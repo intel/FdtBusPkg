@@ -37,6 +37,7 @@
   UefiDriverEntryPoint
 
 [Protocols]
+  gEfiDtIoProtocolGuid
 
 [Depex]
   TRUE

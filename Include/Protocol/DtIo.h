@@ -171,6 +171,48 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_PROP)(
   );
 
 /**
+  For a Device Tree node associated with the EFI_DT_IO_PROTOCOL instance,
+  create child handles with EFI_DT_IO_PROTOCOL for children nodes.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  RemainingDevicePath   If present, describes the child handle that
+                                needs to be created.
+
+  @retval EFI_SUCCESS           Child handles created (all or 1 if RemainingDevicePath
+                                was not NULL)
+  @retval EFI_NOT_FOUND         No child handles created
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_SCAN_CHILDREN)(
+  IN  EFI_DT_IO_PROTOCOL       *This,
+  IN  EFI_DEVICE_PATH_PROTOCOL *RemainingDevicePath OPTIONAL
+  );
+
+/**
+  For a Device Tree node associated with the EFI_DT_IO_PROTOCOL instance,
+  tear down child handles with EFI_DT_IO_PROTOCOL on them. If NumberOfChildren
+  is not 0, only tear down the handles specified in ChildHandleBuffer.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  NumberOfChildren      The number of child device handles in ChildHandleBuffer.
+  @param  ChildHandleBuffer     An array of child handles to be freed. May be NULL if
+                                NumberOfChildren is 0.
+
+  @retval EFI_SUCCESS           Child handles created (all or 1 if RemainingDevicePath
+                                was not NULL)
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILDREN)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  UINTN              NumberOfChildren,
+  IN  EFI_HANDLE         *ChildHandleBuffer OPTIONAL
+  );
+
+/**
   Looks up a reg property value by name for a EFI_DT_IO_PROTOCOL instance.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
@@ -469,6 +511,8 @@ struct _EFI_DT_IO_PROTOCOL {
   ///
   EFI_DT_IO_PROTOCOL_LOOKUP             Lookup;
   EFI_DT_IO_PROTOCOL_GET_PROP           GetProp;
+  EFI_DT_IO_PROTOCOL_SCAN_CHILDREN      ScanChildren;
+  EFI_DT_IO_PROTOCOL_REMOVE_CHILDREN    RemoveChildren;
   ///
   /// Convenience calls to use with or instead of GetProp.
   ///

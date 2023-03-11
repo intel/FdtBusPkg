@@ -72,6 +72,12 @@
   PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
   UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
   NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
+  HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
+  FdtLib|EmbeddedPkg/Library/FdtLib/FdtLib.inf
+  UefiLib|MdePkg/Library/UefiLib/UefiLib.inf
+  MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
+  DevicePathLib|MdePkg/Library/UefiDevicePathLibDevicePathProtocol/UefiDevicePathLibDevicePathProtocol.inf
+  UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
 
 [LibraryClasses.AARCH64]
   NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf

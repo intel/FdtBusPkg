@@ -27,6 +27,7 @@
 [Packages]
   MdeModulePkg/MdeModulePkg.dec
   SseUefiPkg/SseUefiPkg.dec
+  EmbeddedPkg/EmbeddedPkg.dec
   MdePkg/MdePkg.dec
 
 [LibraryClasses]
@@ -35,9 +36,15 @@
   DebugLib
   UefiBootServicesTableLib
   UefiDriverEntryPoint
+  HobLib
+  FdtLib
 
 [Protocols]
   gEfiDtIoProtocolGuid
+
+[Guids]
+  gFdtHobGuid
+
 
 [Depex]
   TRUE

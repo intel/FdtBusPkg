@@ -18,6 +18,11 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiDriverEntryPoint.h>
+#include <Library/HobLib.h>
+#include <Guid/FdtHob.h>
+#include <libfdt.h>
+
+STATIC VOID  *mDeviceTreeBase;
 
 EFI_STATUS
 EFIAPI
@@ -26,5 +31,28 @@ EntryPoint (
   IN  EFI_SYSTEM_TABLE  *SystemTable
   )
 {
+  VOID  *Hob;
+  VOID  *DeviceTreeBase;
+
+  Hob = GetFirstGuidHob (&gFdtHobGuid);
+  if ((Hob == NULL) || (GET_GUID_HOB_DATA_SIZE (Hob) != sizeof (UINT64))) {
+    DEBUG ((DEBUG_ERROR, "No FDT passed in to UEFI\n"));
+    return EFI_NOT_FOUND;
+  }
+
+  DeviceTreeBase = (VOID *)(UINTN)*(UINT64 *)GET_GUID_HOB_DATA (Hob);
+  if (fdt_check_header (DeviceTreeBase) != 0) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: DTB @ %p seems corrupted?\n",
+      __func__,
+      DeviceTreeBase
+      ));
+    return EFI_NOT_FOUND;
+  }
+
+  mDeviceTreeBase = DeviceTreeBase;
+  DEBUG ((DEBUG_INFO, "%a: DTB @ %p\n", __func__, mDeviceTreeBase));
+
   return EFI_SUCCESS;
 }

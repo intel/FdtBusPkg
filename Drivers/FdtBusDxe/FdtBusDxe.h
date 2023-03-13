@@ -25,9 +25,35 @@
 #include <Guid/FdtHob.h>
 #include <libfdt.h>
 
+#define DT_DEV_SIGNATURE  SIGNATURE_32 ('d', 't', 'i', 'o')
+#define DT_DEV_FROM_THIS(a)  CR(a, DT_DEVICE, DtIo, DT_DEV_SIGNATURE)
+
 extern VOID                          *gDeviceTreeBase;
 extern EFI_COMPONENT_NAME_PROTOCOL   gComponentName;
 extern EFI_COMPONENT_NAME2_PROTOCOL  gComponentName2;
 extern EFI_DRIVER_BINDING_PROTOCOL   gDriverBinding;
+
+typedef struct {
+  UINTN                 Signature;
+  CHAR16                *ComponentName;
+  EFI_DT_IO_PROTOCOL    DtIo;
+} DT_DEVICE;
+
+CHAR16 *
+FormatComponentName (
+  IN  CHAR8  *AsciiStr
+  );
+
+EFI_STATUS
+DtDeviceCreate (
+  IN  EFI_HANDLE               ControllerHandle,
+  IN  EFI_DT_DEVICE_PATH_NODE  *PathNode,
+  OUT DT_DEVICE                **Out
+  );
+
+VOID
+DtDeviceCleanup (
+  OUT DT_DEVICE  *DtDevice
+  );
 
 #endif /* __FDT_BUS_DXE_H__ */

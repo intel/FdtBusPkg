@@ -62,7 +62,37 @@ DriverSupported (
   IN  EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath OPTIONAL
   )
 {
-  return EFI_UNSUPPORTED;
+  EFI_STATUS               Status;
+  EFI_DT_DEVICE_PATH_NODE  *ControllerDevicePath;
+
+  ControllerDevicePath = NULL;
+  Status               = gBS->OpenProtocol (
+                                ControllerHandle,
+                                &gEfiDevicePathProtocolGuid,
+                                (VOID **)&ControllerDevicePath,
+                                This->DriverBindingHandle,
+                                ControllerHandle,
+                                EFI_OPEN_PROTOCOL_BY_DRIVER
+                                );
+  if (EFI_ERROR (Status)) {
+    return EFI_UNSUPPORTED;
+  }
+
+  if ((ControllerDevicePath->VendorDevicePath.Header.Type != HARDWARE_DEVICE_PATH) ||
+      (ControllerDevicePath->VendorDevicePath.Header.SubType != HW_VENDOR_DP) ||
+      !CompareGuid (&ControllerDevicePath->VendorDevicePath.Guid, &gEfiDtIoProtocolGuid))
+  {
+    return EFI_UNSUPPORTED;
+  }
+
+  gBS->CloseProtocol (
+         ControllerHandle,
+         &gEfiDevicePathProtocolGuid,
+         This->DriverBindingHandle,
+         ControllerHandle
+         );
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -97,7 +127,7 @@ DriverSupported (
   @retval EFI_SUCCESS              The device was started.
   @retval EFI_DEVICE_ERROR         The device could not be started due to a device error.Currently not implemented.
   @retval EFI_OUT_OF_RESOURCES     The request could not be completed due to a lack of resources.
-  @retval Others                   The driver failded to start the device.
+  @retval Others                   The driver failed to start the device.
 
 **/
 STATIC
@@ -109,7 +139,58 @@ DriverStart (
   IN  EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath OPTIONAL
   )
 {
-  return EFI_UNSUPPORTED;
+  EFI_STATUS               Status;
+  DT_DEVICE                *DtDevice;
+  EFI_DT_DEVICE_PATH_NODE  *ControllerDevicePath;
+
+  DtDevice             = NULL;
+  ControllerDevicePath = NULL;
+  Status               = gBS->OpenProtocol (
+                                ControllerHandle,
+                                &gEfiDevicePathProtocolGuid,
+                                (VOID **)&ControllerDevicePath,
+                                This->DriverBindingHandle,
+                                ControllerHandle,
+                                EFI_OPEN_PROTOCOL_BY_DRIVER
+                                );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: OpenProtocol %r\n", __func__, Status));
+    goto out;
+  }
+
+  Status = DtDeviceCreate (ControllerHandle, ControllerDevicePath, &DtDevice);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: DtDeviceCreate %r\n", __func__, Status));
+    goto out;
+  }
+
+  Status = gBS->InstallMultipleProtocolInterfaces (
+                  &ControllerHandle,
+                  &gEfiDtIoProtocolGuid,
+                  &DtDevice->DtIo,
+                  NULL
+                  );
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: InstallMultipleProtocolInterfaces %r\n", __func__, Status));
+    goto out;
+  }
+
+out:
+  if (EFI_ERROR (Status)) {
+    DtDeviceCleanup (DtDevice);
+
+    if (ControllerDevicePath != NULL) {
+      gBS->CloseProtocol (
+             ControllerHandle,
+             &gEfiDevicePathProtocolGuid,
+             This->DriverBindingHandle,
+             ControllerHandle
+             );
+    }
+  }
+
+  return Status;
 }
 
 /**
@@ -148,7 +229,41 @@ DriverStop (
   IN  EFI_HANDLE                   *ChildHandleBuffer OPTIONAL
   )
 {
-  return EFI_UNSUPPORTED;
+  EFI_STATUS          Status;
+  DT_DEVICE           *DtDevice;
+  EFI_DT_IO_PROTOCOL  *DtIoProtocol;
+
+  Status = gBS->HandleProtocol (
+                  ControllerHandle,
+                  &gEfiDtIoProtocolGuid,
+                  (VOID **)&DtIoProtocol
+                  );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: HandleProtocol %r\n", __func__, Status));
+    return Status;
+  }
+
+  DtDevice = DT_DEV_FROM_THIS (DtIoProtocol);
+  Status   = gBS->UninstallMultipleProtocolInterfaces (
+                    ControllerHandle,
+                    &gEfiDtIoProtocolGuid,
+                    DtIoProtocol,
+                    NULL
+                    );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: UninstallMultipleProtocolInterfaces %r\n", __func__, Status));
+    return Status;
+  }
+
+  FreePool (DtDevice);
+
+  gBS->CloseProtocol (
+         ControllerHandle,
+         &gEfiDevicePathProtocolGuid,
+         This->DriverBindingHandle,
+         ControllerHandle
+         );
+  return EFI_SUCCESS;
 }
 
 GLOBAL_REMOVE_IF_UNREFERENCED EFI_DRIVER_BINDING_PROTOCOL  gDriverBinding = {

@@ -24,7 +24,9 @@
 [Sources]
   ComponentName.c
   DriverBinding.c
+  DtDevice.c
   Entry.c
+  Utils.c
 
 [Packages]
   MdeModulePkg/MdeModulePkg.dec

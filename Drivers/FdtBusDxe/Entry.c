@@ -105,6 +105,8 @@ EntryPoint (
     return Status;
   }
 
+  DEBUG ((DEBUG_INFO, "Root handle is %p\n", RootHandle));
+
   Status = EfiLibInstallDriverBindingComponentName2 (
              ImageHandle,
              SystemTable,

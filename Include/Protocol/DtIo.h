@@ -11,13 +11,17 @@
 #ifndef __DT_IO_H__
 #define __DT_IO_H__
 
-///
-/// Global ID for the DT I/O Protocol
-///
+#include <Protocol/DevicePath.h>
+
 #define EFI_DT_IO_PROTOCOL_GUID \
   { \
     0x5ce5a2b0, 0x2838, 0x3c35, {0x1e, 0xe3, 0x42, 0x5e, 0x36, 0x50, 0xa2, 0x9b } \
   }
+
+typedef struct {
+  VENDOR_DEVICE_PATH    VendorDevicePath;
+  CHAR8                 Name[];
+} EFI_DT_DEVICE_PATH_NODE;
 
 typedef struct _EFI_DT_IO_PROTOCOL EFI_DT_IO_PROTOCOL;
 

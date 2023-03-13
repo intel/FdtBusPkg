@@ -22,6 +22,8 @@
 #
 
 [Sources]
+  ComponentName.c
+  DriverBinding.c
   Entry.c
 
 [Packages]
@@ -41,10 +43,10 @@
 
 [Protocols]
   gEfiDtIoProtocolGuid
+  gEfiDevicePathProtocolGuid
 
 [Guids]
   gFdtHobGuid
-
 
 [Depex]
   TRUE

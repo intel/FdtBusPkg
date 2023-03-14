@@ -30,12 +30,12 @@ EntryPoint (
   IN  EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  VOID                       *Hob;
-  EFI_STATUS                 Status;
-  VOID                       *DeviceTreeBase;
-  EFI_HANDLE                 RootHandle;
-  EFI_DT_NODE_DATA_PROTOCOL  *RootNodeData;
-  INTN                       RootNode;
+  VOID        *Hob;
+  EFI_STATUS  Status;
+  VOID        *DeviceTreeBase;
+  EFI_HANDLE  RootHandle;
+  DT_DEVICE   *RootDtDevice;
+  INTN        RootNode;
 
   Hob = GetFirstGuidHob (&gFdtHobGuid);
   if ((Hob == NULL) || (GET_GUID_HOB_DATA_SIZE (Hob) != sizeof (UINT64))) {
@@ -63,24 +63,25 @@ EntryPoint (
     return EFI_NOT_FOUND;
   }
 
-  RootNodeData = DtNodeDataCreate ("/", NULL, RootNode);
-  if (RootNodeData == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a: DtNodeDataCreate\n", __func__));
+  Status = DtDeviceCreate (RootNode, "/", NULL, &RootDtDevice);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: DtDeviceCreate: %r\n", __func__, Status));
     return EFI_OUT_OF_RESOURCES;
   }
 
   RootHandle = NULL;
   Status     = gBS->InstallMultipleProtocolInterfaces (
-                      &RootHandle,
+                      &RootDtDevice->Handle,
                       &gEfiDevicePathProtocolGuid,
-                      RootNodeData->DevicePath,
-                      &gEfiDtNodeDataProtocol,
-                      RootNodeData,
+                      RootDtDevice->DevicePath,
+                      &gEfiDtIoProtocolGuid,
+                      &RootDtDevice->DtIo,
                       NULL,
                       NULL
                       );
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: InstallMultipleProtocolInterfaces: %r\n", __func__, Status));
+    DtDeviceCleanup (RootDtDevice);
     return Status;
   }
 
@@ -95,12 +96,13 @@ EntryPoint (
 
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "EfiLibInstallDriverBindingComponentName2: %r\n", Status));
+    DtDeviceCleanup (RootDtDevice);
     gBS->UninstallMultipleProtocolInterfaces (
            RootHandle,
            &gEfiDevicePathProtocolGuid,
-           RootNodeData->DevicePath,
-           &gEfiDtNodeDataProtocol,
-           RootNodeData,
+           RootDtDevice->DevicePath,
+           &gEfiDtIoProtocolGuid,
+           &RootDtDevice->DtIo,
            NULL
            );
   }

@@ -24,11 +24,14 @@
 **/
 EFI_STATUS
 DtDeviceCreate (
-  IN  EFI_DT_NODE_DATA_PROTOCOL  *NodeData,
-  OUT DT_DEVICE                  **Out
+  IN  INTN                     FdtNode,
+  IN  CONST CHAR8              *Name,
+  IN  EFI_DT_DEVICE_PATH_NODE  *ParentPath,
+  OUT DT_DEVICE                **Out
   )
 {
-  DT_DEVICE  *DtDevice;
+  DT_DEVICE                *DtDevice;
+  EFI_DT_DEVICE_PATH_NODE  *NewPathNode;
 
   DtDevice = AllocateZeroPool (sizeof *DtDevice);
   if (DtDevice == NULL) {
@@ -37,11 +40,29 @@ DtDeviceCreate (
   }
 
   DtDevice->Signature     = DT_DEV_SIGNATURE;
-  DtDevice->ComponentName = FormatComponentName (NodeData->Name);
-  DtDevice->DtIo.Name     = NodeData->Name;
-  DtDevice->NodeData      = NodeData;
-  *Out                    = DtDevice;
+  DtDevice->FdtNode       = FdtNode;
+  DtDevice->ComponentName = FormatComponentName (Name);
+  DtDevice->DtIo.Name     = Name;
 
+  NewPathNode = DtDevicePathNodeCreate (Name);
+  if (NewPathNode == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: DtDevicePathNodeCreate\n", __func__));
+    FreePool (DtDevice);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  DtDevice->DevicePath = (VOID *)AppendDevicePathNode (
+                                   (VOID *)ParentPath,
+                                   (VOID *)NewPathNode
+                                   );
+  FreePool (NewPathNode);
+  if (DtDevice->DevicePath == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: AppendDevicePathNode\n", __func__));
+    FreePool (DtDevice);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  *Out = DtDevice;
   return EFI_SUCCESS;
 }
 
@@ -63,6 +84,7 @@ DtDeviceCleanup (
     return;
   }
 
+  FreePool (DtDevice->DevicePath);
   FreePool (DtDevice->ComponentName);
   FreePool (DtDevice);
 }
@@ -105,12 +127,12 @@ DtDeviceScan (
   }
 
   Node = -FDT_ERR_NOTFOUND;
-  fdt_for_each_subnode (Node, gDeviceTreeBase, DtDevice->NodeData->FdtNode) {
-    INT32                      Len;
-    CONST CHAR8                *Name;
-    EFI_DT_NODE_DATA_PROTOCOL  *NodeData;
-    EFI_HANDLE                 NodeHandle;
-    VOID                       *OpenProtoData;
+  fdt_for_each_subnode (Node, gDeviceTreeBase, DtDevice->FdtNode) {
+    INT32        Len;
+    CONST CHAR8  *Name;
+    DT_DEVICE    *NodeDtDevice;
+    EFI_HANDLE   NodeHandle;
+    VOID         *OpenProtoData;
 
     Len  = 0;
     Name = fdt_get_name (gDeviceTreeBase, Node, &Len);
@@ -125,9 +147,20 @@ DtDeviceScan (
       continue;
     }
 
-    NodeData = DtNodeDataCreate (Name, DtDevice->NodeData->DevicePath, Node);
-    if (NodeData == NULL) {
-      DEBUG ((DEBUG_ERROR, "%a: DtNodeDataCreate(%a)\n", __func__, Name));
+    Status = DtDeviceCreate (
+               Node,
+               Name,
+               DtDevice->DevicePath,
+               &NodeDtDevice
+               );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: DtDeviceCreate(%a): %r\n",
+        __func__,
+        Name,
+        Status
+        ));
       continue;
     }
 
@@ -135,21 +168,21 @@ DtDeviceScan (
     Status     = gBS->InstallMultipleProtocolInterfaces (
                         &NodeHandle,
                         &gEfiDevicePathProtocolGuid,
-                        NodeData->DevicePath,
-                        &gEfiDtNodeDataProtocol,
-                        NodeData,
+                        NodeDtDevice->DevicePath,
+                        &gEfiDtIoProtocolGuid,
+                        &NodeDtDevice->DtIo,
                         NULL,
                         NULL
                         );
     if (EFI_ERROR (Status)) {
       DEBUG ((DEBUG_ERROR, "%a: InstallMultipleProtocolInterfaces(%a): %r\n", __func__, Name, Status));
-      DtNodeDataCleanup (NodeData);
+      DtDeviceCleanup (NodeDtDevice);
       continue;
     }
 
     Status = gBS->OpenProtocol (
                     ControllerHandle,
-                    &gEfiDtNodeDataProtocol,
+                    &gEfiDtIoProtocolGuid,
                     &OpenProtoData,
                     DriverBindingHandle,
                     NodeHandle,
@@ -160,12 +193,12 @@ DtDeviceScan (
       gBS->UninstallMultipleProtocolInterfaces (
              NodeHandle,
              &gEfiDevicePathProtocolGuid,
-             NodeData->DevicePath,
-             &gEfiDtNodeDataProtocol,
-             NodeData,
+             NodeDtDevice->DevicePath,
+             &gEfiDtIoProtocolGuid,
+             &NodeDtDevice->DtIo,
              NULL
              );
-      DtNodeDataCleanup (NodeData);
+      DtDeviceCleanup (NodeDtDevice);
       continue;
     }
   }

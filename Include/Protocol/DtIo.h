@@ -517,7 +517,7 @@ struct _EFI_DT_NODE_DATA_PROTOCOL {
 /// is associated with the device.
 ///
 struct _EFI_DT_IO_PROTOCOL {
-  CHAR8                                 *Name;
+  CONST CHAR8                           *Name;
   CHAR8                                 *Model;
   EFI_DT_STATUS                         DeviceStatus;
   UINT8                                 AddressCells;

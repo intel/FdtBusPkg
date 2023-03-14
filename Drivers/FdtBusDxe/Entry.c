@@ -80,11 +80,9 @@ EntryPoint (
                       NULL
                       );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "InstallMultipleProtocolInterfaces: %r\n", Status));
+    DEBUG ((DEBUG_ERROR, "%a: InstallMultipleProtocolInterfaces: %r\n", __func__, Status));
     return Status;
   }
-
-  DEBUG ((DEBUG_INFO, "Root handle is %p\n", RootHandle));
 
   Status = EfiLibInstallDriverBindingComponentName2 (
              ImageHandle,

@@ -184,7 +184,12 @@ DriverStart (
     goto out;
   }
 
-  Status = DtDeviceScan (DtDevice, (VOID *)RemainingDevicePath);
+  Status = DtDeviceScan (
+             ControllerHandle,
+             This->DriverBindingHandle,
+             DtDevice,
+             (VOID *)RemainingDevicePath
+             );
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: DtDeviceEnumerate: %r\n", __func__, Status));
   }

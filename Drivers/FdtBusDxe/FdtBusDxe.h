@@ -35,6 +35,7 @@ extern EFI_COMPONENT_NAME2_PROTOCOL  gComponentName2;
 extern EFI_DRIVER_BINDING_PROTOCOL   gDriverBinding;
 
 typedef struct {
+  EFI_HANDLE                   Handle;
   UINTN                        Signature;
   CHAR16                       *ComponentName;
   EFI_DT_IO_PROTOCOL           DtIo;
@@ -71,6 +72,8 @@ DtDeviceCleanup (
 
 EFI_STATUS
 DtDeviceScan (
+  IN  EFI_HANDLE               ControllerHandle,
+  IN  EFI_HANDLE               DriverBindingHandle,
   IN  DT_DEVICE                *DtDevice,
   IN  EFI_DT_DEVICE_PATH_NODE  *RemainingDevicePath
   );

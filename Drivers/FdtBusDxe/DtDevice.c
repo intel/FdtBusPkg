@@ -14,8 +14,9 @@
 /**
   Given a EFI_DT_DEVICE_PATH_NODE, create/populate a DT_DEVICE.
 
-  @param[in]    ControllerHandle EFI_HANDLE
-  @param[in]    PathNode         EFI_DT_DEVICE_PATH_NODE.
+  @param[in]    FdtNode          INTN.
+  @param[in]    Name             CHAR8 *.
+  @param[in]    Parent           DT_DEVICE *.
   @param[out]   Out              DT_DEVICE **.
 
   @retval EFI_SUCCESS            *Out is populated.
@@ -24,10 +25,10 @@
 **/
 EFI_STATUS
 DtDeviceCreate (
-  IN  INTN                     FdtNode,
-  IN  CONST CHAR8              *Name,
-  IN  EFI_DT_DEVICE_PATH_NODE  *ParentPath,
-  OUT DT_DEVICE                **Out
+  IN  INTN         FdtNode,
+  IN  CONST CHAR8  *Name,
+  IN  DT_DEVICE    *Parent,
+  OUT DT_DEVICE    **Out
   )
 {
   DT_DEVICE                *DtDevice;
@@ -41,7 +42,8 @@ DtDeviceCreate (
   }
 
   FullPath = (VOID *)AppendDevicePathNode (
-                       (VOID *)ParentPath,
+                       Parent != NULL ?
+                       (VOID *)Parent->DevicePath : NULL,
                        (VOID *)NewPathNode
                        );
   FreePool (NewPathNode);
@@ -248,7 +250,6 @@ EFI_STATUS
 DtDeviceScan (
   IN  DT_DEVICE                *DtDevice,
   IN  EFI_DT_DEVICE_PATH_NODE  *RemainingDevicePath,
-  IN  EFI_HANDLE               ControllerHandle,
   IN  EFI_HANDLE               DriverBindingHandle
   )
 {
@@ -302,7 +303,7 @@ DtDeviceScan (
     Status = DtDeviceCreate (
                Node,
                Name,
-               DtDevice->DevicePath,
+               DtDevice,
                &NodeDtDevice
                );
     if (Status == EFI_ALREADY_STARTED) {
@@ -325,7 +326,7 @@ DtDeviceScan (
 
     Status = DtDeviceRegister (
                NodeDtDevice,
-               ControllerHandle,
+               DtDevice->Handle,
                DriverBindingHandle
                );
     if (EFI_ERROR (Status)) {

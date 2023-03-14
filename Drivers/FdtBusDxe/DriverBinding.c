@@ -161,7 +161,6 @@ DriverStart (
   Status = DtDeviceScan (
              DtDevice,
              (VOID *)RemainingDevicePath,
-             ControllerHandle,
              This->DriverBindingHandle
              );
   if (EFI_ERROR (Status)) {

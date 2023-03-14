@@ -60,10 +60,10 @@ DtPathMatchesHandle (
 
 EFI_STATUS
 DtDeviceCreate (
-  IN  INTN                     FdtNode,
-  IN  CONST CHAR8              *Name,
-  IN  EFI_DT_DEVICE_PATH_NODE  *ParentPath,
-  OUT DT_DEVICE                **Out
+  IN  INTN         FdtNode,
+  IN  CONST CHAR8  *Name,
+  IN  DT_DEVICE    *Parent,
+  OUT DT_DEVICE    **Out
   );
 
 VOID
@@ -75,7 +75,6 @@ EFI_STATUS
 DtDeviceScan (
   IN  DT_DEVICE                *DtDevice,
   IN  EFI_DT_DEVICE_PATH_NODE  *RemainingDevicePath,
-  IN  EFI_HANDLE               ControllerHandle,
   IN  EFI_HANDLE               DriverBindingHandle
   );
 

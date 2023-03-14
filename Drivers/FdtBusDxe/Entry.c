@@ -11,45 +11,6 @@
 
 #include "FdtBusDxe.h"
 
-typedef struct {
-  VENDOR_DEVICE_PATH    VendorDevicePath;
-  CHAR8                 Name[2];
-} EFI_DT_ROOT_DEVICE_PATH_NODE;
-
-typedef struct {
-  EFI_DT_ROOT_DEVICE_PATH_NODE    Node;
-  EFI_DEVICE_PATH_PROTOCOL        EndDevicePath;
-} EFI_DT_ROOT_DEVICE_PATH;
-
-STATIC EFI_DT_NODE_DATA_PROTOCOL  mRootNodeData;
-
-STATIC EFI_DT_ROOT_DEVICE_PATH  mRootDevicePath = {
-  {
-    {
-      {
-        HARDWARE_DEVICE_PATH,
-        HW_VENDOR_DP,
-        {
-          (UINT8)(sizeof (EFI_DT_ROOT_DEVICE_PATH_NODE)),
-          (UINT8)((sizeof (EFI_DT_ROOT_DEVICE_PATH_NODE)) >> 8),
-        }
-      },
-      EFI_DT_IO_PROTOCOL_GUID
-    },
-    {
-      '/', '\0'
-    }
-  },
-  {
-    END_DEVICE_PATH_TYPE,
-    END_ENTIRE_DEVICE_PATH_SUBTYPE,
-    {
-      sizeof (EFI_DEVICE_PATH_PROTOCOL),
-      0
-    }
-  }
-};
-
 VOID  *gDeviceTreeBase;
 
 /**
@@ -69,10 +30,12 @@ EntryPoint (
   IN  EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  VOID        *Hob;
-  EFI_STATUS  Status;
-  VOID        *DeviceTreeBase;
-  EFI_HANDLE  RootHandle;
+  VOID                       *Hob;
+  EFI_STATUS                 Status;
+  VOID                       *DeviceTreeBase;
+  EFI_HANDLE                 RootHandle;
+  EFI_DT_NODE_DATA_PROTOCOL  *RootNodeData;
+  INTN                       RootNode;
 
   Hob = GetFirstGuidHob (&gFdtHobGuid);
   if ((Hob == NULL) || (GET_GUID_HOB_DATA_SIZE (Hob) != sizeof (UINT64))) {
@@ -94,20 +57,25 @@ EntryPoint (
   gDeviceTreeBase = DeviceTreeBase;
   DEBUG ((DEBUG_INFO, "%a: DTB @ %p\n", __func__, gDeviceTreeBase));
 
-  mRootNodeData.Name    = "/";
-  mRootNodeData.FdtNode = fdt_path_offset (gDeviceTreeBase, "/");
-  if (mRootNodeData.FdtNode < 0) {
-    DEBUG ((DEBUG_ERROR, "%a: no root found\n", __func__));
+  RootNode = fdt_path_offset (gDeviceTreeBase, "/");
+  if (RootNode < 0) {
+    DEBUG ((DEBUG_ERROR, "%a: no root found: %a\n", __func__, fdt_strerror (RootNode)));
     return EFI_NOT_FOUND;
+  }
+
+  RootNodeData = DtNodeDataCreate ("/", NULL, RootNode);
+  if (RootNodeData == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: DtNodeDataCreate\n", __func__));
+    return EFI_OUT_OF_RESOURCES;
   }
 
   RootHandle = NULL;
   Status     = gBS->InstallMultipleProtocolInterfaces (
                       &RootHandle,
                       &gEfiDevicePathProtocolGuid,
-                      &mRootDevicePath,
+                      RootNodeData->DevicePath,
                       &gEfiDtNodeDataProtocol,
-                      &mRootNodeData,
+                      RootNodeData,
                       NULL,
                       NULL
                       );
@@ -132,7 +100,9 @@ EntryPoint (
     gBS->UninstallMultipleProtocolInterfaces (
            RootHandle,
            &gEfiDevicePathProtocolGuid,
-           &mRootDevicePath,
+           RootNodeData->DevicePath,
+           &gEfiDtNodeDataProtocol,
+           RootNodeData,
            NULL
            );
   }

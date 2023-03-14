@@ -73,7 +73,6 @@ DtDeviceCleanup (
   this particular matching child handle.
 
   @param[in]    DtDevice             DT_DEVICE *.
-  @param[in]    ControllerDevicePath Path of DtDevice.
   @param[in]    RemainingDevicePath  Potential child EFI_DT_DEVICE_PATH_NODE *.
 
   @retval EFI_SUCCESS                Success.
@@ -83,7 +82,6 @@ DtDeviceCleanup (
 EFI_STATUS
 DtDeviceScan (
   IN  DT_DEVICE                *DtDevice,
-  IN  EFI_DT_DEVICE_PATH_NODE  *ControllerDevicePath,
   IN  EFI_DT_DEVICE_PATH_NODE  *RemainingDevicePath
   )
 {
@@ -103,7 +101,28 @@ DtDeviceScan (
 
   Node = -FDT_ERR_NOTFOUND;
   fdt_for_each_subnode (Node, gDeviceTreeBase, DtDevice->NodeData->FdtNode) {
-    DEBUG ((DEBUG_ERROR, "See %a\n", fdt_get_name (gDeviceTreeBase, Node, NULL)));
+    INT32                      Len;
+    CONST CHAR8                *Name;
+    EFI_DT_NODE_DATA_PROTOCOL  *NodeData;
+
+    Len  = 0;
+    Name = fdt_get_name (gDeviceTreeBase, Node, &Len);
+    if (Len < 0) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: fdt_get_name(%ld): %a\n",
+        __func__,
+        Node,
+        fdt_strerror (Len)
+        ));
+      continue;
+    }
+
+    NodeData = DtNodeDataCreate (Name, DtDevice->NodeData->DevicePath, Node);
+    if (NodeData == NULL) {
+      DEBUG ((DEBUG_ERROR, "%a: DtNodeDataCreate(%a)\n", __func__, Name));
+      continue;
+    }
   }
 
   if ((Node < 0) && (Node != -FDT_ERR_NOTFOUND)) {

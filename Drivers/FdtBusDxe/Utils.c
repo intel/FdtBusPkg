@@ -24,7 +24,7 @@
 **/
 CHAR16 *
 FormatComponentName (
-  IN  CHAR8  *AsciiStr
+  IN  CONST CHAR8  *AsciiStr
   )
 {
   UINTN   Size;
@@ -43,4 +43,110 @@ FormatComponentName (
   UniStr[Size - 2] = L')';
 
   return UniStr;
+}
+
+/**
+  Given an ASCII name, allocate/fill a EFI_DT_DEVICE_PATH_NODE.
+
+  @param[in]    Name           ASCII string.
+
+  @retval NULL                 Failed to allocate memory.
+  @retval Others               EFI_DT_DEVICE_PATH_NODE.
+
+**/
+STATIC
+EFI_DT_DEVICE_PATH_NODE *
+DtDevicePathNodeCreate (
+  IN  CONST CHAR8  *Name
+  )
+{
+  UINTN                    Size;
+  EFI_STATUS               Status;
+  EFI_DT_DEVICE_PATH_NODE  *Node;
+
+  Size = AsciiStrSize (Name);
+  Node = AllocateZeroPool (sizeof (EFI_DT_DEVICE_PATH_NODE) + Size);
+  if (Node == NULL) {
+    return NULL;
+  }
+
+  Node->VendorDevicePath.Header.Type      = HARDWARE_DEVICE_PATH;
+  Node->VendorDevicePath.Header.SubType   = HW_VENDOR_DP;
+  Node->VendorDevicePath.Header.Length[0] =
+    (UINT8)(sizeof (EFI_DT_DEVICE_PATH_NODE) + Size);
+  Node->VendorDevicePath.Header.Length[1] =
+    (UINT8)((sizeof (EFI_DT_DEVICE_PATH_NODE) + Size) >> 8);
+  CopyGuid (&Node->VendorDevicePath.Guid, &gEfiDtIoProtocolGuid);
+
+  Status = AsciiStrCpyS (Node->Name, Size, Name);
+  if (EFI_ERROR (Status)) {
+    FreePool (Node);
+    DEBUG ((DEBUG_ERROR, "%a: AsciiStrCpyS: %r\n", __func__, Status));
+    return NULL;
+  }
+
+  return Node;
+}
+
+/**
+  Given an ASCII name and FDT Node, allocate/fill a EFI_DT_NODE_DATA_PROTOCOL.
+
+  @param[in]    Name           ASCII string.
+  @param[in]    ParentPath     Parent device path, if available.
+  @param[in]    FdtNode        Node index.
+
+  @retval NULL                 Failed to allocate memory.
+  @retval Others               Pointer to EFI_DT_NODE_DATA_PROTOCOL.
+
+**/
+EFI_DT_NODE_DATA_PROTOCOL *
+DtNodeDataCreate (
+  IN  CONST CHAR8              *Name,
+  IN  EFI_DT_DEVICE_PATH_NODE  *ParentPath,
+  IN  INTN                     FdtNode
+  )
+{
+  EFI_DT_NODE_DATA_PROTOCOL  *NodeData;
+  EFI_DT_DEVICE_PATH_NODE    *NewPathNode;
+
+  NodeData = AllocateZeroPool (sizeof (EFI_DT_NODE_DATA_PROTOCOL));
+  if (NodeData == NULL) {
+    return NULL;
+  }
+
+  NewPathNode = DtDevicePathNodeCreate (Name);
+  if (NewPathNode == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: DtDevicePathNodeCreate\n", __func__));
+    FreePool (NodeData);
+    return NULL;
+  }
+
+  NodeData->DevicePath = (VOID *)AppendDevicePathNode ((VOID *)ParentPath, (VOID *)NewPathNode);
+  FreePool (NewPathNode);
+  if (NodeData->DevicePath == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: AppendDevicePathNode\n", __func__));
+    FreePool (NodeData);
+    return NULL;
+  }
+
+  NodeData->Name    = Name;
+  NodeData->FdtNode = FdtNode;
+  return NodeData;
+}
+
+/**
+  Free a EFI_DT_NODE_DATA_PROTOCOL.
+
+  @param[in]    NodeData       EFI_DT_NODE_DATA_PROTOCOL.
+
+  @retval None
+
+**/
+VOID
+DtNodeDataCleanup (
+  IN  EFI_DT_NODE_DATA_PROTOCOL  *NodeData
+  )
+{
+  FreePool (NodeData->DevicePath);
+  FreePool (NodeData);
 }

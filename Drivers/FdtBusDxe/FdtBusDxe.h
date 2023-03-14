@@ -22,6 +22,7 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiDriverEntryPoint.h>
 #include <Library/HobLib.h>
+#include <Library/DevicePathLib.h>
 #include <Guid/FdtHob.h>
 #include <libfdt.h>
 
@@ -42,7 +43,19 @@ typedef struct {
 
 CHAR16 *
 FormatComponentName (
-  IN  CHAR8  *AsciiStr
+  IN  CONST CHAR8  *AsciiStr
+  );
+
+EFI_DT_NODE_DATA_PROTOCOL *
+DtNodeDataCreate (
+  IN  CONST CHAR8              *Name,
+  IN  EFI_DT_DEVICE_PATH_NODE  *ParentPath,
+  IN  INTN                     FdtNode
+  );
+
+VOID
+DtNodeDataCleanup (
+  IN  EFI_DT_NODE_DATA_PROTOCOL  *NodeData
   );
 
 EFI_STATUS
@@ -59,7 +72,6 @@ DtDeviceCleanup (
 EFI_STATUS
 DtDeviceScan (
   IN  DT_DEVICE                *DtDevice,
-  IN  EFI_DT_DEVICE_PATH_NODE  *ControllerDevicePath,
   IN  EFI_DT_DEVICE_PATH_NODE  *RemainingDevicePath
   );
 

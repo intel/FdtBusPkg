@@ -499,8 +499,9 @@ EFI_STATUS
 /// be also used by clients wishing to have low-level access via libfdt.
 ///
 struct _EFI_DT_NODE_DATA_PROTOCOL {
-  CHAR8    *Name;
-  INTN     FdtNode;
+  CONST CHAR8                *Name;
+  INTN                       FdtNode;
+  EFI_DT_DEVICE_PATH_NODE    *DevicePath;
 };
 
 ///

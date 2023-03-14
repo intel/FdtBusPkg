@@ -42,6 +42,7 @@
   UefiDriverEntryPoint
   HobLib
   FdtLib
+  DevicePathLib
 
 [Protocols]
   gEfiDtIoProtocolGuid

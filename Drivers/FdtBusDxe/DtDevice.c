@@ -61,11 +61,16 @@ DtDeviceCreate (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  DtDevice->Signature     = DT_DEV_SIGNATURE;
+  DtDevice->Signature = DT_DEV_SIGNATURE;
+
+  /*
+   * DtDevice->Handle is filled in DtDeviceRegister().
+   */
   DtDevice->FdtNode       = FdtNode;
   DtDevice->DevicePath    = FullPath;
   DtDevice->ComponentName = FormatComponentName (Name);
   DtDevice->DtIo.Name     = Name;
+  DtDevice->DtIo.Model    = FdtGetModel (FdtNode);
 
   *Out = DtDevice;
   return EFI_SUCCESS;

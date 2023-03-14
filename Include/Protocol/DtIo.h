@@ -502,7 +502,7 @@ EFI_STATUS
 ///
 struct _EFI_DT_IO_PROTOCOL {
   CONST CHAR8                           *Name;
-  CHAR8                                 *Model;
+  CONST CHAR8                           *Model;
   EFI_DT_STATUS                         DeviceStatus;
   UINT8                                 AddressCells;
   UINT8                                 SizeCells;

@@ -26,6 +26,7 @@
   DriverBinding.c
   DtDevice.c
   Entry.c
+  Fdt.c
   Utils.c
 
 [Packages]

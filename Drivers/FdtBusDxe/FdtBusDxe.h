@@ -93,4 +93,9 @@ DtDeviceUnregister (
   IN  EFI_HANDLE  DriverBindingHandle
   );
 
+CONST CHAR8 *
+FdtGetModel (
+  IN INTN  FdtNode
+  );
+
 #endif /* __FDT_BUS_DXE_H__ */

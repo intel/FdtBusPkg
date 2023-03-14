@@ -200,26 +200,52 @@ ComponentNameGetControllerName (
   EFI_DT_IO_PROTOCOL  *DtIoProtocol;
   DT_DEVICE           *DtDevice;
 
-  if (ChildHandle != NULL) {
-    return EFI_UNSUPPORTED;
+  //
+  // Make sure this driver is currently managing ControllerHandle
+  //
+  Status = EfiTestManagedDevice (
+             ControllerHandle,
+             gDriverBinding.DriverBindingHandle,
+             &gEfiDtIoProtocolGuid
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  if (ChildHandle == NULL) {
+    //
+    // Root handle.
+    //
+    Status = gBS->HandleProtocol (
+                    ControllerHandle,
+                    &gEfiDtIoProtocolGuid,
+                    (VOID **)&DtIoProtocol
+                    );
+    if (EFI_ERROR (Status)) {
+      return EFI_UNSUPPORTED;
+    }
+
+    DtDevice        = DT_DEV_FROM_THIS (DtIoProtocol);
+    *ControllerName = DtDevice->ComponentName;
+    return EFI_SUCCESS;
+  }
+
+  Status = EfiTestChildHandle (
+             ControllerHandle,
+             ChildHandle,
+             &gEfiDtIoProtocolGuid
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
   }
 
   Status = gBS->HandleProtocol (
-                  ControllerHandle,
+                  ChildHandle,
                   &gEfiDtIoProtocolGuid,
                   (VOID **)&DtIoProtocol
                   );
   if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
-  }
-
-  Status = EfiTestManagedDevice (
-             ControllerHandle,
-             gDriverBinding.DriverBindingHandle,
-             &gEfiDevicePathProtocolGuid
-             );
-  if (EFI_ERROR (Status)) {
-    return Status;
   }
 
   DtDevice        = DT_DEV_FROM_THIS (DtIoProtocol);

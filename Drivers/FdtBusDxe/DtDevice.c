@@ -71,7 +71,6 @@ DtDeviceCreate (
 
   @param[in]    DtDevice         DT_DEVICE *.
 
-  @retval EFI_SUCCESS            Success.
   @retval None
 
 **/
@@ -90,6 +89,137 @@ DtDeviceCleanup (
 }
 
 /**
+  Undoes DtDeviceRegister.
+
+  @param[in]    DtDevice             DT_DEVICE to unregister.
+
+  @retval EFI_SUCCESS                Success.
+  @retval Other                      Errors.
+
+**/
+EFI_STATUS
+DtDeviceUnregister (
+  IN  DT_DEVICE   *DtDevice,
+  IN  EFI_HANDLE  ControllerHandle,
+  IN  EFI_HANDLE  DriverBindingHandle
+  )
+{
+  EFI_STATUS  Status;
+  VOID        *OpenProtoData;
+
+  if (ControllerHandle != NULL) {
+    ASSERT (DriverBindingHandle != NULL);
+    Status = gBS->CloseProtocol (
+                    ControllerHandle,
+                    &gEfiDtIoProtocolGuid,
+                    DriverBindingHandle,
+                    DtDevice->Handle
+                    );
+
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: CloseProtocol: %r\n", __func__, Status));
+      return Status;
+    }
+  }
+
+  Status = gBS->UninstallMultipleProtocolInterfaces (
+                  DtDevice->Handle,
+                  &gEfiDevicePathProtocolGuid,
+                  DtDevice->DevicePath,
+                  &gEfiDtIoProtocolGuid,
+                  &DtDevice->DtIo,
+                  NULL
+                  );
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: UninstallMultipleProtocolInterfaces(%s): %r\n",
+      __func__,
+      DtDevice->ComponentName,
+      Status
+      ));
+    if (ControllerHandle != NULL) {
+      gBS->OpenProtocol (
+             ControllerHandle,
+             &gEfiDtIoProtocolGuid,
+             &OpenProtoData,
+             DriverBindingHandle,
+             DtDevice->Handle,
+             EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+             );
+    }
+  }
+
+  return Status;
+}
+
+/**
+  Given a DT_DEVICE, create a handle, installing relevant protocols on it
+  (device path and DT I/O). If a controller handle is provided, register
+  the handle a child of that.
+
+  @param[in]    DtDevice             DT_DEVICE to register.
+  @param[in]    ControllerHandle     EFI_HANDLE.
+  @param[in]    DriverBindingHandle  EFI_HANDLE.
+
+  @retval EFI_SUCCESS                Success.
+  @retval Other                      Errors.
+
+**/
+EFI_STATUS
+DtDeviceRegister (
+  IN  DT_DEVICE   *DtDevice,
+  IN  EFI_HANDLE  ControllerHandle,
+  IN  EFI_HANDLE  DriverBindingHandle
+  )
+{
+  EFI_STATUS  Status;
+  VOID        *OpenProtoData;
+
+  Status = gBS->InstallMultipleProtocolInterfaces (
+                  &DtDevice->Handle,
+                  &gEfiDevicePathProtocolGuid,
+                  DtDevice->DevicePath,
+                  &gEfiDtIoProtocolGuid,
+                  &DtDevice->DtIo,
+                  NULL,
+                  NULL
+                  );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: InstallMultipleProtocolInterfaces(%s): %r\n", __func__, DtDevice->ComponentName, Status));
+    return Status;
+  }
+
+  if (ControllerHandle == NULL) {
+    return EFI_SUCCESS;
+  }
+
+  ASSERT (DriverBindingHandle != NULL);
+  Status = gBS->OpenProtocol (
+                  ControllerHandle,
+                  &gEfiDtIoProtocolGuid,
+                  &OpenProtoData,
+                  DriverBindingHandle,
+                  DtDevice->Handle,
+                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                  );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER(%s): %r\n", __func__, DtDevice->ComponentName, Status));
+    gBS->UninstallMultipleProtocolInterfaces (
+           DtDevice->Handle,
+           &gEfiDevicePathProtocolGuid,
+           DtDevice->DevicePath,
+           &gEfiDtIoProtocolGuid,
+           &DtDevice->DtIo,
+           NULL
+           );
+  }
+
+  return Status;
+}
+
+/**
   Create child handles for a DT_DEVICE. Called from DriverStart. If
   RemainingDevicePath is present and describes a DT DevicePath, only create
   this particular matching child handle.
@@ -100,15 +230,15 @@ DtDeviceCleanup (
   @param[in]    RemainingDevicePath  Potential child EFI_DT_DEVICE_PATH_NODE *.
 
   @retval EFI_SUCCESS                Success.
-  @retval None
+  @retval Other                      Errors.
 
 **/
 EFI_STATUS
 DtDeviceScan (
-  IN  EFI_HANDLE               ControllerHandle,
-  IN  EFI_HANDLE               DriverBindingHandle,
   IN  DT_DEVICE                *DtDevice,
-  IN  EFI_DT_DEVICE_PATH_NODE  *RemainingDevicePath
+  IN  EFI_DT_DEVICE_PATH_NODE  *RemainingDevicePath,
+  IN  EFI_HANDLE               ControllerHandle,
+  IN  EFI_HANDLE               DriverBindingHandle
   )
 {
   INTN        Node;
@@ -131,8 +261,6 @@ DtDeviceScan (
     INT32        Len;
     CONST CHAR8  *Name;
     DT_DEVICE    *NodeDtDevice;
-    EFI_HANDLE   NodeHandle;
-    VOID         *OpenProtoData;
 
     Len  = 0;
     Name = fdt_get_name (gDeviceTreeBase, Node, &Len);
@@ -143,6 +271,19 @@ DtDeviceScan (
         __func__,
         Node,
         fdt_strerror (Len)
+        ));
+      continue;
+    }
+
+    if ((RemainingDevicePath != NULL) &&
+        (AsciiStrCmp (RemainingDevicePath->Name, Name) != 0))
+    {
+      DEBUG ((
+        DEBUG_VERBOSE,
+        "%a: looking for %a, skipping %a\n",
+        __func__,
+        Name,
+        RemainingDevicePath->Name
         ));
       continue;
     }
@@ -164,42 +305,13 @@ DtDeviceScan (
       continue;
     }
 
-    NodeHandle = NULL;
-    Status     = gBS->InstallMultipleProtocolInterfaces (
-                        &NodeHandle,
-                        &gEfiDevicePathProtocolGuid,
-                        NodeDtDevice->DevicePath,
-                        &gEfiDtIoProtocolGuid,
-                        &NodeDtDevice->DtIo,
-                        NULL,
-                        NULL
-                        );
+    Status = DtDeviceRegister (
+               NodeDtDevice,
+               ControllerHandle,
+               DriverBindingHandle
+               );
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a: InstallMultipleProtocolInterfaces(%a): %r\n", __func__, Name, Status));
       DtDeviceCleanup (NodeDtDevice);
-      continue;
-    }
-
-    Status = gBS->OpenProtocol (
-                    ControllerHandle,
-                    &gEfiDtIoProtocolGuid,
-                    &OpenProtoData,
-                    DriverBindingHandle,
-                    NodeHandle,
-                    EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
-                    );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a: EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER(%a): %r\n", __func__, Name, Status));
-      gBS->UninstallMultipleProtocolInterfaces (
-             NodeHandle,
-             &gEfiDevicePathProtocolGuid,
-             NodeDtDevice->DevicePath,
-             &gEfiDtIoProtocolGuid,
-             &NodeDtDevice->DtIo,
-             NULL
-             );
-      DtDeviceCleanup (NodeDtDevice);
-      continue;
     }
   }
 

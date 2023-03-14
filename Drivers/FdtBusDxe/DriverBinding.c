@@ -169,10 +169,10 @@ DriverStart (
   }
 
   Status = DtDeviceScan (
-             ControllerHandle,
-             This->DriverBindingHandle,
              DtDevice,
-             (VOID *)RemainingDevicePath
+             (VOID *)RemainingDevicePath,
+             ControllerHandle,
+             This->DriverBindingHandle
              );
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: DtDeviceEnumerate: %r\n", __func__, Status));
@@ -240,19 +240,79 @@ DriverStop (
   IN  EFI_HANDLE                   *ChildHandleBuffer OPTIONAL
   )
 {
-  gBS->CloseProtocol (
-         ControllerHandle,
-         &gEfiDevicePathProtocolGuid,
-         This->DriverBindingHandle,
-         ControllerHandle
-         );
+  UINTN       Index;
+  EFI_STATUS  Status;
+  BOOLEAN     AllChildrenStopped;
 
-  gBS->CloseProtocol (
-         ControllerHandle,
-         &gEfiDtIoProtocolGuid,
-         This->DriverBindingHandle,
-         ControllerHandle
-         );
+  if (NumberOfChildren == 0) {
+    gBS->CloseProtocol (
+           ControllerHandle,
+           &gEfiDevicePathProtocolGuid,
+           This->DriverBindingHandle,
+           ControllerHandle
+           );
+
+    gBS->CloseProtocol (
+           ControllerHandle,
+           &gEfiDtIoProtocolGuid,
+           This->DriverBindingHandle,
+           ControllerHandle
+           );
+
+    return EFI_SUCCESS;
+  }
+
+  AllChildrenStopped = TRUE;
+
+  for (Index = 0; Index < NumberOfChildren; Index++) {
+    EFI_DT_IO_PROTOCOL  *DtIo;
+    DT_DEVICE           *DtDevice;
+
+    DtIo   = NULL;
+    Status = gBS->OpenProtocol (
+                    ChildHandleBuffer[Index],
+                    &gEfiDtIoProtocolGuid,
+                    (VOID **)&DtIo,
+                    This->DriverBindingHandle,
+                    ControllerHandle,
+                    EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                    );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: OpenProtocol(%p): %r\n",
+        __func__,
+        ChildHandleBuffer[Index],
+        Status
+        ));
+      AllChildrenStopped = FALSE;
+      continue;
+    }
+
+    DtDevice = DT_DEV_FROM_THIS (DtIo);
+    Status   = DtDeviceUnregister (
+                 DtDevice,
+                 ControllerHandle,
+                 This->DriverBindingHandle
+                 );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: DtDeviceUnregister(%s): %r\n",
+        __func__,
+        DtDevice->ComponentName,
+        Status
+        ));
+      AllChildrenStopped = FALSE;
+      continue;
+    }
+
+    DtDeviceCleanup (DtDevice);
+  }
+
+  if (!AllChildrenStopped) {
+    return EFI_DEVICE_ERROR;
+  }
 
   return EFI_SUCCESS;
 }

@@ -33,7 +33,6 @@ EntryPoint (
   VOID        *Hob;
   EFI_STATUS  Status;
   VOID        *DeviceTreeBase;
-  EFI_HANDLE  RootHandle;
   DT_DEVICE   *RootDtDevice;
   INTN        RootNode;
 
@@ -69,18 +68,9 @@ EntryPoint (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  RootHandle = NULL;
-  Status     = gBS->InstallMultipleProtocolInterfaces (
-                      &RootDtDevice->Handle,
-                      &gEfiDevicePathProtocolGuid,
-                      RootDtDevice->DevicePath,
-                      &gEfiDtIoProtocolGuid,
-                      &RootDtDevice->DtIo,
-                      NULL,
-                      NULL
-                      );
+  Status = DtDeviceRegister (RootDtDevice, NULL, NULL);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: InstallMultipleProtocolInterfaces: %r\n", __func__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: DtDeviceRegister: %r\n", __func__, Status));
     DtDeviceCleanup (RootDtDevice);
     return Status;
   }
@@ -96,15 +86,8 @@ EntryPoint (
 
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "EfiLibInstallDriverBindingComponentName2: %r\n", Status));
+    DtDeviceUnregister (RootDtDevice, NULL, NULL);
     DtDeviceCleanup (RootDtDevice);
-    gBS->UninstallMultipleProtocolInterfaces (
-           RootHandle,
-           &gEfiDevicePathProtocolGuid,
-           RootDtDevice->DevicePath,
-           &gEfiDtIoProtocolGuid,
-           &RootDtDevice->DtIo,
-           NULL
-           );
   }
 
   return Status;

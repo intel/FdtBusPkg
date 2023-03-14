@@ -68,10 +68,24 @@ DtDeviceCleanup (
 
 EFI_STATUS
 DtDeviceScan (
-  IN  EFI_HANDLE               ControllerHandle,
-  IN  EFI_HANDLE               DriverBindingHandle,
   IN  DT_DEVICE                *DtDevice,
-  IN  EFI_DT_DEVICE_PATH_NODE  *RemainingDevicePath
+  IN  EFI_DT_DEVICE_PATH_NODE  *RemainingDevicePath,
+  IN  EFI_HANDLE               ControllerHandle,
+  IN  EFI_HANDLE               DriverBindingHandle
+  );
+
+EFI_STATUS
+DtDeviceRegister (
+  IN  DT_DEVICE   *DtDevice,
+  IN  EFI_HANDLE  ControllerHandle,
+  IN  EFI_HANDLE  DriverBindingHandle
+  );
+
+EFI_STATUS
+DtDeviceUnregister (
+  IN  DT_DEVICE   *DtDevice,
+  IN  EFI_HANDLE  ControllerHandle,
+  IN  EFI_HANDLE  DriverBindingHandle
   );
 
 #endif /* __FDT_BUS_DXE_H__ */

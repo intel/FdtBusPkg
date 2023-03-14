@@ -98,4 +98,9 @@ FdtGetModel (
   IN INTN  FdtNode
   );
 
+EFI_DT_STATUS
+FdtGetStatus (
+  IN INTN  FdtNode
+  );
+
 #endif /* __FDT_BUS_DXE_H__ */

@@ -66,11 +66,12 @@ DtDeviceCreate (
   /*
    * DtDevice->Handle is filled in DtDeviceRegister().
    */
-  DtDevice->FdtNode       = FdtNode;
-  DtDevice->DevicePath    = FullPath;
-  DtDevice->ComponentName = FormatComponentName (Name);
-  DtDevice->DtIo.Name     = Name;
-  DtDevice->DtIo.Model    = FdtGetModel (FdtNode);
+  DtDevice->FdtNode           = FdtNode;
+  DtDevice->DevicePath        = FullPath;
+  DtDevice->ComponentName     = FormatComponentName (Name);
+  DtDevice->DtIo.Name         = Name;
+  DtDevice->DtIo.Model        = FdtGetModel (FdtNode);
+  DtDevice->DtIo.DeviceStatus = FdtGetStatus (FdtNode);
 
   *Out = DtDevice;
   return EFI_SUCCESS;

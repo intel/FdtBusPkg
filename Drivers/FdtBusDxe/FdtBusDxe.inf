@@ -45,6 +45,7 @@
 
 [Protocols]
   gEfiDtIoProtocolGuid
+  gEfiDtNodeDataProtocol
   gEfiDevicePathProtocolGuid
 
 [Guids]

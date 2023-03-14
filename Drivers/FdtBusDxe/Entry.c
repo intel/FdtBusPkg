@@ -21,6 +21,8 @@ typedef struct {
   EFI_DEVICE_PATH_PROTOCOL        EndDevicePath;
 } EFI_DT_ROOT_DEVICE_PATH;
 
+STATIC EFI_DT_NODE_DATA_PROTOCOL  mRootNodeData;
+
 STATIC EFI_DT_ROOT_DEVICE_PATH  mRootDevicePath = {
   {
     {
@@ -92,11 +94,19 @@ EntryPoint (
   gDeviceTreeBase = DeviceTreeBase;
   DEBUG ((DEBUG_INFO, "%a: DTB @ %p\n", __func__, gDeviceTreeBase));
 
+  mRootNodeData.FdtNode = fdt_path_offset (gDeviceTreeBase, "/");
+  if (mRootNodeData.FdtNode < 0) {
+    DEBUG ((DEBUG_ERROR, "%a: no root found\n", __func__));
+    return EFI_NOT_FOUND;
+  }
+
   RootHandle = NULL;
   Status     = gBS->InstallMultipleProtocolInterfaces (
                       &RootHandle,
                       &gEfiDevicePathProtocolGuid,
                       &mRootDevicePath,
+                      &gEfiDtNodeDataProtocol,
+                      &mRootNodeData,
                       NULL,
                       NULL
                       );

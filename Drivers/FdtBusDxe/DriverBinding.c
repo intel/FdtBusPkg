@@ -62,32 +62,25 @@ DriverSupported (
   IN  EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath OPTIONAL
   )
 {
-  EFI_STATUS               Status;
-  EFI_DT_DEVICE_PATH_NODE  *ControllerDevicePath;
+  EFI_STATUS                 Status;
+  EFI_DT_NODE_DATA_PROTOCOL  *NodeData;
 
-  ControllerDevicePath = NULL;
-  Status               = gBS->OpenProtocol (
-                                ControllerHandle,
-                                &gEfiDevicePathProtocolGuid,
-                                (VOID **)&ControllerDevicePath,
-                                This->DriverBindingHandle,
-                                ControllerHandle,
-                                EFI_OPEN_PROTOCOL_BY_DRIVER
-                                );
+  NodeData = NULL;
+  Status   = gBS->OpenProtocol (
+                    ControllerHandle,
+                    &gEfiDtNodeDataProtocol,
+                    (VOID **)&NodeData,
+                    This->DriverBindingHandle,
+                    ControllerHandle,
+                    EFI_OPEN_PROTOCOL_BY_DRIVER
+                    );
   if (EFI_ERROR (Status)) {
-    return EFI_UNSUPPORTED;
-  }
-
-  if ((ControllerDevicePath->VendorDevicePath.Header.Type != HARDWARE_DEVICE_PATH) ||
-      (ControllerDevicePath->VendorDevicePath.Header.SubType != HW_VENDOR_DP) ||
-      !CompareGuid (&ControllerDevicePath->VendorDevicePath.Guid, &gEfiDtIoProtocolGuid))
-  {
     return EFI_UNSUPPORTED;
   }
 
   gBS->CloseProtocol (
          ControllerHandle,
-         &gEfiDevicePathProtocolGuid,
+         &gEfiDtNodeDataProtocol,
          This->DriverBindingHandle,
          ControllerHandle
          );
@@ -139,26 +132,41 @@ DriverStart (
   IN  EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath OPTIONAL
   )
 {
-  EFI_STATUS               Status;
-  DT_DEVICE                *DtDevice;
-  EFI_DT_DEVICE_PATH_NODE  *ControllerDevicePath;
+  EFI_STATUS                 Status;
+  DT_DEVICE                  *DtDevice;
+  EFI_DT_DEVICE_PATH_NODE    *ControllerDevicePath;
+  EFI_DT_NODE_DATA_PROTOCOL  *NodeData;
 
+  NodeData             = NULL;
   DtDevice             = NULL;
   ControllerDevicePath = NULL;
-  Status               = gBS->OpenProtocol (
-                                ControllerHandle,
-                                &gEfiDevicePathProtocolGuid,
-                                (VOID **)&ControllerDevicePath,
-                                This->DriverBindingHandle,
-                                ControllerHandle,
-                                EFI_OPEN_PROTOCOL_BY_DRIVER
-                                );
+
+  Status = gBS->OpenProtocol (
+                  ControllerHandle,
+                  &gEfiDtNodeDataProtocol,
+                  (VOID **)&NodeData,
+                  This->DriverBindingHandle,
+                  ControllerHandle,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  );
+  if (EFI_ERROR (Status)) {
+    goto out;
+  }
+
+  Status = gBS->OpenProtocol (
+                  ControllerHandle,
+                  &gEfiDevicePathProtocolGuid,
+                  (VOID **)&ControllerDevicePath,
+                  This->DriverBindingHandle,
+                  ControllerHandle,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  );
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: OpenProtocol %r\n", __func__, Status));
     goto out;
   }
 
-  Status = DtDeviceCreate (ControllerHandle, ControllerDevicePath, &DtDevice);
+  Status = DtDeviceCreate (NodeData, ControllerDevicePath, &DtDevice);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: DtDeviceCreate %r\n", __func__, Status));
     goto out;
@@ -184,6 +192,15 @@ out:
       gBS->CloseProtocol (
              ControllerHandle,
              &gEfiDevicePathProtocolGuid,
+             This->DriverBindingHandle,
+             ControllerHandle
+             );
+    }
+
+    if (NodeData != NULL) {
+      gBS->CloseProtocol (
+             ControllerHandle,
+             &gEfiDtNodeDataProtocol,
              This->DriverBindingHandle,
              ControllerHandle
              );
@@ -263,6 +280,14 @@ DriverStop (
          This->DriverBindingHandle,
          ControllerHandle
          );
+
+  gBS->CloseProtocol (
+         ControllerHandle,
+         &gEfiDtNodeDataProtocol,
+         This->DriverBindingHandle,
+         ControllerHandle
+         );
+
   return EFI_SUCCESS;
 }
 

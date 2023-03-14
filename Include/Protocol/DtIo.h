@@ -18,12 +18,18 @@
     0x5ce5a2b0, 0x2838, 0x3c35, {0x1e, 0xe3, 0x42, 0x5e, 0x36, 0x50, 0xa2, 0x9b } \
   }
 
+#define EFI_DT_NODE_DATA_PROTOCOL_GUID \
+  { \
+    0x5ce5a2b0, 0x2838, 0x3c35, {0x1e, 0xe3, 0x42, 0x5e, 0x36, 0xcc, 0xbb, 0xaa } \
+  }
+
 typedef struct {
   VENDOR_DEVICE_PATH    VendorDevicePath;
   CHAR8                 Name[];
 } EFI_DT_DEVICE_PATH_NODE;
 
-typedef struct _EFI_DT_IO_PROTOCOL EFI_DT_IO_PROTOCOL;
+typedef struct _EFI_DT_NODE_DATA_PROTOCOL  EFI_DT_NODE_DATA_PROTOCOL;
+typedef struct _EFI_DT_IO_PROTOCOL         EFI_DT_IO_PROTOCOL;
 
 typedef enum {
   EfiDtIoWidthUint8 = 0,
@@ -60,8 +66,8 @@ typedef enum {
   EfiDtIoDmaOperationMaximum
 } EFI_DT_IO_PROTOCOL_DMA_OPERATION;
 
-typedef UINTN EFI_DT_ADDRESS;
-typedef UINTN EFI_DT_SIZE;
+typedef UINTN  EFI_DT_ADDRESS;
+typedef UINTN  EFI_DT_SIZE;
 
 typedef struct {
   EFI_DT_ADDRESS    Base;
@@ -489,6 +495,14 @@ EFI_STATUS
   );
 
 ///
+/// EFI_DT_NODE_DATA_PROTOCOL is primarily used internally by FdtBusDxe, but can
+/// be also used by clients wishing to have low-level access via libfdt.
+///
+struct _EFI_DT_NODE_DATA_PROTOCOL {
+  INTN    FdtNode;
+};
+
+///
 /// The EFI_DT_IO_PROTOCOL provides the basic Property, Register and DMA
 /// interfaces used to abstract access to devices exposed using a Device
 /// Tree node.Memory, I/O, PCI configuration,
@@ -501,12 +515,9 @@ EFI_STATUS
 /// is associated with the device.
 ///
 struct _EFI_DT_IO_PROTOCOL {
-  EFI_HANDLE                            DeviceHandle;
-  EFI_DT_IO_PROTOCOL                    *Parent;
   CHAR8                                 *Name;
   CHAR8                                 *Model;
   EFI_DT_STATUS                         DeviceStatus;
-  INTN                                  FdtNode;
   UINT8                                 AddressCells;
   UINT8                                 SizeCells;
   BOOLEAN                               IsDmaCoherent;
@@ -540,6 +551,7 @@ struct _EFI_DT_IO_PROTOCOL {
   EFI_DT_IO_PROTOCOL_FREE_BUFFER        FreeBuffer;
 };
 
+extern EFI_GUID  gEfiDtNodeDataProtocol;
 extern EFI_GUID  gEfiDtIoProtocolGuid;
 
 #endif /* __DT_IO_H__ */

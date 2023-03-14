@@ -46,9 +46,9 @@ FormatComponentName (
 
 EFI_STATUS
 DtDeviceCreate (
-  IN  EFI_HANDLE               ControllerHandle,
-  IN  EFI_DT_DEVICE_PATH_NODE  *PathNode,
-  OUT DT_DEVICE                **Out
+  IN  EFI_DT_NODE_DATA_PROTOCOL  *NodeData,
+  IN  EFI_DT_DEVICE_PATH_NODE    *PathNode,
+  OUT DT_DEVICE                  **Out
   );
 
 VOID

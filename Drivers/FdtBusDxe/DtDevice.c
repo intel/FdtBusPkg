@@ -24,9 +24,9 @@
 **/
 EFI_STATUS
 DtDeviceCreate (
-  IN  EFI_HANDLE               ControllerHandle,
-  IN  EFI_DT_DEVICE_PATH_NODE  *PathNode,
-  OUT DT_DEVICE                **Out
+  IN  EFI_DT_NODE_DATA_PROTOCOL  *NodeData,
+  IN  EFI_DT_DEVICE_PATH_NODE    *PathNode,
+  OUT DT_DEVICE                  **Out
   )
 {
   DT_DEVICE  *DtDevice;
@@ -37,11 +37,10 @@ DtDeviceCreate (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  DtDevice->Signature         = DT_DEV_SIGNATURE;
-  DtDevice->DtIo.DeviceHandle = ControllerHandle;
-  DtDevice->DtIo.Name         = PathNode->Name;
-  DtDevice->ComponentName     = FormatComponentName (PathNode->Name);
-  *Out                        = DtDevice;
+  DtDevice->Signature     = DT_DEV_SIGNATURE;
+  DtDevice->DtIo.Name     = PathNode->Name;
+  DtDevice->ComponentName = FormatComponentName (PathNode->Name);
+  *Out                    = DtDevice;
 
   return EFI_SUCCESS;
 }

@@ -162,13 +162,13 @@ DriverStart (
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: OpenProtocol %r\n", __func__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: OpenProtocol: %r\n", __func__, Status));
     goto out;
   }
 
-  Status = DtDeviceCreate (NodeData, ControllerDevicePath, &DtDevice);
+  Status = DtDeviceCreate (NodeData, &DtDevice);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: DtDeviceCreate %r\n", __func__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: DtDeviceCreate: %r\n", __func__, Status));
     goto out;
   }
 
@@ -180,8 +180,13 @@ DriverStart (
                   );
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: InstallMultipleProtocolInterfaces %r\n", __func__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: InstallMultipleProtocolInterfaces: %r\n", __func__, Status));
     goto out;
+  }
+
+  Status = DtDeviceScan (DtDevice, ControllerDevicePath, (VOID *)RemainingDevicePath);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: DtDeviceEnumerate: %r\n", __func__, Status));
   }
 
 out:
@@ -256,7 +261,7 @@ DriverStop (
                   (VOID **)&DtIoProtocol
                   );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: HandleProtocol %r\n", __func__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: HandleProtocol: %r\n", __func__, Status));
     return Status;
   }
 
@@ -268,7 +273,7 @@ DriverStop (
                     NULL
                     );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: UninstallMultipleProtocolInterfaces %r\n", __func__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: UninstallMultipleProtocolInterfaces: %r\n", __func__, Status));
     return Status;
   }
 

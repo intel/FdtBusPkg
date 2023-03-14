@@ -25,7 +25,6 @@
 EFI_STATUS
 DtDeviceCreate (
   IN  EFI_DT_NODE_DATA_PROTOCOL  *NodeData,
-  IN  EFI_DT_DEVICE_PATH_NODE    *PathNode,
   OUT DT_DEVICE                  **Out
   )
 {
@@ -38,8 +37,9 @@ DtDeviceCreate (
   }
 
   DtDevice->Signature     = DT_DEV_SIGNATURE;
-  DtDevice->DtIo.Name     = PathNode->Name;
-  DtDevice->ComponentName = FormatComponentName (PathNode->Name);
+  DtDevice->ComponentName = FormatComponentName (NodeData->Name);
+  DtDevice->DtIo.Name     = NodeData->Name;
+  DtDevice->NodeData      = NodeData;
   *Out                    = DtDevice;
 
   return EFI_SUCCESS;
@@ -65,4 +65,51 @@ DtDeviceCleanup (
 
   FreePool (DtDevice->ComponentName);
   FreePool (DtDevice);
+}
+
+/**
+  Create child handles for a DT_DEVICE. Called from DriverStart. If
+  RemainingDevicePath is present and describes a DT DevicePath, only create
+  this particular matching child handle.
+
+  @param[in]    DtDevice             DT_DEVICE *.
+  @param[in]    ControllerDevicePath Path of DtDevice.
+  @param[in]    RemainingDevicePath  Potential child EFI_DT_DEVICE_PATH_NODE *.
+
+  @retval EFI_SUCCESS                Success.
+  @retval None
+
+**/
+EFI_STATUS
+DtDeviceScan (
+  IN  DT_DEVICE                *DtDevice,
+  IN  EFI_DT_DEVICE_PATH_NODE  *ControllerDevicePath,
+  IN  EFI_DT_DEVICE_PATH_NODE  *RemainingDevicePath
+  )
+{
+  INTN  Node;
+
+  if (RemainingDevicePath != NULL) {
+    if ((RemainingDevicePath->VendorDevicePath.Header.Type != HARDWARE_DEVICE_PATH) ||
+        (RemainingDevicePath->VendorDevicePath.Header.SubType != HW_VENDOR_DP) ||
+        !CompareGuid (&RemainingDevicePath->VendorDevicePath.Guid, &gEfiDtIoProtocolGuid))
+    {
+      //
+      // Nothing to-do, as the remaining device path does not describe a DT node.
+      //
+      return EFI_SUCCESS;
+    }
+  }
+
+  Node = -FDT_ERR_NOTFOUND;
+  fdt_for_each_subnode (Node, gDeviceTreeBase, DtDevice->NodeData->FdtNode) {
+    DEBUG ((DEBUG_ERROR, "See %a\n", fdt_get_name (gDeviceTreeBase, Node, NULL)));
+  }
+
+  if ((Node < 0) && (Node != -FDT_ERR_NOTFOUND)) {
+    DEBUG ((DEBUG_ERROR, "%a: fdt_for_each_subnode: %a\n", __func__, fdt_strerror (Node)));
+    return EFI_DEVICE_ERROR;
+  }
+
+  return EFI_SUCCESS;
 }

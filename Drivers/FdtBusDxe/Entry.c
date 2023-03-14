@@ -94,6 +94,7 @@ EntryPoint (
   gDeviceTreeBase = DeviceTreeBase;
   DEBUG ((DEBUG_INFO, "%a: DTB @ %p\n", __func__, gDeviceTreeBase));
 
+  mRootNodeData.Name    = "/";
   mRootNodeData.FdtNode = fdt_path_offset (gDeviceTreeBase, "/");
   if (mRootNodeData.FdtNode < 0) {
     DEBUG ((DEBUG_ERROR, "%a: no root found\n", __func__));

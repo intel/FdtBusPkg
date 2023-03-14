@@ -34,9 +34,10 @@ extern EFI_COMPONENT_NAME2_PROTOCOL  gComponentName2;
 extern EFI_DRIVER_BINDING_PROTOCOL   gDriverBinding;
 
 typedef struct {
-  UINTN                 Signature;
-  CHAR16                *ComponentName;
-  EFI_DT_IO_PROTOCOL    DtIo;
+  UINTN                        Signature;
+  CHAR16                       *ComponentName;
+  EFI_DT_IO_PROTOCOL           DtIo;
+  EFI_DT_NODE_DATA_PROTOCOL    *NodeData;
 } DT_DEVICE;
 
 CHAR16 *
@@ -47,13 +48,19 @@ FormatComponentName (
 EFI_STATUS
 DtDeviceCreate (
   IN  EFI_DT_NODE_DATA_PROTOCOL  *NodeData,
-  IN  EFI_DT_DEVICE_PATH_NODE    *PathNode,
   OUT DT_DEVICE                  **Out
   );
 
 VOID
 DtDeviceCleanup (
-  OUT DT_DEVICE  *DtDevice
+  IN  DT_DEVICE  *DtDevice
+  );
+
+EFI_STATUS
+DtDeviceScan (
+  IN  DT_DEVICE                *DtDevice,
+  IN  EFI_DT_DEVICE_PATH_NODE  *ControllerDevicePath,
+  IN  EFI_DT_DEVICE_PATH_NODE  *RemainingDevicePath
   );
 
 #endif /* __FDT_BUS_DXE_H__ */

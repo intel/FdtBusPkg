@@ -55,7 +55,7 @@ FormatComponentName (
 
 **/
 EFI_DT_DEVICE_PATH_NODE *
-DtDevicePathNodeCreate (
+DtPathNodeCreate (
   IN  CONST CHAR8  *Name
   )
 {
@@ -85,4 +85,38 @@ DtDevicePathNodeCreate (
   }
 
   return Node;
+}
+
+/**
+  See if a handle with exactly matching device path already exists.
+
+  @param[in]    Path           Device Path.
+
+  @retval TRUE                 Exists.
+  @retval FALSE                Does not exist or error.
+
+**/
+BOOLEAN
+DtPathMatchesHandle (
+  IN  EFI_DEVICE_PATH_PROTOCOL  *Path
+  )
+{
+  EFI_STATUS  Status;
+  EFI_HANDLE  Handle;
+
+  Status = gBS->LocateDevicePath (
+                  &gEfiDtIoProtocolGuid,
+                  &Path,
+                  &Handle
+                  );
+  ASSERT (Status != EFI_INVALID_PARAMETER);
+  if (EFI_ERROR (Status)) {
+    return FALSE;
+  }
+
+  if (IsDevicePathEnd ((VOID *)Path)) {
+    return TRUE;
+  }
+
+  return FALSE;
 }

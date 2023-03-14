@@ -49,8 +49,13 @@ FormatComponentName (
   );
 
 EFI_DT_DEVICE_PATH_NODE *
-DtDevicePathNodeCreate (
+DtPathNodeCreate (
   IN  CONST CHAR8  *Name
+  );
+
+BOOLEAN
+DtPathMatchesHandle (
+  IN  EFI_DEVICE_PATH_PROTOCOL  *Path
   );
 
 EFI_STATUS

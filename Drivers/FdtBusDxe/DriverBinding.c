@@ -75,6 +75,10 @@ DriverSupported (
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
+    if (Status == EFI_ALREADY_STARTED) {
+      return EFI_SUCCESS;
+    }
+
     return EFI_UNSUPPORTED;
   }
 
@@ -132,14 +136,12 @@ DriverStart (
   IN  EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath OPTIONAL
   )
 {
-  EFI_STATUS               Status;
-  EFI_DT_IO_PROTOCOL       *DtIo;
-  DT_DEVICE                *DtDevice;
-  EFI_DT_DEVICE_PATH_NODE  *ControllerDevicePath;
+  EFI_STATUS          Status;
+  EFI_DT_IO_PROTOCOL  *DtIo;
+  DT_DEVICE           *DtDevice;
 
-  DtIo                 = NULL;
-  DtDevice             = NULL;
-  ControllerDevicePath = NULL;
+  DtIo     = NULL;
+  DtDevice = NULL;
 
   Status = gBS->OpenProtocol (
                   ControllerHandle,
@@ -149,24 +151,12 @@ DriverStart (
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
-  if (EFI_ERROR (Status)) {
-    goto out;
+  if (EFI_ERROR (Status) && (Status != EFI_ALREADY_STARTED)) {
+    return Status;
   }
 
+  Status   = EFI_SUCCESS;
   DtDevice = DT_DEV_FROM_THIS (DtIo);
-
-  Status = gBS->OpenProtocol (
-                  ControllerHandle,
-                  &gEfiDevicePathProtocolGuid,
-                  (VOID **)&ControllerDevicePath,
-                  This->DriverBindingHandle,
-                  ControllerHandle,
-                  EFI_OPEN_PROTOCOL_BY_DRIVER
-                  );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: OpenProtocol: %r\n", __func__, Status));
-    goto out;
-  }
 
   Status = DtDeviceScan (
              DtDevice,
@@ -178,30 +168,11 @@ DriverStart (
     DEBUG ((DEBUG_ERROR, "%a: DtDeviceEnumerate: %r\n", __func__, Status));
   }
 
-out:
-  if (EFI_ERROR (Status)) {
-    DtDeviceCleanup (DtDevice);
+  /*
+   * DtDeviceScan above may have created some handles.
+   */
 
-    if (ControllerDevicePath != NULL) {
-      gBS->CloseProtocol (
-             ControllerHandle,
-             &gEfiDevicePathProtocolGuid,
-             This->DriverBindingHandle,
-             ControllerHandle
-             );
-    }
-
-    if (DtIo != NULL) {
-      gBS->CloseProtocol (
-             ControllerHandle,
-             &gEfiDtIoProtocolGuid,
-             This->DriverBindingHandle,
-             ControllerHandle
-             );
-    }
-  }
-
-  return Status;
+  return EFI_SUCCESS;
 }
 
 /**
@@ -245,13 +216,6 @@ DriverStop (
   BOOLEAN     AllChildrenStopped;
 
   if (NumberOfChildren == 0) {
-    gBS->CloseProtocol (
-           ControllerHandle,
-           &gEfiDevicePathProtocolGuid,
-           This->DriverBindingHandle,
-           ControllerHandle
-           );
-
     gBS->CloseProtocol (
            ControllerHandle,
            &gEfiDtIoProtocolGuid,

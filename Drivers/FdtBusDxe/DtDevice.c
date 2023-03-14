@@ -32,35 +32,40 @@ DtDeviceCreate (
 {
   DT_DEVICE                *DtDevice;
   EFI_DT_DEVICE_PATH_NODE  *NewPathNode;
+  EFI_DT_DEVICE_PATH_NODE  *FullPath;
+
+  NewPathNode = DtPathNodeCreate (Name);
+  if (NewPathNode == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: DtDevicePathNodeCreate\n", __func__));
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  FullPath = (VOID *)AppendDevicePathNode (
+                       (VOID *)ParentPath,
+                       (VOID *)NewPathNode
+                       );
+  FreePool (NewPathNode);
+  if (FullPath == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: AppendDevicePathNode\n", __func__));
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  if (DtPathMatchesHandle ((VOID *)FullPath)) {
+    return EFI_ALREADY_STARTED;
+  }
 
   DtDevice = AllocateZeroPool (sizeof *DtDevice);
   if (DtDevice == NULL) {
     DEBUG ((DEBUG_ERROR, "%a: AllocateZeroPool\n", __func__));
+    FreePool (FullPath);
     return EFI_OUT_OF_RESOURCES;
   }
 
   DtDevice->Signature     = DT_DEV_SIGNATURE;
   DtDevice->FdtNode       = FdtNode;
+  DtDevice->DevicePath    = FullPath;
   DtDevice->ComponentName = FormatComponentName (Name);
   DtDevice->DtIo.Name     = Name;
-
-  NewPathNode = DtDevicePathNodeCreate (Name);
-  if (NewPathNode == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a: DtDevicePathNodeCreate\n", __func__));
-    FreePool (DtDevice);
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  DtDevice->DevicePath = (VOID *)AppendDevicePathNode (
-                                   (VOID *)ParentPath,
-                                   (VOID *)NewPathNode
-                                   );
-  FreePool (NewPathNode);
-  if (DtDevice->DevicePath == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a: AppendDevicePathNode\n", __func__));
-    FreePool (DtDevice);
-    return EFI_OUT_OF_RESOURCES;
-  }
 
   *Out = DtDevice;
   return EFI_SUCCESS;
@@ -294,6 +299,13 @@ DtDeviceScan (
                DtDevice->DevicePath,
                &NodeDtDevice
                );
+    if (Status == EFI_ALREADY_STARTED) {
+      /*
+       * Seen/scanned before.
+       */
+      continue;
+    }
+
     if (EFI_ERROR (Status)) {
       DEBUG ((
         DEBUG_ERROR,

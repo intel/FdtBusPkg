@@ -502,6 +502,9 @@ EFI_STATUS
 /// is associated with the device.
 ///
 struct _EFI_DT_IO_PROTOCOL {
+  ///
+  /// Properties useful to most clients.
+  ///
   CONST CHAR8                           *Name;
   CONST CHAR8                           *Model;
   EFI_DT_STATUS                         DeviceStatus;

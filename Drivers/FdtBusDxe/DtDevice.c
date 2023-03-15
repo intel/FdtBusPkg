@@ -102,6 +102,7 @@ DtDeviceCreate (
     DtDevice->DtIo.AddressCells = Parent->DtIo.AddressCells;
     DtDevice->DtIo.SizeCells    = Parent->DtIo.SizeCells;
   }
+  DtDevice->DtIo.IsDmaCoherent = FdtGetDmaCoherency (FdtNode);
 
   if (Broken) {
     DEBUG ((DEBUG_ERROR, "%a: marking %a as broken\n", __func__, Name));

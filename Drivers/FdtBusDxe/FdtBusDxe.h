@@ -114,4 +114,9 @@ FdtGetSizeCells (
   OUT UINT8  *Cells
   );
 
+BOOLEAN
+FdtGetDmaCoherency (
+   IN INTN    FdtNode
+  );
+
 #endif /* __FDT_BUS_DXE_H__ */

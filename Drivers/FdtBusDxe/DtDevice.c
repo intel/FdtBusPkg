@@ -21,7 +21,7 @@
 
   @retval EFI_SUCCESS            *Out is populated.
   @retval Others                 Errors.
-
+0
 **/
 EFI_STATUS
 DtDeviceCreate (
@@ -34,6 +34,11 @@ DtDeviceCreate (
   DT_DEVICE                *DtDevice;
   EFI_DT_DEVICE_PATH_NODE  *NewPathNode;
   EFI_DT_DEVICE_PATH_NODE  *FullPath;
+  EFI_STATUS               Status;
+  BOOLEAN                  HasChildren;
+  BOOLEAN                  Broken;
+
+  Broken = FALSE;
 
   NewPathNode = DtPathNodeCreate (Name);
   if (NewPathNode == NULL) {
@@ -74,6 +79,34 @@ DtDeviceCreate (
   DtDevice->DtIo.Name         = Name;
   DtDevice->DtIo.Model        = FdtGetModel (FdtNode);
   DtDevice->DtIo.DeviceStatus = FdtGetStatus (FdtNode);
+  if (DtDevice->DtIo.DeviceStatus == EFI_DT_STATUS_BROKEN) {
+    DEBUG ((DEBUG_ERROR, "%a: FdtGetStatus\n", __func__));
+    Broken = TRUE;
+  }
+
+  HasChildren = fdt_first_subnode (gDeviceTreeBase, FdtNode) >= 0;
+
+  if (HasChildren || (Parent == NULL)) {
+    Status = FdtGetAddressCells (FdtNode, &DtDevice->DtIo.AddressCells);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: FdtGetAddressCells: %r\n", __func__, Status));
+      Broken = TRUE;
+    }
+
+    Status = FdtGetSizeCells (FdtNode, &DtDevice->DtIo.SizeCells);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: FdtGetSizeCells: %r\n", __func__, Status));
+      Broken = TRUE;
+    }
+  } else {
+    DtDevice->DtIo.AddressCells = Parent->DtIo.AddressCells;
+    DtDevice->DtIo.SizeCells    = Parent->DtIo.SizeCells;
+  }
+
+  if (Broken) {
+    DEBUG ((DEBUG_ERROR, "%a: marking %a as broken\n", __func__, Name));
+    DtDevice->DtIo.DeviceStatus = EFI_DT_STATUS_BROKEN;
+  }
 
   *Out = DtDevice;
   return EFI_SUCCESS;

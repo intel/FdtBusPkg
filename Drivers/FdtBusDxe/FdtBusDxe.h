@@ -102,4 +102,16 @@ FdtGetStatus (
   IN INTN  FdtNode
   );
 
+EFI_STATUS
+FdtGetAddressCells (
+  IN  INTN   FdtNode,
+  OUT UINT8  *Cells
+  );
+
+EFI_STATUS
+FdtGetSizeCells (
+  IN INTN    FdtNode,
+  OUT UINT8  *Cells
+  );
+
 #endif /* __FDT_BUS_DXE_H__ */

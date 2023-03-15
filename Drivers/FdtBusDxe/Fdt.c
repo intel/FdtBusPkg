@@ -66,5 +66,59 @@ FdtGetStatus (
     return EFI_DT_STATUS_FAIL_WITH_CONDITION;
   }
 
-  return EFI_DT_STATUS_UNKNOWN;
+  return EFI_DT_STATUS_BROKEN;
+}
+
+/**
+  Given an FdtNode, return the size cells in *Cells.
+
+  @param[in]    FdtNode          INTN
+  @param[out]   Cells            UINTN
+
+  @retval EFI_SUCCESS            *Out is populated.
+  @retval Others                 Errors.
+
+**/
+EFI_STATUS
+FdtGetSizeCells (
+  IN  INTN   FdtNode,
+  OUT UINT8  *Cells
+  )
+{
+  INTN  Result;
+
+  Result = fdt_size_cells (gDeviceTreeBase, FdtNode);
+  if (Result >= 0) {
+    *Cells = (UINT8)Result;
+    return EFI_SUCCESS;
+  }
+
+  return EFI_DEVICE_ERROR;
+}
+
+/**
+  Given an FdtNode, return the address cells in *Cells.
+
+  @param[in]    FdtNode          INTN
+  @param[out]   Cells            UINTN
+
+  @retval EFI_SUCCESS            *Out is populated.
+  @retval Others                 Errors.
+
+**/
+EFI_STATUS
+FdtGetAddressCells (
+  IN  INTN   FdtNode,
+  OUT UINT8  *Cells
+  )
+{
+  INTN  Result;
+
+  Result = fdt_address_cells (gDeviceTreeBase, FdtNode);
+  if (Result >= 0) {
+    *Cells = (UINT8)Result;
+    return EFI_SUCCESS;
+  }
+
+  return EFI_DEVICE_ERROR;
 }

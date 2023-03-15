@@ -18,9 +18,10 @@
   @param  PathOrAlias           Path or alias looked up.
   @param  Device                Pointer to the EFI_DT_IO_PROTOCOL located.
 
-  @retval EFI_SUCCESS           Lookup successful
+  @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not resolve PathOrAlias to a EFI_DT_IO_PROTOCOL
                                 instance.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -42,8 +43,9 @@ DtIoLookup (
   @param  Name                  Property to look up.
   @param  Property              Pointer to the EFI_DT_PROPERTY to fill.
 
-  @retval EFI_SUCCESS           Lookup successful
+  @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not find property.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -67,8 +69,9 @@ DtIoGetProp (
                                 needs to be created.
 
   @retval EFI_SUCCESS           Child handles created (all or 1 if RemainingDevicePath
-                                was not NULL)
-  @retval EFI_NOT_FOUND         No child handles created
+                                was not NULL).
+  @retval EFI_NOT_FOUND         No child handles created.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -93,7 +96,8 @@ DtIoScanChildren (
                                 NumberOfChildren is 0.
 
   @retval EFI_SUCCESS           Child handles created (all or 1 if RemainingDevicePath
-                                was not NULL)
+                                was not NULL).
+  @retval EFI_DEVICE_ERROR      Device Tree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -116,8 +120,9 @@ DtIoRemoveChildren (
   @param  Index                 Index of the reg value to return.
   @param  Reg                   Pointer to the EFI_DT_REG to fill.
 
-  @retval EFI_SUCCESS           Lookup successful
+  @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not find property.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -145,6 +150,7 @@ DtIoGetReg (
                                 property array.
   @retval EFI_NOT_FOUND         CompatibleString is notpresent in the compatible
                                 property array.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -155,7 +161,23 @@ DtIoIsCompatible (
   IN  CONST CHAR8         *CompatibleString
   )
 {
-  return EFI_UNSUPPORTED;
+  INTN       Ret;
+  DT_DEVICE  *DtDevice;
+
+  DtDevice = DT_DEV_FROM_THIS (This);
+
+  Ret = fdt_node_check_compatible (
+          gDeviceTreeBase,
+          DtDevice->FdtNode,
+          CompatibleString
+          );
+  if (Ret == 0) {
+    return EFI_SUCCESS;
+  } else if (Ret == 1) {
+    return EFI_NOT_FOUND;
+  }
+
+  return EFI_DEVICE_ERROR;
 }
 
 /**

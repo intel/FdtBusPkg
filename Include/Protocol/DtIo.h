@@ -143,9 +143,10 @@ typedef enum {
   @param  PathOrAlias           Path or alias looked up.
   @param  Device                Pointer to the EFI_DT_IO_PROTOCOL located.
 
-  @retval EFI_SUCCESS           Lookup successful
+  @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not resolve PathOrAlias to a EFI_DT_IO_PROTOCOL
                                 instance.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -163,8 +164,9 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_LOOKUP)(
   @param  Name                  Property to look up.
   @param  Property              Pointer to the EFI_DT_PROPERTY to fill.
 
-  @retval EFI_SUCCESS           Lookup successful
+  @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not find property.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -184,8 +186,9 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_PROP)(
                                 needs to be created.
 
   @retval EFI_SUCCESS           Child handles created (all or 1 if RemainingDevicePath
-                                was not NULL)
-  @retval EFI_NOT_FOUND         No child handles created
+                                was not NULL).
+  @retval EFI_NOT_FOUND         No child handles created.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -225,8 +228,9 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILDREN)(
   @param  Index                 Index of the reg value to return.
   @param  Reg                   Pointer to the EFI_DT_REG to fill.
 
-  @retval EFI_SUCCESS           Lookup successful
+  @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not find property.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -250,6 +254,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG)(
                                 property array.
   @retval EFI_NOT_FOUND         CompatibleString is notpresent in the compatible
                                 property array.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/

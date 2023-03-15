@@ -123,7 +123,6 @@ FdtGetAddressCells (
   return EFI_DEVICE_ERROR;
 }
 
-
 /**
   Given an FdtNode, return whether DMA is coherent.
 
@@ -135,7 +134,7 @@ FdtGetAddressCells (
 **/
 BOOLEAN
 FdtGetDmaCoherency (
-  IN  INTN   FdtNode
+  IN  INTN  FdtNode
   )
 {
   return fdt_getprop (gDeviceTreeBase, FdtNode, "dma-coherent", NULL) != NULL;

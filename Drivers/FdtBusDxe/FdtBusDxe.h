@@ -116,7 +116,146 @@ FdtGetSizeCells (
 
 BOOLEAN
 FdtGetDmaCoherency (
-   IN INTN    FdtNode
+  IN INTN  FdtNode
+  );
+
+EFI_STATUS
+EFIAPI
+DtIoLookup (
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  CONST CHAR8         *PathOrAlias,
+  OUT EFI_DT_IO_PROTOCOL  **Device
+  );
+
+EFI_STATUS
+EFIAPI
+DtIoGetProp (
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  CONST CHAR8         *Name,
+  OUT EFI_DT_PROPERTY     *Property
+  );
+
+EFI_STATUS
+EFIAPI
+DtIoScanChildren (
+  IN  EFI_DT_IO_PROTOCOL        *This,
+  IN  EFI_DEVICE_PATH_PROTOCOL  *RemainingDevicePath OPTIONAL
+  );
+
+EFI_STATUS
+EFIAPI
+DtIoRemoveChildren (
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  UINTN               NumberOfChildren,
+  IN  EFI_HANDLE          *ChildHandleBuffer OPTIONAL
+  );
+
+EFI_STATUS
+EFIAPI
+DtIoGetReg (
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  CONST CHAR8         *Name,
+  IN  UINTN               Index,
+  OUT EFI_DT_REG          *Reg
+  );
+
+EFI_STATUS
+EFIAPI
+DtIoIsCompatible (
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  CONST CHAR8         *CompatibleString
+  );
+
+EFI_STATUS
+EFIAPI
+DtIoParseProp (
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  EFI_DT_PROPERTY     *Prop,
+  IN  EFI_DT_VALUE_TYPE   Type,
+  IN  UINTN               Index,
+  OUT VOID                *Buffer
+  );
+
+EFI_STATUS
+EFIAPI
+DtIoPollReg (
+  IN  EFI_DT_IO_PROTOCOL        *This,
+  IN  EFI_DT_IO_PROTOCOL_WIDTH  Width,
+  IN  EFI_DT_REG                *Reg,
+  IN  UINT64                    Offset,
+  IN  UINT64                    Mask,
+  IN  UINT64                    Value,
+  IN  UINT64                    Delay,
+  OUT UINT64                    *Result
+  );
+
+EFI_STATUS
+EFIAPI
+DtIoWriteReg (
+  IN     EFI_DT_IO_PROTOCOL        *This,
+  IN     EFI_DT_IO_PROTOCOL_WIDTH  Width,
+  IN     EFI_DT_REG                *Reg,
+  IN     UINT64                    Offset,
+  IN     UINTN                     Count,
+  IN OUT VOID                      *Buffer
+  );
+
+EFI_STATUS
+EFIAPI
+DtIoReadReg (
+  IN     EFI_DT_IO_PROTOCOL        *This,
+  IN     EFI_DT_IO_PROTOCOL_WIDTH  Width,
+  IN     EFI_DT_REG                *Reg,
+  IN     UINT64                    Offset,
+  IN     UINTN                     Count,
+  IN OUT VOID                      *Buffer
+  );
+
+EFI_STATUS
+EFIAPI
+DtIoCopyReg (
+  IN  EFI_DT_IO_PROTOCOL        *This,
+  IN  EFI_DT_IO_PROTOCOL_WIDTH  Width,
+  IN  EFI_DT_REG                *DestReg,
+  IN  UINT64                    DestOffset,
+  IN  EFI_DT_REG                *SrcReg,
+  IN  UINT64                    SrcOffset,
+  IN  UINTN                     Count
+  );
+
+EFI_STATUS
+EFIAPI
+DtIoMap (
+  IN      EFI_DT_IO_PROTOCOL                *This,
+  IN      EFI_DT_IO_PROTOCOL_DMA_OPERATION  Operation,
+  IN      VOID                              *HostAddress,
+  IN  OUT UINTN                             *NumberOfBytes,
+  OUT     EFI_PHYSICAL_ADDRESS              *DeviceAddress,
+  OUT     VOID                              **Mapping
+  );
+
+EFI_STATUS
+EFIAPI
+DtIoUnmap (
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  VOID                *Mapping
+  );
+
+EFI_STATUS
+EFIAPI
+DtIoAllocateBuffer (
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  EFI_MEMORY_TYPE     MemoryType,
+  IN  UINTN               Pages,
+  OUT VOID                **HostAddress
+  );
+
+EFI_STATUS
+EFIAPI
+DtIoFreeBuffer (
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  UINTN               Pages,
+  IN  VOID                *HostAddress
   );
 
 #endif /* __FDT_BUS_DXE_H__ */

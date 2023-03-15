@@ -25,6 +25,7 @@
   ComponentName.c
   DriverBinding.c
   DtDevice.c
+  DtIo.c
   Entry.c
   Fdt.c
   Utils.c

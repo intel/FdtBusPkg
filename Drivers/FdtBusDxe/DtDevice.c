@@ -21,7 +21,7 @@
 
   @retval EFI_SUCCESS            *Out is populated.
   @retval Others                 Errors.
-0
+
 **/
 EFI_STATUS
 DtDeviceCreate (
@@ -73,9 +73,13 @@ DtDeviceCreate (
   /*
    * DtDevice->Handle is filled in DtDeviceRegister().
    */
-  DtDevice->FdtNode           = FdtNode;
-  DtDevice->DevicePath        = FullPath;
-  DtDevice->ComponentName     = FormatComponentName (Name);
+  DtDevice->FdtNode       = FdtNode;
+  DtDevice->DevicePath    = FullPath;
+  DtDevice->ComponentName = FormatComponentName (Name);
+
+  /*
+   * Properties useful to most clients.
+   */
   DtDevice->DtIo.Name         = Name;
   DtDevice->DtIo.Model        = FdtGetModel (FdtNode);
   DtDevice->DtIo.DeviceStatus = FdtGetStatus (FdtNode);
@@ -102,12 +106,44 @@ DtDeviceCreate (
     DtDevice->DtIo.AddressCells = Parent->DtIo.AddressCells;
     DtDevice->DtIo.SizeCells    = Parent->DtIo.SizeCells;
   }
+
   DtDevice->DtIo.IsDmaCoherent = FdtGetDmaCoherency (FdtNode);
 
   if (Broken) {
     DEBUG ((DEBUG_ERROR, "%a: marking %a as broken\n", __func__, Name));
     DtDevice->DtIo.DeviceStatus = EFI_DT_STATUS_BROKEN;
   }
+
+  /*
+   * Core.
+   */
+  DtDevice->DtIo.Lookup         = DtIoLookup;
+  DtDevice->DtIo.GetProp        = DtIoGetProp;
+  DtDevice->DtIo.ScanChildren   = DtIoScanChildren;
+  DtDevice->DtIo.RemoveChildren = DtIoRemoveChildren;
+
+  /*
+   * Convenience calls.
+   */
+  DtDevice->DtIo.ParseProp    = DtIoParseProp;
+  DtDevice->DtIo.GetReg       = DtIoGetReg;
+  DtDevice->DtIo.IsCompatible = DtIoIsCompatible;
+
+  /*
+   * Device register access.
+   */
+  DtDevice->DtIo.PollReg  = DtIoPollReg;
+  DtDevice->DtIo.ReadReg  = DtIoReadReg;
+  DtDevice->DtIo.WriteReg = DtIoWriteReg;
+  DtDevice->DtIo.CopyReg  = DtIoCopyReg;
+
+  /*
+   * DMA operations.
+   */
+  DtDevice->DtIo.Map            = DtIoMap;
+  DtDevice->DtIo.Unmap          = DtIoUnmap;
+  DtDevice->DtIo.AllocateBuffer = DtIoAllocateBuffer;
+  DtDevice->DtIo.FreeBuffer     = DtIoFreeBuffer;
 
   *Out = DtDevice;
   return EFI_SUCCESS;

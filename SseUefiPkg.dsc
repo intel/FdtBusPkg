@@ -19,6 +19,8 @@
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
 
+!include MdePkg/MdeLibs.dsc.inc
+
 [PcdsFixedAtBuild.common]
   # DEBUG_ASSERT_ENABLED       0x01
   # DEBUG_PRINT_ENABLED        0x02
@@ -86,3 +88,9 @@
 
 [Components]
   SseUefiPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
+  SseUefiPkg/Drivers/VirtioFdtDxe/VirtioFdtDxe.inf {
+    <LibraryClasses>
+       IoLib|MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
+       VirtioLib|OvmfPkg/Library/VirtioLib/VirtioLib.inf
+       VirtioMmioDeviceLib|OvmfPkg/Library/VirtioMmioDeviceLib/VirtioMmioDeviceLib.inf
+  }

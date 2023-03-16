@@ -1,15 +1,13 @@
 /** @file
-
-    Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2 of the License, or (at your option) any later version.
-
+*  Virtio FDT client protocol driver for virtio,mmio DT node
+*
+*  Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
+*
+*  SPDX-License-Identifier: BSD-2-Clause-Patent
+*
 **/
 
-#include "FdtBusDxe.h"
+#include "VirtioFdtDxe.h"
 
 STATIC
 EFI_STATUS
@@ -52,7 +50,18 @@ GLOBAL_REMOVE_IF_UNREFERENCED EFI_COMPONENT_NAME2_PROTOCOL  gComponentName2 = {
 STATIC EFI_UNICODE_STRING_TABLE  mDriverName[] = {
   {
     "eng;en",
-    (CHAR16 *)L"Device Tree Bus Driver"
+    (CHAR16 *)L"Virtio Device Tree Transport Driver"
+  },
+  {
+    NULL,
+    NULL
+  }
+};
+
+STATIC EFI_UNICODE_STRING_TABLE  mDeviceName[] = {
+  {
+    "eng;en",
+    (CHAR16 *)L"Virtio Transport"
   },
   {
     NULL,
@@ -70,10 +79,10 @@ STATIC EFI_UNICODE_STRING_TABLE  mDriverName[] = {
   by This does not support the language specified by Language,
   then EFI_UNSUPPORTED is returned.
 
-  @param[in]  This              A pointer to the EFI_COMPONENT_NAME2_PROTOCOL or
+  @param  This[in]              A pointer to the EFI_COMPONENT_NAME2_PROTOCOL or
                                 EFI_COMPONENT_NAME_PROTOCOL instance.
 
-  @param[in]  Language          A pointer to a Null-terminated ASCII string
+  @param  Language[in]          A pointer to a Null-terminated ASCII string
                                 array indicating the language. This is the
                                 language of the driver name that the caller is
                                 requesting, and it must match one of the
@@ -82,7 +91,7 @@ STATIC EFI_UNICODE_STRING_TABLE  mDriverName[] = {
                                 to the driver writer. Language is specified
                                 in RFC 4646 or ISO 639-2 language code format.
 
-  @param[out]  DriverName       A pointer to the Unicode string to return.
+  @param  DriverName[out]       A pointer to the Unicode string to return.
                                 This Unicode string is the name of the
                                 driver specified by This in the language
                                 specified by Language.
@@ -130,15 +139,15 @@ ComponentNameGetDriverName (
   then EFI_UNSUPPORTED is returned.  If the driver specified by This does not
   support the language specified by Language, then EFI_UNSUPPORTED is returned.
 
-  @param[in]  This              A pointer to the EFI_COMPONENT_NAME2_PROTOCOL or
+  @param  This[in]              A pointer to the EFI_COMPONENT_NAME2_PROTOCOL or
                                 EFI_COMPONENT_NAME_PROTOCOL instance.
 
-  @param[in]  ControllerHandle  The handle of a controller that the driver
+  @param  ControllerHandle[in]  The handle of a controller that the driver
                                 specified by This is managing.  This handle
                                 specifies the controller whose name is to be
                                 returned.
 
-  @param[in]  ChildHandle       The handle of the child controller to retrieve
+  @param  ChildHandle[in]       The handle of the child controller to retrieve
                                 the name of.  This is an optional parameter that
                                 may be NULL.  It will be NULL for device
                                 drivers.  It will also be NULL for a bus drivers
@@ -147,7 +156,7 @@ ComponentNameGetDriverName (
                                 driver that wishes to retrieve the name of a
                                 child controller.
 
-  @param[in]  Language          A pointer to a Null-terminated ASCII string
+  @param  Language[in]          A pointer to a Null-terminated ASCII string
                                 array indicating the language.  This is the
                                 language of the driver name that the caller is
                                 requesting, and it must match one of the
@@ -156,7 +165,7 @@ ComponentNameGetDriverName (
                                 to the driver writer. Language is specified in
                                 RFC 4646 or ISO 639-2 language code format.
 
-  @param[out]  ControllerName   A pointer to the Unicode string to return.
+  @param  ControllerName[out]   A pointer to the Unicode string to return.
                                 This Unicode string is the name of the
                                 controller specified by ControllerHandle and
                                 ChildHandle in the language specified by
@@ -196,10 +205,8 @@ ComponentNameGetControllerName (
   OUT CHAR16                       **ControllerName
   )
 {
-  EFI_STATUS                           Status;
-  EFI_DT_IO_PROTOCOL                   *DtIoProtocol;
-  UINTN                                EntryCount;
-  EFI_OPEN_PROTOCOL_INFORMATION_ENTRY  *OpenInfoBuffer;
+  EFI_STATUS          Status;
+  EFI_DT_IO_PROTOCOL  *DtIoProtocol;
 
   //
   // Make sure this driver is currently managing ControllerHandle
@@ -239,37 +246,11 @@ ComponentNameGetControllerName (
     return Status;
   }
 
-  //
-  // Retrieve the list of agents that are consuming
-  // gEfiDtIoProtocolGuid on the child handle. If there's
-  // zero, then no driver is bound to it, and we can display
-  // our info. Otherwise - punt since the binding driver should
-  // be providing its own component name protocols.
-  //
-  Status = gBS->OpenProtocolInformation (
-                  ChildHandle,
-                  &gEfiDtIoProtocolGuid,
-                  &OpenInfoBuffer,
-                  &EntryCount
-                  );
-  if (EFI_ERROR (Status)) {
-    return EFI_UNSUPPORTED;
-  }
-
-  FreePool (OpenInfoBuffer);
-  if (EntryCount > 0) {
-    return EFI_UNSUPPORTED;
-  }
-
-  Status = gBS->HandleProtocol (
-                  ChildHandle,
-                  &gEfiDtIoProtocolGuid,
-                  (VOID **)&DtIoProtocol
-                  );
-  if (EFI_ERROR (Status)) {
-    return EFI_UNSUPPORTED;
-  }
-
-  *ControllerName = DtIoProtocol->ComponentName;
-  return EFI_SUCCESS;
+  return LookupUnicodeString2 (
+           Language,
+           This->SupportedLanguages,
+           mDeviceName,
+           ControllerName,
+           (BOOLEAN)(This == &gComponentName)
+           );
 }

@@ -116,7 +116,6 @@ DtIoRemoveChildren (
   Looks up a reg property value by name for a EFI_DT_IO_PROTOCOL instance.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
-  @param  Name                  Property to look up.
   @param  Index                 Index of the reg value to return.
   @param  Reg                   Pointer to the EFI_DT_REG to fill.
 
@@ -130,12 +129,56 @@ EFI_STATUS
 EFIAPI
 DtIoGetReg (
   IN  EFI_DT_IO_PROTOCOL  *This,
-  IN  CONST CHAR8         *Name,
   IN  UINTN               Index,
   OUT EFI_DT_REG          *Reg
   )
 {
-  return EFI_UNSUPPORTED;
+  UINTN         ElemLen;
+  UINT8         AddressCells;
+  UINT8         SizeCells;
+  UINT8         Iter;
+  int           Len;
+  CONST UINT32  *Buf;
+  DT_DEVICE     *DtDevice;
+
+  DtDevice     = DT_DEV_FROM_THIS (This);
+  AddressCells = This->AddressCells;
+  SizeCells    = This->SizeCells;
+  ElemLen      = AddressCells + SizeCells;
+
+  Buf = fdt_getprop (gDeviceTreeBase, DtDevice->FdtNode, "reg", &Len);
+  if (Buf == NULL) {
+    if (Len == -FDT_ERR_NOTFOUND) {
+      return EFI_NOT_FOUND;
+    }
+
+    return EFI_DEVICE_ERROR;
+  }
+
+  if ((Len / ElemLen) <= Index) {
+    return EFI_NOT_FOUND;
+  }
+
+  Buf += (ElemLen * Index) / sizeof (UINT32);
+
+  Reg->Base = 0;
+  for (Iter = 0; Iter < AddressCells; Iter++, Buf++) {
+    Reg->Base |= ((UINTN)fdt32_to_cpu (*Buf)) <<
+                 (32 * (AddressCells - (Iter + 1)));
+  }
+
+  Reg->Length = 0;
+  for (Iter = 0; Iter < SizeCells; Iter++, Buf++) {
+    Reg->Length |= ((UINTN)fdt32_to_cpu (*Buf)) <<
+                   (32 * (SizeCells - (Iter + 1)));
+  }
+
+  //
+  // TODO: need to translate address instead of assuming
+  // reg always encodes a CPU address.
+  //
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -148,7 +191,7 @@ DtIoGetReg (
 
   @retval EFI_SUCCESS           CompatibleString is present in the compatible
                                 property array.
-  @retval EFI_NOT_FOUND         CompatibleString is notpresent in the compatible
+  @retval EFI_NOT_FOUND         CompatibleString is not present in the compatible
                                 property array.
   @retval EFI_DEVICE_ERROR      Device Tree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.

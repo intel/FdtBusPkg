@@ -70,19 +70,19 @@ DtDeviceCreate (
 
   DtDevice->Signature = DT_DEV_SIGNATURE;
 
-  /*
-   * DtDevice->Handle is filled in DtDeviceRegister().
-   */
-  DtDevice->FdtNode       = FdtNode;
-  DtDevice->DevicePath    = FullPath;
-  DtDevice->ComponentName = FormatComponentName (Name);
+  //
+  // DtDevice->Handle is filled in DtDeviceRegister().
+  //
+  DtDevice->FdtNode    = FdtNode;
+  DtDevice->DevicePath = FullPath;
 
-  /*
-   * Properties useful to most clients.
-   */
-  DtDevice->DtIo.Name         = Name;
-  DtDevice->DtIo.Model        = FdtGetModel (FdtNode);
-  DtDevice->DtIo.DeviceStatus = FdtGetStatus (FdtNode);
+  //
+  // Properties useful to most clients.
+  //
+  DtDevice->DtIo.ComponentName = FormatComponentName (Name);
+  DtDevice->DtIo.Name          = Name;
+  DtDevice->DtIo.Model         = FdtGetModel (FdtNode);
+  DtDevice->DtIo.DeviceStatus  = FdtGetStatus (FdtNode);
   if (DtDevice->DtIo.DeviceStatus == EFI_DT_STATUS_BROKEN) {
     DEBUG ((DEBUG_ERROR, "%a: FdtGetStatus\n", __func__));
     Broken = TRUE;
@@ -114,32 +114,32 @@ DtDeviceCreate (
     DtDevice->DtIo.DeviceStatus = EFI_DT_STATUS_BROKEN;
   }
 
-  /*
-   * Core.
-   */
+  //
+  // Core.
+  //
   DtDevice->DtIo.Lookup         = DtIoLookup;
   DtDevice->DtIo.GetProp        = DtIoGetProp;
   DtDevice->DtIo.ScanChildren   = DtIoScanChildren;
   DtDevice->DtIo.RemoveChildren = DtIoRemoveChildren;
 
-  /*
-   * Convenience calls.
-   */
+  //
+  // Convenience calls.
+  //
   DtDevice->DtIo.ParseProp    = DtIoParseProp;
   DtDevice->DtIo.GetReg       = DtIoGetReg;
   DtDevice->DtIo.IsCompatible = DtIoIsCompatible;
 
-  /*
-   * Device register access.
-   */
+  //
+  // Device register access.
+  //
   DtDevice->DtIo.PollReg  = DtIoPollReg;
   DtDevice->DtIo.ReadReg  = DtIoReadReg;
   DtDevice->DtIo.WriteReg = DtIoWriteReg;
   DtDevice->DtIo.CopyReg  = DtIoCopyReg;
 
-  /*
-   * DMA operations.
-   */
+  //
+  // DMA operations.
+  //
   DtDevice->DtIo.Map            = DtIoMap;
   DtDevice->DtIo.Unmap          = DtIoUnmap;
   DtDevice->DtIo.AllocateBuffer = DtIoAllocateBuffer;
@@ -166,8 +166,8 @@ DtDeviceCleanup (
     return;
   }
 
+  FreePool (DtDevice->DtIo.ComponentName);
   FreePool (DtDevice->DevicePath);
-  FreePool (DtDevice->ComponentName);
   FreePool (DtDevice);
 }
 
@@ -219,7 +219,7 @@ DtDeviceUnregister (
       DEBUG_ERROR,
       "%a: UninstallMultipleProtocolInterfaces(%s): %r\n",
       __func__,
-      DtDevice->ComponentName,
+      DtDevice->DtIo.ComponentName,
       Status
       ));
     if (ControllerHandle != NULL) {
@@ -270,7 +270,7 @@ DtDeviceRegister (
                   NULL
                   );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: InstallMultipleProtocolInterfaces(%s): %r\n", __func__, DtDevice->ComponentName, Status));
+    DEBUG ((DEBUG_ERROR, "%a: InstallMultipleProtocolInterfaces(%s): %r\n", __func__, DtDevice->DtIo.ComponentName, Status));
     return Status;
   }
 
@@ -288,7 +288,7 @@ DtDeviceRegister (
                   EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
                   );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER(%s): %r\n", __func__, DtDevice->ComponentName, Status));
+    DEBUG ((DEBUG_ERROR, "%a: EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER(%s): %r\n", __func__, DtDevice->DtIo.ComponentName, Status));
     gBS->UninstallMultipleProtocolInterfaces (
            DtDevice->Handle,
            &gEfiDevicePathProtocolGuid,
@@ -377,9 +377,9 @@ DtDeviceScan (
                &NodeDtDevice
                );
     if (Status == EFI_ALREADY_STARTED) {
-      /*
-       * Seen/scanned before.
-       */
+      //
+      // Seen/scanned before.
+      //
       continue;
     }
 

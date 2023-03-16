@@ -39,7 +39,6 @@ typedef struct {
   EFI_HANDLE                 Handle;
   INTN                       FdtNode;
   EFI_DT_DEVICE_PATH_NODE    *DevicePath;
-  CHAR16                     *ComponentName;
   EFI_DT_IO_PROTOCOL         DtIo;
 } DT_DEVICE;
 
@@ -154,7 +153,6 @@ EFI_STATUS
 EFIAPI
 DtIoGetReg (
   IN  EFI_DT_IO_PROTOCOL  *This,
-  IN  CONST CHAR8         *Name,
   IN  UINTN               Index,
   OUT EFI_DT_REG          *Reg
   );

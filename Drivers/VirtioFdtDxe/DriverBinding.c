@@ -1,15 +1,13 @@
 /** @file
-
-    Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2 of the License, or (at your option) any later version.
-
+*  Virtio FDT client protocol driver for virtio,mmio DT node
+*
+*  Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
+*
+*  SPDX-License-Identifier: BSD-2-Clause-Patent
+*
 **/
 
-#include "FdtBusDxe.h"
+#include "VirtioFdtDxe.h"
 
 /**
   Tests to see if this driver supports a given controller. If a child device is provided,
@@ -82,16 +80,7 @@ DriverSupported (
     return EFI_UNSUPPORTED;
   }
 
-  if ((AsciiStrCmp (DtIo->Name, "/") != 0) &&
-      (DtIo->IsCompatible (DtIo, "simple-bus") != EFI_SUCCESS))
-  {
-    //
-    // A client driver should use DtIo->ScanChildren to make
-    // FdtBusDxe discover handles under nodes it doesn't directly
-    // support.
-    //
-    Status = EFI_UNSUPPORTED;
-  }
+  Status = DtIo->IsCompatible (DtIo, "virtio,mmio");
 
   gBS->CloseProtocol (
          ControllerHandle,
@@ -99,6 +88,124 @@ DriverSupported (
          This->DriverBindingHandle,
          ControllerHandle
          );
+
+  return Status;
+}
+
+/**
+  Register an Virtio transport child handle.
+
+  @param[in]    RegBase              Virtio register base.
+  @param[in]    ControllerHandle     Parent handle.
+  @param[in]    DriverBindingHandle  Driver binding handle.
+  @param[in]    ControllerPath       Parent path.
+
+  @retval EFI_SUCCESS                Success.
+  @retval Others                     Errors.
+
+**/
+STATIC
+EFI_STATUS
+ChildCreate (
+  IN  UINTN                     RegBase,
+  IN  EFI_HANDLE                ControllerHandle,
+  IN  EFI_HANDLE                DriverBindingHandle,
+  IN  EFI_DEVICE_PATH_PROTOCOL  *ControllerPath
+  )
+{
+  EFI_HANDLE                         Handle;
+  EFI_STATUS                         Status;
+  VOID                               *OpenProtoData;
+  EFI_DEVICE_PATH_PROTOCOL           *HandlePath;
+  VIRTIO_TRANSPORT_DEVICE_PATH_NODE  *PathNode;
+
+  Handle     = NULL;
+  HandlePath = NULL;
+
+  PathNode = (VIRTIO_TRANSPORT_DEVICE_PATH_NODE *)CreateDeviceNode (
+                                                    HARDWARE_DEVICE_PATH,
+                                                    HW_VENDOR_DP,
+                                                    sizeof (VIRTIO_TRANSPORT_DEVICE_PATH_NODE)
+                                                    );
+  if (PathNode == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    DEBUG ((DEBUG_ERROR, "%a: CreateDeviceNode: %r\n", __func__, Status));
+    goto out;
+  }
+
+  CopyGuid (&PathNode->Vendor.Guid, &gVirtioMmioTransportGuid);
+  PathNode->PhysBase = RegBase;
+
+  HandlePath = AppendDevicePathNode (
+                 ControllerPath,
+                 (VOID *)PathNode
+                 );
+  FreePool (PathNode);
+  if (HandlePath == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: AppendDevicePathNode: %r\n",
+      __func__,
+      Status
+      ));
+    goto out;
+  }
+
+  Status = gBS->InstallMultipleProtocolInterfaces (
+                  &Handle,
+                  &gEfiDevicePathProtocolGuid,
+                  HandlePath,
+                  NULL
+                  );
+  if (EFI_ERROR (Status)) {
+    if (Status != EFI_ALREADY_STARTED) {
+      DEBUG ((DEBUG_ERROR, "%a: CreateDeviceNode: %r\n", __func__, Status));
+    }
+
+    goto out;
+  }
+
+  Status = gBS->OpenProtocol (
+                  ControllerHandle,
+                  &gEfiDtIoProtocolGuid,
+                  &OpenProtoData,
+                  DriverBindingHandle,
+                  Handle,
+                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                  );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER: %r\n", __func__, Status));
+    goto out;
+  }
+
+  Status = VirtioMmioInstallDevice (RegBase, Handle);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: VirtioMmioInstallDevice: %r\n", __func__, Status));
+    gBS->CloseProtocol (
+           ControllerHandle,
+           &gEfiDtIoProtocolGuid,
+           DriverBindingHandle,
+           Handle
+           );
+    goto out;
+  }
+
+out:
+  if (EFI_ERROR (Status)) {
+    if (Handle != NULL) {
+      gBS->UninstallMultipleProtocolInterfaces (
+             Handle,
+             &gEfiDevicePathProtocolGuid,
+             HandlePath,
+             NULL
+             );
+    }
+
+    if (HandlePath != NULL) {
+      FreePool (HandlePath);
+    }
+  }
 
   return Status;
 }
@@ -147,12 +254,20 @@ DriverStart (
   IN  EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath OPTIONAL
   )
 {
-  EFI_STATUS          Status;
-  EFI_DT_IO_PROTOCOL  *DtIo;
-  DT_DEVICE           *DtDevice;
+  EFI_DT_REG                Reg;
+  EFI_STATUS                Status;
+  EFI_DT_IO_PROTOCOL        *DtIo;
+  BOOLEAN                   MyOpen;
+  EFI_DEVICE_PATH_PROTOCOL  *ControllerPath;
 
-  DtIo     = NULL;
-  DtDevice = NULL;
+  DtIo   = NULL;
+  MyOpen = TRUE;
+
+  ControllerPath = DevicePathFromHandle (ControllerHandle);
+  if (ControllerPath == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: DevicePathFromHandle\n"));
+    return EFI_NOT_FOUND;
+  }
 
   Status = gBS->OpenProtocol (
                   ControllerHandle,
@@ -162,27 +277,60 @@ DriverStart (
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
-  if (EFI_ERROR (Status) && (Status != EFI_ALREADY_STARTED)) {
+  if (Status == EFI_ALREADY_STARTED) {
+    //
+    // Don't accidentally close EFI_DT_IO_PROTOCOL if
+    // we didn't open it.
+    //
+    MyOpen = FALSE;
+    Status = EFI_SUCCESS;
+  }
+
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  Status   = EFI_SUCCESS;
-  DtDevice = DT_DEV_FROM_THIS (DtIo);
-
-  Status = DtDeviceScan (
-             DtDevice,
-             (VOID *)RemainingDevicePath,
-             This->DriverBindingHandle
-             );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: DtDeviceEnumerate: %r\n", __func__, Status));
+  if ((RemainingDevicePath != NULL) &&
+      IsDevicePathEndType (RemainingDevicePath))
+  {
+    goto out;
   }
 
-  //
-  // DtDeviceScan above may have created some handles.
-  //
+  Status = DtIo->GetReg (DtIo, 0, &Reg);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: GetReg: %r\n", __func__, Status));
+    goto out;
+  }
 
-  return EFI_SUCCESS;
+  Status = ChildCreate (
+             Reg.Base,
+             ControllerHandle,
+             This->DriverBindingHandle,
+             ControllerPath
+             );
+  if (EFI_ERROR (Status)) {
+    if (Status != EFI_ALREADY_STARTED) {
+      DEBUG ((DEBUG_ERROR, "%a: ChildCreate: %r\n", __func__, Status));
+    } else {
+      Status = EFI_SUCCESS;
+    }
+
+    goto out;
+  }
+
+out:
+  if (EFI_ERROR (Status)) {
+    if (MyOpen) {
+      gBS->CloseProtocol (
+             ControllerHandle,
+             &gEfiDtIoProtocolGuid,
+             This->DriverBindingHandle,
+             ControllerHandle
+             );
+    }
+  }
+
+  return Status;
 }
 
 /**
@@ -221,74 +369,7 @@ DriverStop (
   IN  EFI_HANDLE                   *ChildHandleBuffer OPTIONAL
   )
 {
-  UINTN       Index;
-  EFI_STATUS  Status;
-  BOOLEAN     AllChildrenStopped;
-
-  if (NumberOfChildren == 0) {
-    gBS->CloseProtocol (
-           ControllerHandle,
-           &gEfiDtIoProtocolGuid,
-           This->DriverBindingHandle,
-           ControllerHandle
-           );
-
-    return EFI_SUCCESS;
-  }
-
-  AllChildrenStopped = TRUE;
-
-  for (Index = 0; Index < NumberOfChildren; Index++) {
-    EFI_DT_IO_PROTOCOL  *DtIo;
-    DT_DEVICE           *DtDevice;
-
-    DtIo   = NULL;
-    Status = gBS->OpenProtocol (
-                    ChildHandleBuffer[Index],
-                    &gEfiDtIoProtocolGuid,
-                    (VOID **)&DtIo,
-                    This->DriverBindingHandle,
-                    ControllerHandle,
-                    EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                    );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((
-        DEBUG_ERROR,
-        "%a: OpenProtocol(%p): %r\n",
-        __func__,
-        ChildHandleBuffer[Index],
-        Status
-        ));
-      AllChildrenStopped = FALSE;
-      continue;
-    }
-
-    DtDevice = DT_DEV_FROM_THIS (DtIo);
-    Status   = DtDeviceUnregister (
-                 DtDevice,
-                 ControllerHandle,
-                 This->DriverBindingHandle
-                 );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((
-        DEBUG_ERROR,
-        "%a: DtDeviceUnregister(%s): %r\n",
-        __func__,
-        DtIo->ComponentName,
-        Status
-        ));
-      AllChildrenStopped = FALSE;
-      continue;
-    }
-
-    DtDeviceCleanup (DtDevice);
-  }
-
-  if (!AllChildrenStopped) {
-    return EFI_DEVICE_ERROR;
-  }
-
-  return EFI_SUCCESS;
+  return EFI_UNSUPPORTED;
 }
 
 GLOBAL_REMOVE_IF_UNREFERENCED EFI_DRIVER_BINDING_PROTOCOL  gDriverBinding = {

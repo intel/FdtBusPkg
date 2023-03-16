@@ -83,9 +83,9 @@ typedef enum {
   EFI_DT_STATUS_FAIL_WITH_CONDITION,
 } EFI_DT_STATUS;
 
-//
-// Beginning, end of property data and pointer to data to be next returned.
-//
+///
+/// Beginning, end of property data and pointer to data to be next returned.
+///
 typedef struct {
   ///
   /// Beginning of property data.
@@ -224,7 +224,6 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILDREN)(
   Looks up a reg property value by name for a EFI_DT_IO_PROTOCOL instance.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
-  @param  Name                  Property to look up.
   @param  Index                 Index of the reg value to return.
   @param  Reg                   Pointer to the EFI_DT_REG to fill.
 
@@ -237,7 +236,6 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILDREN)(
 typedef
 EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG)(
   IN  EFI_DT_IO_PROTOCOL *This,
-  IN  CONST CHAR8        *Name,
   IN  UINTN              Index,
   OUT EFI_DT_REG         *Reg
   );
@@ -252,7 +250,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG)(
 
   @retval EFI_SUCCESS           CompatibleString is present in the compatible
                                 property array.
-  @retval EFI_NOT_FOUND         CompatibleString is notpresent in the compatible
+  @retval EFI_NOT_FOUND         CompatibleString is not present in the compatible
                                 property array.
   @retval EFI_DEVICE_ERROR      Device Tree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
@@ -496,39 +494,44 @@ EFI_STATUS
 /// is associated with the device.
 ///
 struct _EFI_DT_IO_PROTOCOL {
-  ///
-  /// Properties useful to most clients.
-  ///
+  //
+  // Properties useful to most clients.
+  //
+  // Note: ComponentName is not CONST because the place where it
+  // it mostly useful (EFI_COMPONENT_NAME_PROTOCOL) is missing
+  // CONST qualifier in ComponentNameGetControllerName arg.
+  //
+  CHAR16                                *ComponentName;
   CONST CHAR8                           *Name;
   CONST CHAR8                           *Model;
   EFI_DT_STATUS                         DeviceStatus;
   UINT8                                 AddressCells;
   UINT8                                 SizeCells;
   BOOLEAN                               IsDmaCoherent;
-  ///
-  /// Core.
-  ///
+  //
+  // Core.
+  //
   EFI_DT_IO_PROTOCOL_LOOKUP             Lookup;
   EFI_DT_IO_PROTOCOL_GET_PROP           GetProp;
   EFI_DT_IO_PROTOCOL_SCAN_CHILDREN      ScanChildren;
   EFI_DT_IO_PROTOCOL_REMOVE_CHILDREN    RemoveChildren;
-  ///
-  /// Convenience calls to use with or instead of GetProp.
-  ///
+  //
+  // Convenience calls to use with or instead of GetProp.
+  //
   EFI_DT_IO_PROTOCOL_PARSE_PROP         ParseProp;
   EFI_DT_IO_PROTOCOL_GET_REG            GetReg;
   EFI_DT_IO_PROTOCOL_IS_COMPATIBLE      IsCompatible;
 
-  ///
-  /// Device register access.
-  ///
+  //
+  // Device register access.
+  //
   EFI_DT_IO_PROTOCOL_POLL_REG           PollReg;
   EFI_DT_IO_PROTOCOL_IO_REG             ReadReg;
   EFI_DT_IO_PROTOCOL_IO_REG             WriteReg;
   EFI_DT_IO_PROTOCOL_COPY_REG           CopyReg;
-  ///
-  /// DMA operations.
-  ///
+  //
+  // DMA operations.
+  //
   EFI_DT_IO_PROTOCOL_MAP                Map;
   EFI_DT_IO_PROTOCOL_UNMAP              Unmap;
   EFI_DT_IO_PROTOCOL_ALLOCATE_BUFFER    AllocateBuffer;

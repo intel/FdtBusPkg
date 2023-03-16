@@ -54,7 +54,7 @@ typedef enum {
   /// Provides both read and write access to system memory
   /// by both the processor and a bus master. The buffer is
   /// coherent from both the processor's and the bus master's
-  //// point of view.
+  /// point of view.
   ///
   EfiDtIoDmaOperationBusMasterCommonBuffer,
   EfiDtIoDmaOperationMaximum
@@ -222,6 +222,9 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILDREN)(
 
 /**
   Looks up a reg property value by name for a EFI_DT_IO_PROTOCOL instance.
+
+  Note: The returned address is in CPU space, not bus space, if these are
+  different.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Index                 Index of the reg value to return.
@@ -392,6 +395,9 @@ EFI_STATUS
 /**
   Provides the device-specific addresses needed to access system memory.
 
+  Note: the implementation of this may perform cache coherency operations,
+  bounce buffering, etc, as necessary.
+
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Operation             Indicates if the bus master is going to read or write to system memory.
   @param  HostAddress           The system memory address to map to the device.
@@ -421,6 +427,9 @@ EFI_STATUS
 
 /**
   Completes the Map() operation and releases any corresponding resources.
+
+  Note: the implementation of this may perform cache coherency operations,
+  bounce buffering, etc, as necessary.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Mapping               The mapping value returned from Map().

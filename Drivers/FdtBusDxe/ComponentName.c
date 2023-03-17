@@ -196,6 +196,7 @@ ComponentNameGetControllerName (
   EFI_STATUS                           Status;
   EFI_DT_IO_PROTOCOL                   *DtIoProtocol;
   UINTN                                EntryCount;
+  UINTN                                Index;
   EFI_OPEN_PROTOCOL_INFORMATION_ENTRY  *OpenInfoBuffer;
 
   //
@@ -238,9 +239,11 @@ ComponentNameGetControllerName (
 
   //
   // Retrieve the list of agents that are consuming
-  // gEfiDtIoProtocolGuid on the child handle. If there's
-  // zero, then no driver is bound to it, and we can display
-  // our info. Otherwise - punt since the binding driver should
+  // gEfiDtIoProtocolGuid on the child handle. Detect
+  // if the child handle has a driver bound to it.
+  //
+  // If there isn't - display our compoent info.
+  // Otherwise - punt since the binding driver should
   // be providing its own component name protocols.
   //
   Status = gBS->OpenProtocolInformation (
@@ -253,8 +256,17 @@ ComponentNameGetControllerName (
     return EFI_UNSUPPORTED;
   }
 
+  for (Index = 0; Index < EntryCount; Index++) {
+    if ((OpenInfoBuffer[Index].Attributes & EFI_OPEN_PROTOCOL_BY_DRIVER) != 0) {
+      break;
+    }
+  }
+
   FreePool (OpenInfoBuffer);
-  if (EntryCount > 0) {
+  if (Index != EntryCount) {
+    //
+    // The child handle was opened by a bound driver.
+    //
     return EFI_UNSUPPORTED;
   }
 

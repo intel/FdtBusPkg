@@ -220,14 +220,25 @@ DtDeviceUnregister (
       Status
       ));
     if (ControllerHandle != NULL) {
-      gBS->OpenProtocol (
-             ControllerHandle,
-             &gEfiDtIoProtocolGuid,
-             &OpenProtoData,
-             DriverBindingHandle,
-             DtDevice->Handle,
-             EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
-             );
+      EFI_STATUS  Status2;
+      Status2 = gBS->OpenProtocol (
+                       ControllerHandle,
+                       &gEfiDtIoProtocolGuid,
+                       &OpenProtoData,
+                       DriverBindingHandle,
+                       DtDevice->Handle,
+                       EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                       );
+      if (EFI_ERROR (Status2)) {
+        DEBUG ((
+          DEBUG_ERROR,
+          "%a: EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER(%s): %r\n",
+          __func__,
+          DtDevice->DtIo.ComponentName,
+          Status2
+          ));
+        return Status2;
+      }
     }
   }
 

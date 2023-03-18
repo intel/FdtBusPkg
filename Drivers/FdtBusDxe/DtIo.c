@@ -54,7 +54,29 @@ DtIoGetProp (
   OUT EFI_DT_PROPERTY     *Property
   )
 {
-  return EFI_UNSUPPORTED;
+  DT_DEVICE   *DtDevice;
+  CONST VOID  *Buf;
+  INT32       Len;
+
+  if ((This == NULL) || (Property == NULL) || (Name == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DtDevice = DT_DEV_FROM_THIS (This);
+  Buf      = fdt_getprop (gDeviceTreeBase, DtDevice->FdtNode, Name, &Len);
+  if (Buf == NULL) {
+    if (Len == -FDT_ERR_NOTFOUND) {
+      return EFI_NOT_FOUND;
+    }
+
+    return EFI_DEVICE_ERROR;
+  }
+
+  Property->Begin = Buf;
+  Property->Iter  = Buf;
+  Property->End   = Buf + Len;
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -130,27 +152,32 @@ DtIoGetReg (
   OUT EFI_DT_REG          *Reg
   )
 {
-  UINTN         ElemLen;
-  UINT8         AddressCells;
-  UINT8         SizeCells;
-  UINT8         Iter;
-  int           Len;
-  CONST UINT32  *Buf;
-  DT_DEVICE     *DtDevice;
+  EFI_STATUS       Status;
+  UINTN            ElemLen;
+  UINT8            AddressCells;
+  UINT8            SizeCells;
+  UINT8            Iter;
+  UINTN            Len;
+  CONST UINT32     *Buf;
+  EFI_DT_PROPERTY  Property;
+  DT_DEVICE        *DtDevice;
+
+  if ((This == NULL) || (Reg == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
 
   DtDevice     = DT_DEV_FROM_THIS (This);
   AddressCells = This->AddressCells;
   SizeCells    = This->SizeCells;
   ElemLen      = AddressCells + SizeCells;
 
-  Buf = fdt_getprop (gDeviceTreeBase, DtDevice->FdtNode, "reg", &Len);
-  if (Buf == NULL) {
-    if (Len == -FDT_ERR_NOTFOUND) {
-      return EFI_NOT_FOUND;
-    }
-
-    return EFI_DEVICE_ERROR;
+  Status = DtIoGetProp (This, "reg", &Property);
+  if (EFI_ERROR (Status)) {
+    return Status;
   }
+
+  Len = Property.End - Property.Begin;
+  Buf = Property.Begin;
 
   if ((Len / ElemLen) <= Index) {
     return EFI_NOT_FOUND;
@@ -203,6 +230,10 @@ DtIoIsCompatible (
 {
   INTN       Ret;
   DT_DEVICE  *DtDevice;
+
+  if ((This == NULL) || (CompatibleString == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
 
   DtDevice = DT_DEV_FROM_THIS (This);
 

@@ -153,12 +153,6 @@ DtIoGetReg (
   )
 {
   EFI_STATUS       Status;
-  UINTN            ElemLen;
-  UINT8            AddressCells;
-  UINT8            SizeCells;
-  UINT8            Iter;
-  UINTN            Len;
-  CONST UINT32     *Buf;
   EFI_DT_PROPERTY  Property;
   DT_DEVICE        *DtDevice;
 
@@ -166,41 +160,23 @@ DtIoGetReg (
     return EFI_INVALID_PARAMETER;
   }
 
-  DtDevice     = DT_DEV_FROM_THIS (This);
-  AddressCells = This->AddressCells;
-  SizeCells    = This->SizeCells;
-  ElemLen      = AddressCells + SizeCells;
+  DtDevice = DT_DEV_FROM_THIS (This);
 
   Status = DtIoGetProp (This, "reg", &Property);
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  Len = Property.End - Property.Begin;
-  Buf = Property.Begin;
-
-  if ((Len / ElemLen) <= Index) {
-    return EFI_NOT_FOUND;
+  Status = DtIoParseProp (
+             This,
+             &Property,
+             EFI_DT_VALUE_REG,
+             Index,
+             Reg
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
   }
-
-  Buf += (ElemLen * Index) / sizeof (UINT32);
-
-  Reg->Base = 0;
-  for (Iter = 0; Iter < AddressCells; Iter++, Buf++) {
-    Reg->Base |= ((UINTN)fdt32_to_cpu (*Buf)) <<
-                 (32 * (AddressCells - (Iter + 1)));
-  }
-
-  Reg->Length = 0;
-  for (Iter = 0; Iter < SizeCells; Iter++, Buf++) {
-    Reg->Length |= ((UINTN)fdt32_to_cpu (*Buf)) <<
-                   (32 * (SizeCells - (Iter + 1)));
-  }
-
-  //
-  // TODO: need to translate address instead of assuming
-  // reg always encodes a CPU address.
-  //
 
   return EFI_SUCCESS;
 }
@@ -271,14 +247,65 @@ DtIoIsCompatible (
 EFI_STATUS
 EFIAPI
 DtIoParseProp (
-  IN  EFI_DT_IO_PROTOCOL  *This,
-  IN  EFI_DT_PROPERTY     *Prop,
-  IN  EFI_DT_VALUE_TYPE   Type,
-  IN  UINTN               Index,
-  OUT VOID                *Buffer
+  IN  EFI_DT_IO_PROTOCOL   *This,
+  IN  OUT EFI_DT_PROPERTY  *Prop,
+  IN  EFI_DT_VALUE_TYPE    Type,
+  IN  UINTN                Index,
+  OUT VOID                 *Buffer
   )
 {
-  return EFI_UNSUPPORTED;
+  DT_DEVICE     *DtDevice;
+  UINTN         ElemLen;
+  UINT8         Iter;
+  UINTN         Len;
+  CONST UINT32  *Buf;
+
+  if ((This == NULL) || (Prop == NULL) || (Buffer == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DtDevice = DT_DEV_FROM_THIS (This);
+
+  if (Type == EFI_DT_VALUE_REG) {
+    ElemLen = This->AddressCells + This->SizeCells;
+  } else {
+    return EFI_UNSUPPORTED;
+  }
+
+  Len = Prop->End - Prop->Iter;
+  Buf = Prop->Iter;
+
+  if ((Len / ElemLen) <= Index) {
+    return EFI_NOT_FOUND;
+  }
+
+  Buf += (ElemLen * Index) / sizeof (UINT32);
+
+  if (Type == EFI_DT_VALUE_REG) {
+    EFI_DT_REG  *Reg;
+
+    Reg       = Buffer;
+    Reg->Base = 0;
+    for (Iter = 0; Iter < This->AddressCells; Iter++, Buf++) {
+      Reg->Base |= ((UINTN)fdt32_to_cpu (*Buf)) <<
+                   (32 * (This->AddressCells - (Iter + 1)));
+    }
+
+    Reg->Length = 0;
+    for (Iter = 0; Iter < This->SizeCells; Iter++, Buf++) {
+      Reg->Length |= ((UINTN)fdt32_to_cpu (*Buf)) <<
+                     (32 * (This->SizeCells - (Iter + 1)));
+    }
+
+    //
+    // TODO: need to translate address instead of assuming
+    // reg always encodes a CPU address.
+    //
+  }
+
+  Prop->Iter = Buf;
+
+  return EFI_SUCCESS;
 }
 
 /**

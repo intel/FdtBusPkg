@@ -164,11 +164,11 @@ DtIoIsCompatible (
 EFI_STATUS
 EFIAPI
 DtIoParseProp (
-  IN  EFI_DT_IO_PROTOCOL  *This,
-  IN  EFI_DT_PROPERTY     *Prop,
-  IN  EFI_DT_VALUE_TYPE   Type,
-  IN  UINTN               Index,
-  OUT VOID                *Buffer
+  IN  EFI_DT_IO_PROTOCOL   *This,
+  IN OUT  EFI_DT_PROPERTY  *Prop,
+  IN  EFI_DT_VALUE_TYPE    Type,
+  IN  UINTN                Index,
+  OUT VOID                 *Buffer
   );
 
 EFI_STATUS

@@ -94,3 +94,7 @@
        VirtioLib|OvmfPkg/Library/VirtioLib/VirtioLib.inf
        VirtioMmioDeviceLib|OvmfPkg/Library/VirtioMmioDeviceLib/VirtioMmioDeviceLib.inf
   }
+  SseUefiPkg/Drivers/HighMemDxe/HighMemDxe.inf {
+    <LibraryClasses>
+       DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
+  }

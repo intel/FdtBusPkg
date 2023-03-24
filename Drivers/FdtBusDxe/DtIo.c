@@ -254,11 +254,11 @@ DtIoParseProp (
   OUT VOID                 *Buffer
   )
 {
-  DT_DEVICE     *DtDevice;
-  UINTN         ElemLen;
-  UINT8         Iter;
-  UINTN         Len;
-  CONST UINT32  *Buf;
+  DT_DEVICE          *DtDevice;
+  UINTN              ElemCells;
+  UINT8              Iter;
+  UINTN              Cells;
+  CONST EFI_DT_CELL  *Buf;
 
   if ((This == NULL) || (Prop == NULL) || (Buffer == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -267,19 +267,19 @@ DtIoParseProp (
   DtDevice = DT_DEV_FROM_THIS (This);
 
   if (Type == EFI_DT_VALUE_REG) {
-    ElemLen = This->AddressCells + This->SizeCells;
+    ElemCells = This->AddressCells + This->SizeCells;
   } else {
     return EFI_UNSUPPORTED;
   }
 
-  Len = Prop->End - Prop->Iter;
-  Buf = Prop->Iter;
+  Cells = (Prop->End - Prop->Iter) / sizeof (EFI_DT_CELL);
+  Buf   = Prop->Iter;
 
-  if ((Len / ElemLen) <= Index) {
+  if ((Cells / ElemCells) <= Index) {
     return EFI_NOT_FOUND;
   }
 
-  Buf += (ElemLen * Index) / sizeof (UINT32);
+  Buf += ElemCells * Index;
 
   if (Type == EFI_DT_VALUE_REG) {
     EFI_DT_REG  *Reg;

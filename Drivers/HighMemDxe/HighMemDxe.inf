@@ -1,8 +1,8 @@
 ## @file
-#  High memory node enumeration DXE driver for ARM and RISC-V
-#  Virtual Machines
+#  High memory node enumeration DXE driver for ARM and RISC-V.
 #
 #  Copyright (c) 2015-2016, Linaro Ltd. All rights reserved.
+#  Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -19,12 +19,14 @@
 
 [Sources]
   HighMemDxe.c
+  ComponentName.c
+  DriverBinding.c
 
 [Packages]
   EmbeddedPkg/EmbeddedPkg.dec
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
-  OvmfPkg/OvmfPkg.dec
+  SseUefiPkg/SseUefiPkg.dec
 
 [LibraryClasses]
   BaseLib
@@ -37,9 +39,10 @@
 [Protocols]
   gEfiCpuArchProtocolGuid                 ## CONSUMES
   gFdtClientProtocolGuid                  ## CONSUMES
+  gEfiDtIoProtocolGuid                    ## CONSUMES
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdDxeNxMemoryProtectionPolicy
 
 [Depex]
-  gEfiCpuArchProtocolGuid AND gFdtClientProtocolGuid
+  gEfiCpuArchProtocolGuid

@@ -93,6 +93,11 @@ FdtGetModel (
   IN INTN  FdtNode
   );
 
+CONST CHAR8 *
+FdtGetDeviceType (
+  IN INTN  FdtNode
+  );
+
 EFI_DT_STATUS
 FdtGetStatus (
   IN INTN  FdtNode

@@ -60,8 +60,9 @@ typedef enum {
   EfiDtIoDmaOperationMaximum
 } EFI_DT_IO_PROTOCOL_DMA_OPERATION;
 
-typedef UINTN EFI_DT_ADDRESS;
-typedef UINTN EFI_DT_SIZE;
+typedef UINTN  EFI_DT_ADDRESS;
+typedef UINTN  EFI_DT_SIZE;
+typedef UINT32 EFI_DT_CELL;
 
 typedef struct {
   EFI_DT_ADDRESS    Base;
@@ -513,6 +514,7 @@ struct _EFI_DT_IO_PROTOCOL {
   CHAR16                                *ComponentName;
   CONST CHAR8                           *Name;
   CONST CHAR8                           *Model;
+  CONST CHAR8                           *DeviceType;
   EFI_DT_STATUS                         DeviceStatus;
   UINT8                                 AddressCells;
   UINT8                                 SizeCells;

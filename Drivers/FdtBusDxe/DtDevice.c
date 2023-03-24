@@ -79,6 +79,7 @@ DtDeviceCreate (
   DtDevice->DtIo.ComponentName = FormatComponentName (Name);
   DtDevice->DtIo.Name          = Name;
   DtDevice->DtIo.Model         = FdtGetModel (FdtNode);
+  DtDevice->DtIo.DeviceType    = FdtGetDeviceType (FdtNode);
   DtDevice->DtIo.DeviceStatus  = FdtGetStatus (FdtNode);
   if (DtDevice->DtIo.DeviceStatus == EFI_DT_STATUS_BROKEN) {
     DEBUG ((DEBUG_ERROR, "%a: FdtGetStatus\n", __func__));

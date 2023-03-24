@@ -32,6 +32,29 @@ FdtGetModel (
 }
 
 /**
+  Given an FdtNode, return the device_type property or the empty string.
+
+  @param[in]    FdtNode          INTN
+
+  @retval CHAR8 *                Model name or empty string.
+
+**/
+CONST CHAR8 *
+FdtGetDeviceType (
+  IN INTN  FdtNode
+  )
+{
+  CONST CHAR8  *Buf;
+
+  Buf = fdt_getprop (gDeviceTreeBase, FdtNode, "device_type", NULL);
+  if (Buf == NULL) {
+    return "";
+  }
+
+  return Buf;
+}
+
+/**
   Given an FdtNode, return the device status.
 
   @param[in]    FdtNode          INTN

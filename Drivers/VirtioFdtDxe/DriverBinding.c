@@ -76,18 +76,26 @@ DriverSupported (
     if (Status == EFI_ALREADY_STARTED) {
       return EFI_SUCCESS;
     }
-
-    return EFI_UNSUPPORTED;
+    return Status;
   }
 
   Status = DtIo->IsCompatible (DtIo, "virtio,mmio");
+  if (EFI_ERROR (Status)) {
+    goto out;
+  }
 
+  if (DtIo->DeviceStatus != EFI_DT_STATUS_OKAY) {
+    Status = EFI_UNSUPPORTED;
+    goto out;
+  }
+
+ out:
   gBS->CloseProtocol (
-         ControllerHandle,
-         &gEfiDtIoProtocolGuid,
-         This->DriverBindingHandle,
-         ControllerHandle
-         );
+                      ControllerHandle,
+                      &gEfiDtIoProtocolGuid,
+                      This->DriverBindingHandle,
+                      ControllerHandle
+                      );
 
   return Status;
 }

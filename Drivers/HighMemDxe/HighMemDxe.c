@@ -157,6 +157,16 @@ InitializeHighMemDxe (
   )
 {
   EFI_STATUS  Status;
+#ifdef DT_NON_DRIVER_BINDING
+  EFI_DT_IO_PROTOCOL                *DtIo;
+  UINTN                             HandleCount;
+  EFI_HANDLE                        *HandleBuffer;
+  UINTN                             Index;
+  EFI_DT_REG                        Reg;
+  BOOLEAN                           Foundit;
+
+  Foundit = FALSE;
+#endif
 
   Status = gBS->LocateProtocol (
                   &gEfiCpuArchProtocolGuid,
@@ -165,6 +175,69 @@ InitializeHighMemDxe (
                   );
   ASSERT_EFI_ERROR (Status);
 
+#ifdef DT_NON_DRIVER_BINDING
+  Status = gBS->LocateHandleBuffer (
+                  ByProtocol,
+                  &gEfiDtIoProtocolGuid,
+                  NULL,
+                  &HandleCount,
+                  &HandleBuffer
+                  );
+  ASSERT_EFI_ERROR (Status);
+
+  for (Index = 0; Index < HandleCount ; Index++) {
+    Status = gBS->HandleProtocol (HandleBuffer[Index], &gEfiDtIoProtocolGuid, (VOID **) &DtIo);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: HandleProtocol gEfiDtIoProtocolGuid failed. \n",
+        __func__
+        ));
+      continue;
+    } else {
+      if (AsciiStrCmp (DtIo->DeviceType, "memory") == 0) {
+          Foundit = TRUE;
+        //
+        // found the node or nodes
+        //
+        Status = DtIo->GetReg (DtIo, 0, &Reg);
+        if (EFI_ERROR (Status)) {
+          DEBUG ((
+            DEBUG_ERROR,
+            "%a: DtIo->GetReg is failed. \n",
+            __func__
+            ));
+        }
+
+        Status = ProcessMemoryRange (&Reg);
+        if (EFI_ERROR (Status)) {
+          DEBUG ((
+            DEBUG_ERROR,
+            "%a: Can't Set Memory Attributes at node [%a]: %r\n",
+            __func__,
+            DtIo->Name,
+            Status
+            ));
+        } else {
+          DEBUG ((
+            DEBUG_INFO,
+            "%a: DT_IO Set Memory Attributes at node [%a] successfully. \n",
+            __func__,
+            DtIo->Name
+            ));
+        }
+      }
+    }
+  }
+  //
+  // Can not find any Memory node
+  //
+  if (!Foundit) {
+    DEBUG ((DEBUG_ERROR, "We can't find Memroy Node! \n"));
+  }
+
+  return EFI_SUCCESS;
+#else
   return EfiLibInstallDriverBindingComponentName2 (
            ImageHandle,
            SystemTable,
@@ -173,4 +246,5 @@ InitializeHighMemDxe (
            &gComponentName,
            &gComponentName2
            );
+#endif
 }

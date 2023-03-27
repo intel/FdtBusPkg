@@ -11,7 +11,7 @@
 
 [Defines]
   INF_VERSION                    = 0x00010005
-  BASE_NAME                      = HighMemDxe
+  BASE_NAME                      = HighMemDxeNoBinding
   FILE_GUID                      = 2E6D0598-1085-4F74-BC4D-23D2C6600C26
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0

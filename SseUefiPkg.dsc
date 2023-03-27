@@ -98,3 +98,7 @@
     <LibraryClasses>
        DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
   }
+  SseUefiPkg/Drivers/HighMemDxe/HighMemDxeNoBinding.inf {
+    <LibraryClasses>
+       DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
+  }

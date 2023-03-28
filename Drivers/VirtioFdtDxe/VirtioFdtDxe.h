@@ -25,7 +25,6 @@
 #include <Guid/VirtioMmioTransport.h>
 
 #include <Protocol/DtIo.h>
-#include <Protocol/FdtClient.h>
 
 extern EFI_COMPONENT_NAME_PROTOCOL   gComponentName;
 extern EFI_COMPONENT_NAME2_PROTOCOL  gComponentName2;

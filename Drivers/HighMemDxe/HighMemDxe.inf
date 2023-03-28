@@ -38,7 +38,6 @@
 
 [Protocols]
   gEfiCpuArchProtocolGuid                 ## CONSUMES
-  gFdtClientProtocolGuid                  ## CONSUMES
   gEfiDtIoProtocolGuid                    ## CONSUMES
 
 [Pcd]

@@ -30,6 +30,11 @@ extern EFI_COMPONENT_NAME2_PROTOCOL  gComponentName2;
 extern EFI_DRIVER_BINDING_PROTOCOL   gDriverBinding;
 
 EFI_STATUS
+DeviceIsSupported (
+  IN  EFI_DT_IO_PROTOCOL  *DtIo
+  );
+
+EFI_STATUS
 ProcessMemoryRanges (
   IN  EFI_DT_IO_PROTOCOL  *DtIo
   );

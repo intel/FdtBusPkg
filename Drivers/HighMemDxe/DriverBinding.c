@@ -76,17 +76,8 @@ DriverSupported (
     return Status;
   }
 
-  if (AsciiStrCmp (DtIo->DeviceType, "memory") != 0) {
-    Status = EFI_UNSUPPORTED;
-    goto out;
-  }
+  Status = DeviceIsSupported (DtIo);
 
-  if (DtIo->DeviceStatus != EFI_DT_STATUS_OKAY) {
-    Status = EFI_UNSUPPORTED;
-    goto out;
-  }
-
-out:
   gBS->CloseProtocol (
          ControllerHandle,
          &gEfiDtIoProtocolGuid,

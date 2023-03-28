@@ -13,6 +13,33 @@
 STATIC EFI_CPU_ARCH_PROTOCOL  *mCpu;
 
 /**
+  Return whether a DtIo is supported by this driver.
+
+  @param[in] DtIo           EFI_DT_IO_PROTOCOL *.
+
+  @retval EFI_SUCCESS       Device is supported by driver.
+  @retval EFI_UNSUPPORTED   Device is not supported.
+
+**/
+EFI_STATUS
+DeviceIsSupported (
+  IN  EFI_DT_IO_PROTOCOL  *DtIo
+  )
+{
+  ASSERT (DtIo != NULL);
+
+  if (AsciiStrCmp (DtIo->DeviceType, "memory") != 0) {
+    return EFI_UNSUPPORTED;
+  }
+
+  if (DtIo->DeviceStatus != EFI_DT_STATUS_OKAY) {
+    return EFI_UNSUPPORTED;
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
   Process a /memory node range.
 
   @param[in] Reg            Range to process.
@@ -31,6 +58,8 @@ ProcessMemoryRange (
   EFI_STATUS                       Status;
   UINT64                           Attributes;
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR  GcdDescriptor;
+
+  ASSERT (Reg != NULL);
 
   if (Reg->Length == 0) {
     return EFI_SUCCESS;
@@ -159,6 +188,8 @@ ProcessMemoryRanges (
   EFI_DT_REG  Reg;
   EFI_STATUS  Status;
 
+  ASSERT (DtIo != NULL);
+
   Index = 0;
   do {
     Status = DtIo->GetReg (DtIo, Index++, &Reg);
@@ -268,11 +299,8 @@ InitializeHighMemDxe (
       continue;
     }
 
-    if (AsciiStrCmp (DtIo->DeviceType, "memory") != 0) {
-      continue;
-    }
-
-    if (DtIo->DeviceStatus != EFI_DT_STATUS_OKAY) {
+    Status = DeviceIsSupported (DtIo);
+    if (EFI_ERROR (Status)) {
       continue;
     }
 

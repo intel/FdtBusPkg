@@ -30,8 +30,8 @@ extern EFI_COMPONENT_NAME2_PROTOCOL  gComponentName2;
 extern EFI_DRIVER_BINDING_PROTOCOL   gDriverBinding;
 
 EFI_STATUS
-ProcessMemoryRange (
-  IN  EFI_DT_REG  *Reg
+ProcessMemoryRanges (
+  IN  EFI_DT_IO_PROTOCOL  *DtIo
   );
 
 #endif /* __HIGH_MEM_DXE_H__ */

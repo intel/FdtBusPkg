@@ -141,8 +141,6 @@ DriverStart (
   IN  EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath OPTIONAL
   )
 {
-  UINTN                     Index;
-  EFI_DT_REG                Reg;
   EFI_STATUS                Status;
   EFI_DT_IO_PROTOCOL        *DtIo;
   BOOLEAN                   MyOpen;
@@ -171,25 +169,16 @@ DriverStart (
     return Status;
   }
 
-  Index = 0;
-  do {
-    Status = DtIo->GetReg (DtIo, Index++, &Reg);
-    if (EFI_ERROR (Status)) {
-      if (Status != EFI_NOT_FOUND) {
-        DEBUG ((DEBUG_ERROR, "%a: GetReg: %r\n", __func__, Status));
-      } else {
-        Status = EFI_SUCCESS;
-      }
-
-      break;
-    }
-
-    Status = ProcessMemoryRange (&Reg);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a: ProcessMemoryRange: %r\n", __func__, Status));
-      break;
-    }
-  } while (1);
+  Status = ProcessMemoryRanges (DtIo);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: ProcessMemoryRanges(%a): %r\n",
+      __func__,
+      DtIo->Name,
+      Status
+      ));
+  }
 
   if (EFI_ERROR (Status)) {
     gBS->CloseProtocol (

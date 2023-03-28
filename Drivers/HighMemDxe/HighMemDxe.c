@@ -2,6 +2,7 @@
 *  High memory node enumeration DXE driver for ARM and RISC-V.
 *
 *  Copyright (c) 2015-2016, Linaro Ltd. All rights reserved.
+*  Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
 *
 *  SPDX-License-Identifier: BSD-2-Clause-Patent
 *
@@ -12,15 +13,16 @@
 STATIC EFI_CPU_ARCH_PROTOCOL  *mCpu;
 
 /**
-  Process each /memory node range.
+  Process a /memory node range.
 
-  @param[in] ImageHandle    The firmware allocated handle for the EFI image.
-  @param[in] SystemTable    A pointer to the EFI System Table.
+  @param[in] Reg            Range to process.
 
-  @retval EFI_SUCCESS       The entry point is executed successfully.
-  @retval other             Some error occurs when executing this entry point.
+  @retval EFI_SUCCESS       The range are processed.
+  @retval other             Some error occured (and logged).
+.
 
 **/
+STATIC
 EFI_STATUS
 ProcessMemoryRange (
   IN  EFI_DT_REG  *Reg
@@ -140,6 +142,59 @@ ProcessMemoryRange (
 }
 
 /**
+  Given a DtIo, process each /memory node range.
+
+  @param[in] DtIo           EFI_DT_IO_PROTOCOL *.
+
+  @retval EFI_SUCCESS       All ranges are processed.
+  @retval other             Some error occured (and logged).
+
+**/
+EFI_STATUS
+ProcessMemoryRanges (
+  IN  EFI_DT_IO_PROTOCOL  *DtIo
+  )
+{
+  UINTN       Index;
+  EFI_DT_REG  Reg;
+  EFI_STATUS  Status;
+
+  Index = 0;
+  do {
+    Status = DtIo->GetReg (DtIo, Index++, &Reg);
+    if (EFI_ERROR (Status)) {
+      if (Status != EFI_NOT_FOUND) {
+        DEBUG ((
+          DEBUG_ERROR,
+          "%a: GetReg(%a): %r\n",
+          __func__,
+          DtIo->Name,
+          Status
+          ));
+      } else {
+        Status = EFI_SUCCESS;
+      }
+
+      break;
+    }
+
+    Status = ProcessMemoryRange (&Reg);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: ProcessMemoryRange(%a): %r\n",
+        __func__,
+        DtIo->Name,
+        Status
+        ));
+      break;
+    }
+  } while (1);
+
+  return Status;
+}
+
+/**
   The Entry Point for HighMemDxe driver.
 
   @param[in] ImageHandle    The firmware allocated handle for the EFI image.
@@ -156,17 +211,11 @@ InitializeHighMemDxe (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS  Status;
-#ifdef DT_NON_DRIVER_BINDING
-  EFI_DT_IO_PROTOCOL                *DtIo;
-  UINTN                             HandleCount;
-  EFI_HANDLE                        *HandleBuffer;
-  UINTN                             Index;
-  EFI_DT_REG                        Reg;
-  BOOLEAN                           Foundit;
-
-  Foundit = FALSE;
-#endif
+  EFI_STATUS          Status;
+  EFI_DT_IO_PROTOCOL  *DtIo;
+  UINTN               HandleCount;
+  EFI_HANDLE          *HandleBuffer;
+  UINTN               Index;
 
   Status = gBS->LocateProtocol (
                   &gEfiCpuArchProtocolGuid,
@@ -175,7 +224,22 @@ InitializeHighMemDxe (
                   );
   ASSERT_EFI_ERROR (Status);
 
-#ifdef DT_NON_DRIVER_BINDING
+ #ifndef DT_NON_DRIVER_BINDING
+  Status = EfiLibInstallDriverBindingComponentName2 (
+             ImageHandle,
+             SystemTable,
+             &gDriverBinding,
+             ImageHandle,
+             &gComponentName,
+             &gComponentName2
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: EfiLibInstallDriverBindingComponentName2: %r\n", __func__, Status));
+    return Status;
+  }
+
+ #endif /* DT_NON_DRIVER_BINDING */
+
   Status = gBS->LocateHandleBuffer (
                   ByProtocol,
                   &gEfiDtIoProtocolGuid,
@@ -183,68 +247,66 @@ InitializeHighMemDxe (
                   &HandleCount,
                   &HandleBuffer
                   );
-  ASSERT_EFI_ERROR (Status);
+ #ifdef DT_NON_DRIVER_BINDING
 
-  for (Index = 0; Index < HandleCount ; Index++) {
-    Status = gBS->HandleProtocol (HandleBuffer[Index], &gEfiDtIoProtocolGuid, (VOID **) &DtIo);
+  /*
+   * The non-binding version has a DEPEX on FdtBusDxe, so this can't
+   * happen (unless there's no DT in the system...).
+   */
+  ASSERT_EFI_ERROR (Status);
+ #endif /* DT_NON_DRIVER_BINDING */
+
+  for (Index = 0; Index < HandleCount; Index++) {
+    Status = gBS->HandleProtocol (HandleBuffer[Index], &gEfiDtIoProtocolGuid, (VOID **)&DtIo);
     if (EFI_ERROR (Status)) {
       DEBUG ((
         DEBUG_ERROR,
-        "%a: HandleProtocol gEfiDtIoProtocolGuid failed. \n",
-        __func__
+        "%a: HandleProtocol: %r\n",
+        __func__,
+        Status
         ));
       continue;
-    } else {
-      if (AsciiStrCmp (DtIo->DeviceType, "memory") == 0) {
-          Foundit = TRUE;
-        //
-        // found the node or nodes
-        //
-        Status = DtIo->GetReg (DtIo, 0, &Reg);
-        if (EFI_ERROR (Status)) {
-          DEBUG ((
-            DEBUG_ERROR,
-            "%a: DtIo->GetReg is failed. \n",
-            __func__
-            ));
-        }
-
-        Status = ProcessMemoryRange (&Reg);
-        if (EFI_ERROR (Status)) {
-          DEBUG ((
-            DEBUG_ERROR,
-            "%a: Can't Set Memory Attributes at node [%a]: %r\n",
-            __func__,
-            DtIo->Name,
-            Status
-            ));
-        } else {
-          DEBUG ((
-            DEBUG_INFO,
-            "%a: DT_IO Set Memory Attributes at node [%a] successfully. \n",
-            __func__,
-            DtIo->Name
-            ));
-        }
-      }
     }
-  }
-  //
-  // Can not find any Memory node
-  //
-  if (!Foundit) {
-    DEBUG ((DEBUG_ERROR, "We can't find Memroy Node! \n"));
+
+    if (AsciiStrCmp (DtIo->DeviceType, "memory") != 0) {
+      continue;
+    }
+
+    if (DtIo->DeviceStatus != EFI_DT_STATUS_OKAY) {
+      continue;
+    }
+
+ #ifdef DT_NON_DRIVER_BINDING
+    Status = ProcessMemoryRanges (DtIo);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: ProcessMemoryRanges(%a): %r\n",
+        __func__,
+        DtIo->Name,
+        Status
+        ));
+    }
+
+ #else
+    Status = gBS->ConnectController (
+                    HandleBuffer[Index],
+                    gDriverBinding.DriverBindingHandle,
+                    NULL,
+                    FALSE
+                    );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: ConnectController(%a): %r\n",
+        __func__,
+        DtIo->Name,
+        Status
+        ));
+    }
+
+ #endif /* DT_NON_DRIVER_BINDING */
   }
 
   return EFI_SUCCESS;
-#else
-  return EfiLibInstallDriverBindingComponentName2 (
-           ImageHandle,
-           SystemTable,
-           &gDriverBinding,
-           ImageHandle,
-           &gComponentName,
-           &gComponentName2
-           );
-#endif
 }

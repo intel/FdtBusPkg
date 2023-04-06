@@ -76,6 +76,7 @@ DriverSupported (
     if (Status == EFI_ALREADY_STARTED) {
       return EFI_SUCCESS;
     }
+
     return Status;
   }
 
@@ -89,13 +90,13 @@ DriverSupported (
     goto out;
   }
 
- out:
+out:
   gBS->CloseProtocol (
-                      ControllerHandle,
-                      &gEfiDtIoProtocolGuid,
-                      This->DriverBindingHandle,
-                      ControllerHandle
-                      );
+         ControllerHandle,
+         &gEfiDtIoProtocolGuid,
+         This->DriverBindingHandle,
+         ControllerHandle
+         );
 
   return Status;
 }

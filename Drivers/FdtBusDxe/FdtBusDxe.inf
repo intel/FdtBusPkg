@@ -49,6 +49,8 @@
 
 [Guids]
   gFdtHobGuid
+  gFdtTableGuid
+  gEdkiiPlatformHasDeviceTreeGuid
 
 [Depex]
   TRUE

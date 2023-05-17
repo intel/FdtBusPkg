@@ -8,6 +8,8 @@
 
 #include "FdtBusDxe.h"
 
+LIST_ENTRY  gCriticalDevices = INITIALIZE_LIST_HEAD_VARIABLE (gCriticalDevices);
+
 /**
   Given a EFI_DT_DEVICE_PATH_NODE, create/populate a DT_DEVICE.
 
@@ -112,6 +114,13 @@ DtDeviceCreate (
     DtDevice->DtIo.DeviceStatus = EFI_DT_STATUS_BROKEN;
   }
 
+  if (FdtIsDeviceCritical (FdtNode) ||
+      (AsciiStrCmp (DtDevice->DtIo.DeviceType, "memory") == 0))
+  {
+    InsertTailList (&gCriticalDevices, &DtDevice->Link);
+    DtDevice->Flags |= DT_DEVICE_CRITICAL;
+  }
+
   //
   // Core.
   //
@@ -162,6 +171,10 @@ DtDeviceCleanup (
 {
   if (DtDevice == NULL) {
     return;
+  }
+
+  if ((DtDevice->Flags & DT_DEVICE_CRITICAL) != 0) {
+    RemoveEntryList (&DtDevice->Link);
   }
 
   FreePool (DtDevice->DtIo.ComponentName);

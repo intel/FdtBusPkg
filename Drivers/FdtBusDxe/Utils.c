@@ -9,6 +9,58 @@
 #include "FdtBusDxe.h"
 
 /**
+  Given a an EFI_HANDLE, return if the handle has a driver started
+  on it.
+
+  @param[in]    Handle         EFI_HANDLE.
+
+  @retval TRUE                 Has driver bound/started.
+  @retval FALSE                Does not have a driver bound/started.
+
+**/
+BOOLEAN
+HandleHasBoundDriver (
+  IN  EFI_HANDLE  Handle
+  )
+{
+  EFI_STATUS                           Status;
+  UINTN                                EntryCount;
+  UINTN                                Index;
+  EFI_OPEN_PROTOCOL_INFORMATION_ENTRY  *OpenInfoBuffer;
+
+  //
+  // Detect if the child handle has a driver bound to it, by
+  // retrieving the list of agents that are consuming
+  // gEfiDtIoProtocolGuid on the handle.
+  //
+  Status = gBS->OpenProtocolInformation (
+                  Handle,
+                  &gEfiDtIoProtocolGuid,
+                  &OpenInfoBuffer,
+                  &EntryCount
+                  );
+  if (EFI_ERROR (Status)) {
+    return FALSE;
+  }
+
+  for (Index = 0; Index < EntryCount; Index++) {
+    if ((OpenInfoBuffer[Index].Attributes & EFI_OPEN_PROTOCOL_BY_DRIVER) != 0) {
+      break;
+    }
+  }
+
+  FreePool (OpenInfoBuffer);
+  if (Index != EntryCount) {
+    //
+    // The child handle was opened by a bound driver.
+    //
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
   Given an ASCII name, format as a Unicode component name.
 
   E.g. foo -> DT(foo).

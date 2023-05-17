@@ -25,11 +25,13 @@
 
 #define DT_DEV_SIGNATURE  SIGNATURE_32 ('d', 't', 'i', 'o')
 #define DT_DEV_FROM_THIS(a)  CR(a, DT_DEVICE, DtIo, DT_DEV_SIGNATURE)
+#define DT_DEV_FROM_LINK(a)  CR(a, DT_DEVICE, Link, DT_DEV_SIGNATURE)
 
 extern VOID                          *gDeviceTreeBase;
 extern EFI_COMPONENT_NAME_PROTOCOL   gComponentName;
 extern EFI_COMPONENT_NAME2_PROTOCOL  gComponentName2;
 extern EFI_DRIVER_BINDING_PROTOCOL   gDriverBinding;
+extern LIST_ENTRY                    gCriticalDevices;
 
 typedef struct {
   UINTN                      Signature;
@@ -37,7 +39,19 @@ typedef struct {
   INTN                       FdtNode;
   EFI_DT_DEVICE_PATH_NODE    *DevicePath;
   EFI_DT_IO_PROTOCOL         DtIo;
+  #define DT_DEVICE_CRITICAL  (1UL << 0)
+  UINTN                      Flags;
+  //
+  // To insert into gCriticalDevices when DT_DEVICE_CRITICAL
+  // is set.
+  //
+  LIST_ENTRY                 Link;
 } DT_DEVICE;
+
+BOOLEAN
+HandleHasBoundDriver (
+  IN  EFI_HANDLE  Handle
+  );
 
 CHAR16 *
 FormatComponentName (
@@ -118,6 +132,11 @@ FdtGetSizeCells (
 BOOLEAN
 FdtGetDmaCoherency (
   IN INTN  FdtNode
+  );
+
+BOOLEAN
+FdtIsDeviceCritical (
+  IN  INTN  FdtNode
   );
 
 EFI_STATUS

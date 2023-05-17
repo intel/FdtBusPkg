@@ -10,6 +10,42 @@
 
 VOID              *gDeviceTreeBase;
 STATIC EFI_EVENT  mPlatformHasDeviceTreeEvent;
+STATIC EFI_EVENT  mEndOfDxeEvent;
+
+/**
+  Try to connect all DtDevices in the critical device list.
+
+  @param[in] Event          EFI_EVENT.
+  @param[in] Context        Unused.
+
+  @retval None
+
+**/
+STATIC
+VOID
+EFIAPI
+OnEndOfDxe (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+{
+  LIST_ENTRY  *Link;
+  DT_DEVICE   *DtDevice;
+  EFI_STATUS  Status;
+
+  Link = gCriticalDevices.ForwardLink;
+  while (Link != &gCriticalDevices) {
+    DtDevice = DT_DEV_FROM_LINK (Link);
+    Link     = Link->ForwardLink;
+
+    if (!HandleHasBoundDriver (DtDevice->Handle)) {
+      Status = gBS->ConnectController (DtDevice->Handle, NULL, NULL, TRUE);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_WARN, "%s: critical device not connected\n", DtDevice->DtIo.ComponentName));
+      }
+    }
+  }
+}
 
 /**
   Install the managed DT table as an EFI configuration table if the
@@ -65,7 +101,7 @@ OnPlatformHasDeviceTree (
 **/
 STATIC
 VOID
-UnregisterNotification (
+UnregisterDtNotification (
   VOID
   )
 {
@@ -84,7 +120,7 @@ UnregisterNotification (
 **/
 STATIC
 EFI_STATUS
-RegisterNotification (
+RegisterDtNotification (
   VOID
   )
 {
@@ -116,6 +152,55 @@ RegisterNotification (
       Status
       ));
     gBS->CloseEvent (mPlatformHasDeviceTreeEvent);
+    return Status;
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Unregister an EndOfDxe signal notification.
+
+  @retval None
+
+**/
+STATIC
+VOID
+UnregisterEndOfDxeNotification (
+  VOID
+  )
+{
+  gBS->CloseEvent (mEndOfDxeEvent);
+  mEndOfDxeEvent = NULL;
+}
+
+/**
+  Register an EndOfDxe signal notification to process devices listed
+  as critical.
+
+  @retval EFI_SUCCESS       Callback registered.
+  @retval other             Some error occured.
+
+**/
+STATIC
+EFI_STATUS
+RegisterEndOfDxeNotification (
+  VOID
+  )
+{
+  EFI_STATUS  Status;
+
+  Status = gBS->CreateEventEx (
+                  EVT_NOTIFY_SIGNAL,
+                  TPL_CALLBACK,
+                  OnEndOfDxe,
+                  NULL,
+                  &gEfiEndOfDxeEventGroupGuid,
+                  &mEndOfDxeEvent
+                  );
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: CreateEventEx: %r\n", __func__, Status));
     return Status;
   }
 
@@ -222,16 +307,24 @@ EntryPoint (
   gDeviceTreeBase = DeviceTreeBase;
   DEBUG ((DEBUG_INFO, "%a: DTB @ %p\n", __func__, gDeviceTreeBase));
 
-  Status = RegisterNotification ();
+  Status = RegisterDtNotification ();
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: RegisterNotification: %r\n", __func__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: RegisterDtNotification: %r\n", __func__, Status));
+    return Status;
+  }
+
+  Status = RegisterEndOfDxeNotification ();
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: RegisterEndOfDxeNotification: %r\n", __func__, Status));
+    UnregisterDtNotification ();
     return Status;
   }
 
   Status = RegisterBusDriver (ImageHandle);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: RegisterBusDriver: %r\n", __func__, Status));
-    UnregisterNotification ();
+    UnregisterEndOfDxeNotification ();
+    UnregisterDtNotification ();
     return Status;
   }
 

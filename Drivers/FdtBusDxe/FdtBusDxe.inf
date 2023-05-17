@@ -51,6 +51,7 @@
   gFdtHobGuid
   gFdtTableGuid
   gEdkiiPlatformHasDeviceTreeGuid
+  gEfiEndOfDxeEventGroupGuid
 
 [Depex]
   TRUE

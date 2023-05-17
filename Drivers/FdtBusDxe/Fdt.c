@@ -159,3 +159,21 @@ FdtGetDmaCoherency (
 {
   return fdt_getprop (gDeviceTreeBase, FdtNode, "dma-coherent", NULL) != NULL;
 }
+
+/**
+  Given an FdtNode, return whether this device is critical to platform
+  operation (e.g. it must be connected before or during EndOfDxe event).
+
+  @param[in]    FdtNode          INTN
+
+  @retval TRUE                   Device is critical.
+  @retval FALSE                  Device is not critical.
+
+**/
+BOOLEAN
+FdtIsDeviceCritical (
+  IN  INTN  FdtNode
+  )
+{
+  return fdt_getprop (gDeviceTreeBase, FdtNode, "uefi,critical", NULL) != NULL;
+}

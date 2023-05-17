@@ -242,11 +242,14 @@ InitializeHighMemDxe (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS          Status;
+  EFI_STATUS  Status;
+
+ #ifdef DT_NON_DRIVER_BINDING
   EFI_DT_IO_PROTOCOL  *DtIo;
   UINTN               HandleCount;
   EFI_HANDLE          *HandleBuffer;
   UINTN               Index;
+ #endif /* DT_NON_DRIVER_BINDING */
 
   Status = gBS->LocateProtocol (
                   &gEfiCpuArchProtocolGuid,
@@ -269,8 +272,7 @@ InitializeHighMemDxe (
     return Status;
   }
 
- #endif /* DT_NON_DRIVER_BINDING */
-
+ #else
   Status = gBS->LocateHandleBuffer (
                   ByProtocol,
                   &gEfiDtIoProtocolGuid,
@@ -278,14 +280,12 @@ InitializeHighMemDxe (
                   &HandleCount,
                   &HandleBuffer
                   );
- #ifdef DT_NON_DRIVER_BINDING
 
   /*
    * The non-binding version has a DEPEX on FdtBusDxe, so this can't
    * happen (unless there's no DT in the system...).
    */
   ASSERT_EFI_ERROR (Status);
- #endif /* DT_NON_DRIVER_BINDING */
 
   for (Index = 0; Index < HandleCount; Index++) {
     Status = gBS->HandleProtocol (HandleBuffer[Index], &gEfiDtIoProtocolGuid, (VOID **)&DtIo);
@@ -304,7 +304,6 @@ InitializeHighMemDxe (
       continue;
     }
 
- #ifdef DT_NON_DRIVER_BINDING
     Status = ProcessMemoryRanges (DtIo);
     if (EFI_ERROR (Status)) {
       DEBUG ((
@@ -315,26 +314,9 @@ InitializeHighMemDxe (
         Status
         ));
     }
-
- #else
-    Status = gBS->ConnectController (
-                    HandleBuffer[Index],
-                    gDriverBinding.DriverBindingHandle,
-                    NULL,
-                    FALSE
-                    );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((
-        DEBUG_ERROR,
-        "%a: ConnectController(%a): %r\n",
-        __func__,
-        DtIo->Name,
-        Status
-        ));
-    }
+  }
 
  #endif /* DT_NON_DRIVER_BINDING */
-  }
 
   return EFI_SUCCESS;
 }

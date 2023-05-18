@@ -27,6 +27,7 @@ DtDeviceCreate (
   IN  INTN         FdtNode,
   IN  CONST CHAR8  *Name,
   IN  DT_DEVICE    *Parent,
+  IN  UINTN        DeviceFlags,
   OUT DT_DEVICE    **Out
   )
 {
@@ -36,8 +37,10 @@ DtDeviceCreate (
   EFI_STATUS               Status;
   BOOLEAN                  HasChildren;
   BOOLEAN                  Broken;
+  VOID                     *TreeBase;
 
-  Broken = FALSE;
+  Broken   = FALSE;
+  TreeBase = GetTreeBaseFromDeviceFlags (DeviceFlags);
 
   NewPathNode = DtPathNodeCreate (Name);
   if (NewPathNode == NULL) {
@@ -80,24 +83,28 @@ DtDeviceCreate (
   //
   DtDevice->DtIo.ComponentName = FormatComponentName (Name);
   DtDevice->DtIo.Name          = Name;
-  DtDevice->DtIo.Model         = FdtGetModel (FdtNode);
-  DtDevice->DtIo.DeviceType    = FdtGetDeviceType (FdtNode);
-  DtDevice->DtIo.DeviceStatus  = FdtGetStatus (FdtNode);
+  DtDevice->DtIo.Model         = FdtGetModel (TreeBase, FdtNode);
+  DtDevice->DtIo.DeviceType    = FdtGetDeviceType (TreeBase, FdtNode);
+  DtDevice->DtIo.DeviceStatus  = FdtGetStatus (TreeBase, FdtNode);
   if (DtDevice->DtIo.DeviceStatus == EFI_DT_STATUS_BROKEN) {
     DEBUG ((DEBUG_ERROR, "%a: FdtGetStatus\n", __func__));
     Broken = TRUE;
   }
 
-  HasChildren = fdt_first_subnode (gDeviceTreeBase, FdtNode) >= 0;
+  HasChildren = fdt_first_subnode (TreeBase, FdtNode) >= 0;
 
   if (HasChildren || (Parent == NULL)) {
-    Status = FdtGetAddressCells (FdtNode, &DtDevice->DtIo.AddressCells);
+    Status = FdtGetAddressCells (
+               TreeBase,
+               FdtNode,
+               &DtDevice->DtIo.AddressCells
+               );
     if (EFI_ERROR (Status)) {
       DEBUG ((DEBUG_ERROR, "%a: FdtGetAddressCells: %r\n", __func__, Status));
       Broken = TRUE;
     }
 
-    Status = FdtGetSizeCells (FdtNode, &DtDevice->DtIo.SizeCells);
+    Status = FdtGetSizeCells (TreeBase, FdtNode, &DtDevice->DtIo.SizeCells);
     if (EFI_ERROR (Status)) {
       DEBUG ((DEBUG_ERROR, "%a: FdtGetSizeCells: %r\n", __func__, Status));
       Broken = TRUE;
@@ -107,18 +114,22 @@ DtDeviceCreate (
     DtDevice->DtIo.SizeCells    = Parent->DtIo.SizeCells;
   }
 
-  DtDevice->DtIo.IsDmaCoherent = FdtGetDmaCoherency (FdtNode);
+  DtDevice->DtIo.IsDmaCoherent = FdtGetDmaCoherency (TreeBase, FdtNode);
 
   if (Broken) {
     DEBUG ((DEBUG_ERROR, "%a: marking %a as broken\n", __func__, Name));
     DtDevice->DtIo.DeviceStatus = EFI_DT_STATUS_BROKEN;
   }
 
-  if (FdtIsDeviceCritical (FdtNode) ||
+  DtDevice->Flags |= DeviceFlags;
+  if (FdtIsDeviceCritical (TreeBase, FdtNode) ||
       (AsciiStrCmp (DtDevice->DtIo.DeviceType, "memory") == 0))
   {
-    InsertTailList (&gCriticalDevices, &DtDevice->Link);
     DtDevice->Flags |= DT_DEVICE_CRITICAL;
+  }
+
+  if ((DtDevice->Flags & DT_DEVICE_CRITICAL) != 0) {
+    InsertTailList (&gCriticalDevices, &DtDevice->Link);
   }
 
   //
@@ -347,6 +358,9 @@ DtDeviceScan (
 {
   INTN        Node;
   EFI_STATUS  Status;
+  VOID        *TreeBase;
+
+  TreeBase = GetTreeBaseFromDeviceFlags (DtDevice->Flags);
 
   if (RemainingDevicePath != NULL) {
     if ((RemainingDevicePath->VendorDevicePath.Header.Type != HARDWARE_DEVICE_PATH) ||
@@ -361,13 +375,13 @@ DtDeviceScan (
   }
 
   Node = -FDT_ERR_NOTFOUND;
-  fdt_for_each_subnode (Node, gDeviceTreeBase, DtDevice->FdtNode) {
+  fdt_for_each_subnode (Node, TreeBase, DtDevice->FdtNode) {
     INT32        Len;
     CONST CHAR8  *Name;
     DT_DEVICE    *NodeDtDevice;
 
     Len  = 0;
-    Name = fdt_get_name (gDeviceTreeBase, Node, &Len);
+    Name = fdt_get_name (TreeBase, Node, &Len);
     if (Len < 0) {
       DEBUG ((
         DEBUG_ERROR,
@@ -396,6 +410,7 @@ DtDeviceScan (
                Node,
                Name,
                DtDevice,
+               DtDevice->Flags & DT_DEVICE_INHERITED,
                &NodeDtDevice
                );
     if (Status == EFI_ALREADY_STARTED) {

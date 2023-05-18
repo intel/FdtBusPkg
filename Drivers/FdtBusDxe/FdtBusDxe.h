@@ -27,11 +27,24 @@
 #define DT_DEV_FROM_THIS(a)  CR(a, DT_DEVICE, DtIo, DT_DEV_SIGNATURE)
 #define DT_DEV_FROM_LINK(a)  CR(a, DT_DEVICE, Link, DT_DEV_SIGNATURE)
 
-extern VOID                          *gDeviceTreeBase;
+extern VOID  *gDeviceTreeBase;
+#ifndef MDEPKG_NDEBUG
+extern VOID  *gTestTreeBase;
+#else
+#define gTestTreeBase  NULL
+#endif /* MDEPKG_NDEBUG */
 extern EFI_COMPONENT_NAME_PROTOCOL   gComponentName;
 extern EFI_COMPONENT_NAME2_PROTOCOL  gComponentName2;
 extern EFI_DRIVER_BINDING_PROTOCOL   gDriverBinding;
 extern LIST_ENTRY                    gCriticalDevices;
+
+#define DT_DEVICE_CRITICAL  (1UL << 0)
+#ifndef MDEPKG_NDEBUG
+#define DT_DEVICE_TEST  (1UL << 1)
+#else
+#define DT_DEVICE_TEST  0
+#endif /* MDEPKG_NDEBUG */
+#define DT_DEVICE_INHERITED  DT_DEVICE_TEST
 
 typedef struct {
   UINTN                      Signature;
@@ -39,7 +52,6 @@ typedef struct {
   INTN                       FdtNode;
   EFI_DT_DEVICE_PATH_NODE    *DevicePath;
   EFI_DT_IO_PROTOCOL         DtIo;
-  #define DT_DEVICE_CRITICAL  (1UL << 0)
   UINTN                      Flags;
   //
   // To insert into gCriticalDevices when DT_DEVICE_CRITICAL
@@ -47,6 +59,11 @@ typedef struct {
   //
   LIST_ENTRY                 Link;
 } DT_DEVICE;
+
+VOID *
+GetTreeBaseFromDeviceFlags (
+  IN UINTN  DeviceFlags
+  );
 
 BOOLEAN
 HandleHasBoundDriver (
@@ -73,6 +90,7 @@ DtDeviceCreate (
   IN  INTN         FdtNode,
   IN  CONST CHAR8  *Name,
   IN  DT_DEVICE    *Parent,
+  IN  UINTN        DeviceFlags,
   OUT DT_DEVICE    **Out
   );
 
@@ -104,38 +122,45 @@ DtDeviceUnregister (
 
 CONST CHAR8 *
 FdtGetModel (
+  IN VOID  *TreeBase,
   IN INTN  FdtNode
   );
 
 CONST CHAR8 *
 FdtGetDeviceType (
+  IN VOID  *TreeBase,
   IN INTN  FdtNode
   );
 
 EFI_DT_STATUS
 FdtGetStatus (
+  IN VOID  *TreeBase,
   IN INTN  FdtNode
   );
 
 EFI_STATUS
 FdtGetAddressCells (
+  IN VOID    *TreeBase,
   IN  INTN   FdtNode,
   OUT UINT8  *Cells
   );
 
 EFI_STATUS
 FdtGetSizeCells (
+  IN VOID    *TreeBase,
   IN INTN    FdtNode,
   OUT UINT8  *Cells
   );
 
 BOOLEAN
 FdtGetDmaCoherency (
+  IN VOID  *TreeBase,
   IN INTN  FdtNode
   );
 
 BOOLEAN
 FdtIsDeviceCritical (
+  IN VOID   *TreeBase,
   IN  INTN  FdtNode
   );
 
@@ -276,5 +301,27 @@ DtIoFreeBuffer (
   IN  UINTN               Pages,
   IN  VOID                *HostAddress
   );
+
+#ifndef MDEPKG_NDEBUG
+EFI_STATUS
+TestsInit (
+  VOID
+  );
+
+VOID
+TestsCleanup (
+  VOID
+  );
+
+VOID
+TestsInvoke (
+  IN DT_DEVICE  *DtDevice
+  );
+
+#else
+#define TestsInit()  EFI_SUCCESS
+#define TestsCleanup()
+#define TestsInvoke(x)
+#endif /* MDEPKG_NDEBUG */
 
 #endif /* __FDT_BUS_DXE_H__ */

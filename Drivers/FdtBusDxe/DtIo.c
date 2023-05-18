@@ -57,13 +57,15 @@ DtIoGetProp (
   DT_DEVICE   *DtDevice;
   CONST VOID  *Buf;
   INT32       Len;
+  VOID        *TreeBase;
 
   if ((This == NULL) || (Property == NULL) || (Name == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
   DtDevice = DT_DEV_FROM_THIS (This);
-  Buf      = fdt_getprop (gDeviceTreeBase, DtDevice->FdtNode, Name, &Len);
+  TreeBase = GetTreeBaseFromDeviceFlags (DtDevice->Flags);
+  Buf      = fdt_getprop (TreeBase, DtDevice->FdtNode, Name, &Len);
   if (Buf == NULL) {
     if (Len == -FDT_ERR_NOTFOUND) {
       return EFI_NOT_FOUND;
@@ -206,15 +208,17 @@ DtIoIsCompatible (
 {
   INTN       Ret;
   DT_DEVICE  *DtDevice;
+  VOID       *TreeBase;
 
   if ((This == NULL) || (CompatibleString == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
   DtDevice = DT_DEV_FROM_THIS (This);
+  TreeBase = GetTreeBaseFromDeviceFlags (DtDevice->Flags);
 
   Ret = fdt_node_check_compatible (
-          gDeviceTreeBase,
+          TreeBase,
           DtDevice->FdtNode,
           CompatibleString
           );

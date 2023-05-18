@@ -9,7 +9,32 @@
 #include "FdtBusDxe.h"
 
 /**
-  Given a an EFI_HANDLE, return if the handle has a driver started
+  Given DeviceFlags, return the right Fdt tree base.
+
+  In practice, on non-debug builds, this always returns gDeviceTreeBase,
+  because DT_DEVICE_TEST is defined as 0.
+
+  @param[in]    DeviceFlags    DT_DEVICE DeviceFlags.
+
+  @retval VOID *               Fdt base.
+
+**/
+VOID *
+GetTreeBaseFromDeviceFlags (
+  IN UINTN  DeviceFlags
+  )
+{
+  VOID  *TreeBase;
+
+  TreeBase = (DeviceFlags & DT_DEVICE_TEST) != 0 ?
+             gTestTreeBase : gDeviceTreeBase;
+
+  ASSERT (TreeBase != NULL);
+  return TreeBase;
+}
+
+/**
+  Given a EFI_HANDLE, return if the handle has a driver started
   on it.
 
   @param[in]    Handle         EFI_HANDLE.

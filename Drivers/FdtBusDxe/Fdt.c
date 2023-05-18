@@ -11,6 +11,7 @@
 /**
   Given an FdtNode, return the model name property or the empty string.
 
+  @param[in]    TreeBase         Device Tree blob base
   @param[in]    FdtNode          INTN
 
   @retval CHAR8 *                Model name or empty string.
@@ -18,12 +19,13 @@
 **/
 CONST CHAR8 *
 FdtGetModel (
+  IN VOID  *TreeBase,
   IN INTN  FdtNode
   )
 {
   CONST CHAR8  *Buf;
 
-  Buf = fdt_getprop (gDeviceTreeBase, FdtNode, "model", NULL);
+  Buf = fdt_getprop (TreeBase, FdtNode, "model", NULL);
   if (Buf == NULL) {
     return "";
   }
@@ -34,6 +36,7 @@ FdtGetModel (
 /**
   Given an FdtNode, return the device_type property or the empty string.
 
+  @param[in]    TreeBase         Device Tree blob base
   @param[in]    FdtNode          INTN
 
   @retval CHAR8 *                Model name or empty string.
@@ -41,12 +44,13 @@ FdtGetModel (
 **/
 CONST CHAR8 *
 FdtGetDeviceType (
+  IN VOID  *TreeBase,
   IN INTN  FdtNode
   )
 {
   CONST CHAR8  *Buf;
 
-  Buf = fdt_getprop (gDeviceTreeBase, FdtNode, "device_type", NULL);
+  Buf = fdt_getprop (TreeBase, FdtNode, "device_type", NULL);
   if (Buf == NULL) {
     return "";
   }
@@ -57,6 +61,7 @@ FdtGetDeviceType (
 /**
   Given an FdtNode, return the device status.
 
+  @param[in]    TreeBase         Device Tree blob base
   @param[in]    FdtNode          INTN
 
   @retval EFI_DT_STATUS          Enum.
@@ -64,12 +69,13 @@ FdtGetDeviceType (
 **/
 EFI_DT_STATUS
 FdtGetStatus (
+  IN VOID  *TreeBase,
   IN INTN  FdtNode
   )
 {
   CONST CHAR8  *Buf;
 
-  Buf = fdt_getprop (gDeviceTreeBase, FdtNode, "status", NULL);
+  Buf = fdt_getprop (TreeBase, FdtNode, "status", NULL);
   if (Buf == NULL) {
     return EFI_DT_STATUS_OKAY;
   }
@@ -92,6 +98,7 @@ FdtGetStatus (
 /**
   Given an FdtNode, return the size cells in *Cells.
 
+  @param[in]    TreeBase         Device Tree blob base
   @param[in]    FdtNode          INTN
   @param[out]   Cells            UINTN
 
@@ -101,13 +108,14 @@ FdtGetStatus (
 **/
 EFI_STATUS
 FdtGetSizeCells (
+  IN VOID    *TreeBase,
   IN  INTN   FdtNode,
   OUT UINT8  *Cells
   )
 {
   INTN  Result;
 
-  Result = fdt_size_cells (gDeviceTreeBase, FdtNode);
+  Result = fdt_size_cells (TreeBase, FdtNode);
   if (Result >= 0) {
     *Cells = (UINT8)Result;
     return EFI_SUCCESS;
@@ -119,6 +127,7 @@ FdtGetSizeCells (
 /**
   Given an FdtNode, return the address cells in *Cells.
 
+  @param[in]    TreeBase         Device Tree blob base
   @param[in]    FdtNode          INTN
   @param[out]   Cells            UINTN
 
@@ -128,13 +137,14 @@ FdtGetSizeCells (
 **/
 EFI_STATUS
 FdtGetAddressCells (
+  IN VOID    *TreeBase,
   IN  INTN   FdtNode,
   OUT UINT8  *Cells
   )
 {
   INTN  Result;
 
-  Result = fdt_address_cells (gDeviceTreeBase, FdtNode);
+  Result = fdt_address_cells (TreeBase, FdtNode);
   if (Result >= 0) {
     *Cells = (UINT8)Result;
     return EFI_SUCCESS;
@@ -146,6 +156,7 @@ FdtGetAddressCells (
 /**
   Given an FdtNode, return whether DMA is coherent.
 
+  @param[in]    TreeBase         Device Tree blob base
   @param[in]    FdtNode          INTN
 
   @retval TRUE                   DMA is coherent.
@@ -154,16 +165,18 @@ FdtGetAddressCells (
 **/
 BOOLEAN
 FdtGetDmaCoherency (
+  IN VOID   *TreeBase,
   IN  INTN  FdtNode
   )
 {
-  return fdt_getprop (gDeviceTreeBase, FdtNode, "dma-coherent", NULL) != NULL;
+  return fdt_getprop (TreeBase, FdtNode, "dma-coherent", NULL) != NULL;
 }
 
 /**
   Given an FdtNode, return whether this device is critical to platform
   operation (e.g. it must be connected before or during EndOfDxe event).
 
+  @param[in]    TreeBase         Device Tree blob base
   @param[in]    FdtNode          INTN
 
   @retval TRUE                   Device is critical.
@@ -172,8 +185,9 @@ FdtGetDmaCoherency (
 **/
 BOOLEAN
 FdtIsDeviceCritical (
+  IN VOID   *TreeBase,
   IN  INTN  FdtNode
   )
 {
-  return fdt_getprop (gDeviceTreeBase, FdtNode, "uefi,critical", NULL) != NULL;
+  return fdt_getprop (TreeBase, FdtNode, "uefi,critical", NULL) != NULL;
 }

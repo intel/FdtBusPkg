@@ -61,6 +61,7 @@ DriverSupported (
 {
   EFI_STATUS          Status;
   EFI_DT_IO_PROTOCOL  *DtIo;
+  DT_DEVICE           *DtDevice;
 
   DtIo   = NULL;
   Status = gBS->OpenProtocol (
@@ -79,9 +80,14 @@ DriverSupported (
     return EFI_UNSUPPORTED;
   }
 
-  if ((AsciiStrCmp (DtIo->Name, "/") != 0) &&
-      (DtIo->IsCompatible (DtIo, "simple-bus") != EFI_SUCCESS))
+  DtDevice = DT_DEV_FROM_THIS (DtIo);
+
+  if (((DtDevice->Flags & DT_DEVICE_TEST) != 0) ||
+      (AsciiStrCmp (DtIo->Name, "/DtRoot") == 0) ||
+      (DtIo->IsCompatible (DtIo, "simple-bus") == EFI_SUCCESS))
   {
+    Status = EFI_SUCCESS;
+  } else {
     //
     // A client driver should use DtIo->ScanChildren to make
     // FdtBusDxe discover handles under nodes it doesn't directly
@@ -178,6 +184,10 @@ DriverStart (
   //
   // DtDeviceScan above may have created some handles.
   //
+
+  if ((DtDevice->Flags & DT_DEVICE_TEST) != 0) {
+    TestsInvoke (DtDevice);
+  }
 
   return EFI_SUCCESS;
 }

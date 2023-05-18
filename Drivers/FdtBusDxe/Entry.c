@@ -208,6 +208,59 @@ RegisterEndOfDxeNotification (
 }
 
 /**
+  Create the root handles that the bus driver will manage.
+
+  @param[in]  DeviceFlags   Inherited DT_DEVICE flags.
+  @param[out] OutDtDevice   DT_DEVICE **.
+
+  @retval EFI_SUCCESS       Success.
+  @retval other             Some error occured.
+
+**/
+STATIC
+EFI_STATUS
+CreateRootHandle (
+  IN  UINTN      DeviceFlags,
+  OUT DT_DEVICE  **OutDtDevice
+  )
+{
+  EFI_STATUS  Status;
+  DT_DEVICE   *RootDtDevice;
+  INTN        RootNode;
+  VOID        *TreeBase;
+
+  TreeBase = GetTreeBaseFromDeviceFlags (DeviceFlags);
+  RootNode = fdt_path_offset (TreeBase, "/");
+  if (RootNode < 0) {
+    DEBUG ((DEBUG_ERROR, "%a: no root found: %a\n", __func__, fdt_strerror (RootNode)));
+    return EFI_NOT_FOUND;
+  }
+
+  Status = DtDeviceCreate (
+             RootNode,
+             (DeviceFlags & DT_DEVICE_TEST) != 0 ?
+             "/DtTestRoot" : "/DtRoot",
+             NULL,
+             DeviceFlags,
+             &RootDtDevice
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: DtDeviceCreate: %r\n", __func__, Status));
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  Status = DtDeviceRegister (RootDtDevice, NULL, NULL);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: DtDeviceRegister: %r\n", __func__, Status));
+    DtDeviceCleanup (RootDtDevice);
+    return Status;
+  }
+
+  *OutDtDevice = RootDtDevice;
+  return EFI_SUCCESS;
+}
+
+/**
   Create the root handle that the bus driver will manage and register
   the bus driver binding and component protocols.
 
@@ -225,27 +278,23 @@ RegisterBusDriver (
 {
   EFI_STATUS  Status;
   DT_DEVICE   *RootDtDevice;
-  INTN        RootNode;
+  DT_DEVICE   *TestRootDtDevice;
 
-  ASSERT (gDeviceTreeBase != NULL);
+  RootDtDevice     = NULL;
+  TestRootDtDevice = NULL;
 
-  RootNode = fdt_path_offset (gDeviceTreeBase, "/");
-  if (RootNode < 0) {
-    DEBUG ((DEBUG_ERROR, "%a: no root found: %a\n", __func__, fdt_strerror (RootNode)));
-    return EFI_NOT_FOUND;
+  Status = CreateRootHandle (0, &RootDtDevice);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: CreateRootHandle: %r\n", __func__, Status));
+    goto done;
   }
 
-  Status = DtDeviceCreate (RootNode, "/", NULL, &RootDtDevice);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: DtDeviceCreate: %r\n", __func__, Status));
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  Status = DtDeviceRegister (RootDtDevice, NULL, NULL);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: DtDeviceRegister: %r\n", __func__, Status));
-    DtDeviceCleanup (RootDtDevice);
-    return Status;
+  if (gTestTreeBase != NULL) {
+    Status = CreateRootHandle (DT_DEVICE_TEST, &TestRootDtDevice);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: CreateRootHandle(Test): %r\n", __func__, Status));
+      goto done;
+    }
   }
 
   Status = EfiLibInstallDriverBindingComponentName2 (
@@ -259,11 +308,23 @@ RegisterBusDriver (
 
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "EfiLibInstallDriverBindingComponentName2: %r\n", Status));
-    DtDeviceUnregister (RootDtDevice, NULL, NULL);
-    DtDeviceCleanup (RootDtDevice);
+    goto done;
   }
 
-  return EFI_SUCCESS;
+done:
+  if (EFI_ERROR (Status)) {
+    if (TestRootDtDevice != NULL) {
+      DtDeviceUnregister (TestRootDtDevice, NULL, NULL);
+      DtDeviceCleanup (TestRootDtDevice);
+    }
+
+    if (RootDtDevice != NULL) {
+      DtDeviceUnregister (RootDtDevice, NULL, NULL);
+      DtDeviceCleanup (RootDtDevice);
+    }
+  }
+
+  return Status;
 }
 
 /**
@@ -307,9 +368,16 @@ EntryPoint (
   gDeviceTreeBase = DeviceTreeBase;
   DEBUG ((DEBUG_INFO, "%a: DTB @ %p\n", __func__, gDeviceTreeBase));
 
+  Status = TestsInit ();
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: TestsInit: %r\n", __func__, Status));
+    return Status;
+  }
+
   Status = RegisterDtNotification ();
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: RegisterDtNotification: %r\n", __func__, Status));
+    TestsCleanup ();
     return Status;
   }
 
@@ -317,6 +385,7 @@ EntryPoint (
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: RegisterEndOfDxeNotification: %r\n", __func__, Status));
     UnregisterDtNotification ();
+    TestsCleanup ();
     return Status;
   }
 
@@ -325,6 +394,7 @@ EntryPoint (
     DEBUG ((DEBUG_ERROR, "%a: RegisterBusDriver: %r\n", __func__, Status));
     UnregisterEndOfDxeNotification ();
     UnregisterDtNotification ();
+    TestsCleanup ();
     return Status;
   }
 

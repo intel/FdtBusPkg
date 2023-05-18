@@ -26,6 +26,7 @@
   Entry.c
   Fdt.c
   Utils.c
+  Tests.c
 
 [Packages]
   MdeModulePkg/MdeModulePkg.dec

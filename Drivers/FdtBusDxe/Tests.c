@@ -65,12 +65,12 @@
 VOID  *gTestTreeBase;
 
 /**
-  Root node test.
+  Node tests.
 
   @param[in] DtDevice       Device to test.
 
   @retval TRUE              Success.
-  @retval FALSE             Faulure.
+  @retval FALSE             Failure.
 
 **/
 STATIC
@@ -92,15 +92,6 @@ RootTestFn (
   return TRUE;
 }
 
-/**
-  Test node test.
-
-  @param[in] DtDevice       Device to test.
-
-  @retval TRUE              Success.
-  @retval FALSE             Faulure.
-
-**/
 STATIC
 BOOLEAN
 EFIAPI
@@ -111,20 +102,14 @@ TestG0Fn (
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->IsCompatible (DtIo, "test1_compatible") == EFI_SUCCESS);
+  ASSERT (AsciiStrCmp (DtIo->Model, "") == 0);
+  ASSERT (AsciiStrCmp (DtIo->DeviceType, "") == 0);
+  ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_OKAY);
   ASSERT (!DtIo->IsDmaCoherent);
 
   return TRUE;
 }
 
-/**
-  Test node test.
-
-  @param[in] DtDevice       Device to test.
-
-  @retval TRUE              Success.
-  @retval FALSE             Faulure.
-
-**/
 STATIC
 BOOLEAN
 EFIAPI
@@ -135,18 +120,11 @@ TestG1Fn (
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->IsDmaCoherent);
+  ASSERT (AsciiStrCmp (DtIo->Model, "foo") == 0);
+  ASSERT (AsciiStrCmp (DtIo->DeviceType, "bar") == 0);
   return TRUE;
 }
 
-/**
-  Test node test.
-
-  @param[in] DtDevice       Device to test.
-
-  @retval TRUE              Success.
-  @retval FALSE             Faulure.
-
-**/
 STATIC
 BOOLEAN
 EFIAPI
@@ -161,15 +139,6 @@ TestG2Fn (
   return TRUE;
 }
 
-/**
-  Test node test.
-
-  @param[in] DtDevice       Device to test.
-
-  @retval TRUE              Success.
-  @retval FALSE             Faulure.
-
-**/
 STATIC
 BOOLEAN
 EFIAPI
@@ -187,15 +156,6 @@ TestG2P0Fn (
   return TRUE;
 }
 
-/**
-  Test node test.
-
-  @param[in] DtDevice       Device to test.
-
-  @retval TRUE              Success.
-  @retval FALSE             Faulure.
-
-**/
 STATIC
 BOOLEAN
 EFIAPI
@@ -215,15 +175,6 @@ TestG2P0C1Fn  (
   return TRUE;
 }
 
-/**
-  Test node test.
-
-  @param[in] DtDevice       Device to test.
-
-  @retval TRUE              Success.
-  @retval FALSE             Faulure.
-
-**/
 STATIC
 BOOLEAN
 EFIAPI
@@ -238,6 +189,110 @@ TestG2P1Fn (
   //
   ASSERT (DtIo->AddressCells == 2);
   ASSERT (DtIo->SizeCells == 2);
+  return TRUE;
+}
+
+STATIC
+BOOLEAN
+EFIAPI
+TestG2P2Fn (
+  IN DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
+  ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_BROKEN);
+  return TRUE;
+}
+
+STATIC
+BOOLEAN
+EFIAPI
+TestG2P3Fn (
+  IN DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
+  ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_BROKEN);
+  return TRUE;
+}
+
+STATIC
+BOOLEAN
+EFIAPI
+TestG3P0Fn (
+  IN DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
+  ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_DISABLED);
+  return TRUE;
+}
+
+STATIC
+BOOLEAN
+EFIAPI
+TestG3P1Fn (
+  IN DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
+  ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_RESERVED);
+  return TRUE;
+}
+
+STATIC
+BOOLEAN
+EFIAPI
+TestG3P2Fn (
+  IN DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
+  ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_FAIL);
+  return TRUE;
+}
+
+STATIC
+BOOLEAN
+EFIAPI
+TestG3P3Fn (
+  IN DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
+  ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_FAIL_WITH_CONDITION);
+  return TRUE;
+}
+
+STATIC
+BOOLEAN
+EFIAPI
+TestG3P4Fn (
+  IN DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
+  ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_OKAY);
+  return TRUE;
+}
+
+STATIC
+BOOLEAN
+EFIAPI
+TestG3P5Fn (
+  IN DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
+  ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_BROKEN);
   return TRUE;
 }
 
@@ -263,7 +318,7 @@ TestsPopulate (
   NODE_TEST (Buffer, RootTestFn);
 
   //
-  // Test compatible and dma-coherent properties.
+  // Test compatible, model, status, and dma-coherent properties.
   //
 
   NEW_NODE (
@@ -274,14 +329,16 @@ TestsPopulate (
     );
 
   //
-  // Test dma-coherent property.
+  // Test model, dma-coherent property.
   //
 
   NEW_NODE (
     Buffer,
     g1,
     TestG1Fn,
-    fdt_property (Buffer, "dma-coherent", NULL, 0)
+    fdt_property (Buffer, "dma-coherent", NULL, 0),
+    fdt_property_string (Buffer, "model", "foo"),
+    fdt_property_string (Buffer, "device_type", "bar")
     );
 
   //
@@ -298,12 +355,70 @@ TestsPopulate (
   NODE_TEST (Buffer, TestG2P0C1Fn);
   END_NODE (Buffer, g2p0c1);
   END_NODE (Buffer, g2p0);
-  BEGIN_NODE (Buffer, g2p1);
-  NODE_TEST (Buffer, TestG2P1Fn);
-  fdt_property_u32 (Buffer, "#address-cells", 2);
-  fdt_property_u32 (Buffer, "#size-cells", 2);
-  END_NODE (Buffer, g2p1);
+  NEW_NODE (
+    Buffer,
+    g2p1,
+    TestG2P1Fn,
+    fdt_property_u32 (Buffer, "#address-cells", 2),
+    fdt_property_u32 (Buffer, "#size-cells", 2)
+    );
+  NEW_NODE (
+    Buffer,
+    g2p2,
+    TestG2P2Fn,
+    fdt_property_u32 (Buffer, "#address-cells", 5),
+    fdt_property_u32 (Buffer, "#size-cells", 2)
+    );
+  NEW_NODE (
+    Buffer,
+    g2p3,
+    TestG2P3Fn,
+    fdt_property_u32 (Buffer, "#address-cells", 2),
+    fdt_property_u32 (Buffer, "#size-cells", 5)
+    );
   END_NODE (Buffer, g2);
+
+  //
+  // More tests for device_status.
+  //
+  BEGIN_NODE (Buffer, g3);
+  NEW_NODE (
+    Buffer,
+    g3p0,
+    TestG3P0Fn,
+    fdt_property_string (Buffer, "status", "disabled")
+    );
+  NEW_NODE (
+    Buffer,
+    g3p1,
+    TestG3P1Fn,
+    fdt_property_string (Buffer, "status", "reserved")
+    );
+  NEW_NODE (
+    Buffer,
+    g3p2,
+    TestG3P2Fn,
+    fdt_property_string (Buffer, "status", "fail")
+    );
+  NEW_NODE (
+    Buffer,
+    g3p3,
+    TestG3P3Fn,
+    fdt_property_string (Buffer, "status", "fail-foo")
+    );
+  NEW_NODE (
+    Buffer,
+    g3p4,
+    TestG3P4Fn,
+    fdt_property_string (Buffer, "status", "okay")
+    );
+  NEW_NODE (
+    Buffer,
+    g3p5,
+    TestG3P5Fn,
+    fdt_property_string (Buffer, "status", "lkalksjdlkajsd")
+    );
+  END_NODE (Buffer, g3);
 
   return 0;
 }

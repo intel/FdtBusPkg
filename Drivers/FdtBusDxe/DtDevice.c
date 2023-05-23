@@ -90,41 +90,44 @@ DtDeviceCreate (
     Broken = TRUE;
   }
 
+  if ((Parent != NULL) && ((Parent->Flags & DT_DEVICE_HAS_ADDRESS_CELLS) != 0)) {
+    DtDevice->DtIo.AddressCells = Parent->DtIo.ChildAddressCells;
+  } else {
+    //
+    // Default value in 2.3.5 #address-cells and #size-cells.
+    //
+    DtDevice->DtIo.AddressCells = 2;
+  }
+
+  if ((Parent != NULL) && ((Parent->Flags & DT_DEVICE_HAS_SIZE_CELLS) != 0)) {
+    DtDevice->DtIo.SizeCells = Parent->DtIo.ChildSizeCells;
+  } else {
+    //
+    // Default value in 2.3.5 #address-cells and #size-cells.
+    //
+    DtDevice->DtIo.SizeCells = 1;
+  }
+
   Status = FdtGetAddressCells (
              TreeBase,
              FdtNode,
-             &DtDevice->DtIo.AddressCells
+             &DtDevice->DtIo.ChildAddressCells
              );
   if (!EFI_ERROR (Status)) {
     DtDevice->Flags |= DT_DEVICE_HAS_ADDRESS_CELLS;
-  } else if (Status == EFI_NOT_FOUND) {
-    if ((Parent != NULL) && ((Parent->Flags & DT_DEVICE_HAS_ADDRESS_CELLS) != 0)) {
-      DtDevice->DtIo.AddressCells = Parent->DtIo.AddressCells;
-    } else {
-      //
-      // Default value in 2.3.5 #address-cells and #size-cells.
-      //
-      DtDevice->DtIo.AddressCells = 2;
-    }
-  } else {
+  } else if (Status != EFI_NOT_FOUND) {
     DEBUG ((DEBUG_ERROR, "%a: FdtGetAddressCells: %r\n", __func__, Status));
     Broken = TRUE;
   }
 
-  Status = FdtGetSizeCells (TreeBase, FdtNode, &DtDevice->DtIo.SizeCells);
+  Status = FdtGetSizeCells (
+             TreeBase,
+             FdtNode,
+             &DtDevice->DtIo.ChildSizeCells
+             );
   if (!EFI_ERROR (Status)) {
     DtDevice->Flags |= DT_DEVICE_HAS_SIZE_CELLS;
-    DEBUG ((DEBUG_ERROR, "%a: has size cells %u\n", Name, DtDevice->DtIo.SizeCells));
-  } else if (Status == EFI_NOT_FOUND) {
-    if ((Parent != NULL) && ((Parent->Flags & DT_DEVICE_HAS_SIZE_CELLS) != 0)) {
-      DtDevice->DtIo.SizeCells = Parent->DtIo.SizeCells;
-    } else {
-      //
-      // Default value in 2.3.5 #address-cells and #size-cells.
-      //
-      DtDevice->DtIo.SizeCells = 1;
-    }
-  } else {
+  } else if (Status != EFI_NOT_FOUND) {
     DEBUG ((DEBUG_ERROR, "%a: FdtGetSizeCells: %r\n", __func__, Status));
     Broken = TRUE;
   }

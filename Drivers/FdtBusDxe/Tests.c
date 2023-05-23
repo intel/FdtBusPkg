@@ -83,8 +83,7 @@ RootTestFn (
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   //
-  // Check default values as per 2.3.5 of DT spec,
-  // as test root node has no #address-cells or #size-cells.
+  // Check default values as per 2.3.5 of DT spec.
   //
   ASSERT (DtIo->AddressCells == 2);
   ASSERT (DtIo->SizeCells == 1);
@@ -134,8 +133,12 @@ TestG2Fn (
 {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
-  ASSERT (DtIo->AddressCells == 4);
-  ASSERT (DtIo->SizeCells == 3);
+  //
+  // #address-cells and #size-cells apply to children,
+  // not the node itself.
+  //
+  ASSERT (DtIo->AddressCells == 2);
+  ASSERT (DtIo->SizeCells == 1);
   return TRUE;
 }
 
@@ -184,23 +187,6 @@ TestG2P1Fn (
 {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
-  //
-  // These should be not inherited from g2.
-  //
-  ASSERT (DtIo->AddressCells == 2);
-  ASSERT (DtIo->SizeCells == 2);
-  return TRUE;
-}
-
-STATIC
-BOOLEAN
-EFIAPI
-TestG2P2Fn (
-  IN DT_DEVICE  *DtDevice
-  )
-{
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_BROKEN);
   return TRUE;
 }
@@ -208,7 +194,7 @@ TestG2P2Fn (
 STATIC
 BOOLEAN
 EFIAPI
-TestG2P3Fn (
+TestG2P2Fn (
   IN DT_DEVICE  *DtDevice
   )
 {
@@ -359,20 +345,13 @@ TestsPopulate (
     Buffer,
     g2p1,
     TestG2P1Fn,
-    fdt_property_u32 (Buffer, "#address-cells", 2),
+    fdt_property_u32 (Buffer, "#address-cells", 5),
     fdt_property_u32 (Buffer, "#size-cells", 2)
     );
   NEW_NODE (
     Buffer,
     g2p2,
     TestG2P2Fn,
-    fdt_property_u32 (Buffer, "#address-cells", 5),
-    fdt_property_u32 (Buffer, "#size-cells", 2)
-    );
-  NEW_NODE (
-    Buffer,
-    g2p3,
-    TestG2P3Fn,
     fdt_property_u32 (Buffer, "#address-cells", 2),
     fdt_property_u32 (Buffer, "#size-cells", 5)
     );

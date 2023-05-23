@@ -518,6 +518,9 @@ struct _EFI_DT_IO_PROTOCOL {
   EFI_DT_STATUS                         DeviceStatus;
   UINT8                                 AddressCells;
   UINT8                                 SizeCells;
+  UINT8                                 ChildAddressCells;
+  UINT8                                 ChildSizeCells;
+
   BOOLEAN                               IsDmaCoherent;
   //
   // Core.

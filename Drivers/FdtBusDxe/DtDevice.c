@@ -35,7 +35,6 @@ DtDeviceCreate (
   EFI_DT_DEVICE_PATH_NODE  *NewPathNode;
   EFI_DT_DEVICE_PATH_NODE  *FullPath;
   EFI_STATUS               Status;
-  BOOLEAN                  HasChildren;
   BOOLEAN                  Broken;
   VOID                     *TreeBase;
 
@@ -91,27 +90,43 @@ DtDeviceCreate (
     Broken = TRUE;
   }
 
-  HasChildren = fdt_first_subnode (TreeBase, FdtNode) >= 0;
-
-  if (HasChildren || (Parent == NULL)) {
-    Status = FdtGetAddressCells (
-               TreeBase,
-               FdtNode,
-               &DtDevice->DtIo.AddressCells
-               );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a: FdtGetAddressCells: %r\n", __func__, Status));
-      Broken = TRUE;
-    }
-
-    Status = FdtGetSizeCells (TreeBase, FdtNode, &DtDevice->DtIo.SizeCells);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a: FdtGetSizeCells: %r\n", __func__, Status));
-      Broken = TRUE;
+  Status = FdtGetAddressCells (
+             TreeBase,
+             FdtNode,
+             &DtDevice->DtIo.AddressCells
+             );
+  if (!EFI_ERROR (Status)) {
+    DtDevice->Flags |= DT_DEVICE_HAS_ADDRESS_CELLS;
+  } else if (Status == EFI_NOT_FOUND) {
+    if ((Parent != NULL) && ((Parent->Flags & DT_DEVICE_HAS_ADDRESS_CELLS) != 0)) {
+      DtDevice->DtIo.AddressCells = Parent->DtIo.AddressCells;
+    } else {
+      //
+      // Default value in 2.3.5 #address-cells and #size-cells.
+      //
+      DtDevice->DtIo.AddressCells = 2;
     }
   } else {
-    DtDevice->DtIo.AddressCells = Parent->DtIo.AddressCells;
-    DtDevice->DtIo.SizeCells    = Parent->DtIo.SizeCells;
+    DEBUG ((DEBUG_ERROR, "%a: FdtGetAddressCells: %r\n", __func__, Status));
+    Broken = TRUE;
+  }
+
+  Status = FdtGetSizeCells (TreeBase, FdtNode, &DtDevice->DtIo.SizeCells);
+  if (!EFI_ERROR (Status)) {
+    DtDevice->Flags |= DT_DEVICE_HAS_SIZE_CELLS;
+    DEBUG ((DEBUG_ERROR, "%a: has size cells %u\n", Name, DtDevice->DtIo.SizeCells));
+  } else if (Status == EFI_NOT_FOUND) {
+    if ((Parent != NULL) && ((Parent->Flags & DT_DEVICE_HAS_SIZE_CELLS) != 0)) {
+      DtDevice->DtIo.SizeCells = Parent->DtIo.SizeCells;
+    } else {
+      //
+      // Default value in 2.3.5 #address-cells and #size-cells.
+      //
+      DtDevice->DtIo.SizeCells = 1;
+    }
+  } else {
+    DEBUG ((DEBUG_ERROR, "%a: FdtGetSizeCells: %r\n", __func__, Status));
+    Broken = TRUE;
   }
 
   DtDevice->DtIo.IsDmaCoherent = FdtGetDmaCoherency (TreeBase, FdtNode);
@@ -121,7 +136,7 @@ DtDeviceCreate (
     DtDevice->DtIo.DeviceStatus = EFI_DT_STATUS_BROKEN;
   }
 
-  DtDevice->Flags |= DeviceFlags;
+  DtDevice->Flags |= DeviceFlags & DT_DEVICE_INHERITED;
   if (FdtIsDeviceCritical (TreeBase, FdtNode) ||
       (AsciiStrCmp (DtDevice->DtIo.DeviceType, "memory") == 0))
   {
@@ -410,7 +425,7 @@ DtDeviceScan (
                Node,
                Name,
                DtDevice,
-               DtDevice->Flags & DT_DEVICE_INHERITED,
+               DtDevice->Flags,
                &NodeDtDevice
                );
     if (Status == EFI_ALREADY_STARTED) {

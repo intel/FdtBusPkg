@@ -38,9 +38,11 @@ extern EFI_COMPONENT_NAME2_PROTOCOL  gComponentName2;
 extern EFI_DRIVER_BINDING_PROTOCOL   gDriverBinding;
 extern LIST_ENTRY                    gCriticalDevices;
 
-#define DT_DEVICE_CRITICAL  (1UL << 0)
+#define DT_DEVICE_CRITICAL           (1UL << 0)
+#define DT_DEVICE_HAS_SIZE_CELLS     (1UL << 1)
+#define DT_DEVICE_HAS_ADDRESS_CELLS  (1UL << 2)
 #ifndef MDEPKG_NDEBUG
-#define DT_DEVICE_TEST  (1UL << 1)
+#define DT_DEVICE_TEST  (1UL << 3)
 #else
 #define DT_DEVICE_TEST  0
 #endif /* MDEPKG_NDEBUG */

@@ -103,6 +103,7 @@ FdtGetStatus (
   @param[out]   Cells            UINTN
 
   @retval EFI_SUCCESS            *Out is populated.
+  @retval EFI_NOT_FOUND          No #size-cells property.
   @retval Others                 Errors.
 
 **/
@@ -113,15 +114,26 @@ FdtGetSizeCells (
   OUT UINT8  *Cells
   )
 {
-  INTN  Result;
+  INT32              Len;
+  UINT8              Value;
+  CONST EFI_DT_CELL  *Buf;
 
-  Result = fdt_size_cells (TreeBase, FdtNode);
-  if (Result >= 0) {
-    *Cells = (UINT8)Result;
-    return EFI_SUCCESS;
+  Buf = fdt_getprop (TreeBase, FdtNode, "#size-cells", &Len);
+  if (!Buf) {
+    return EFI_NOT_FOUND;
   }
 
-  return EFI_DEVICE_ERROR;
+  if (Len != sizeof (EFI_DT_CELL)) {
+    return EFI_DEVICE_ERROR;
+  }
+
+  Value = fdt32_to_cpu (*Buf);
+  if ((Value <= 0) || (Value > FDT_MAX_NCELLS)) {
+    return EFI_DEVICE_ERROR;
+  }
+
+  *Cells = Value;
+  return EFI_SUCCESS;
 }
 
 /**
@@ -132,25 +144,37 @@ FdtGetSizeCells (
   @param[out]   Cells            UINTN
 
   @retval EFI_SUCCESS            *Out is populated.
+  @retval EFI_NOT_FOUND          No #address-cells property.
   @retval Others                 Errors.
 
 **/
 EFI_STATUS
 FdtGetAddressCells (
-  IN VOID    *TreeBase,
+  IN  VOID   *TreeBase,
   IN  INTN   FdtNode,
   OUT UINT8  *Cells
   )
 {
-  INTN  Result;
+  INT32              Len;
+  UINT8              Value;
+  CONST EFI_DT_CELL  *Buf;
 
-  Result = fdt_address_cells (TreeBase, FdtNode);
-  if (Result >= 0) {
-    *Cells = (UINT8)Result;
-    return EFI_SUCCESS;
+  Buf = fdt_getprop (TreeBase, FdtNode, "#address-cells", &Len);
+  if (!Buf) {
+    return EFI_NOT_FOUND;
   }
 
-  return EFI_DEVICE_ERROR;
+  if (Len != sizeof (EFI_DT_CELL)) {
+    return EFI_DEVICE_ERROR;
+  }
+
+  Value = fdt32_to_cpu (*Buf);
+  if ((Value <= 0) || (Value > FDT_MAX_NCELLS)) {
+    return EFI_DEVICE_ERROR;
+  }
+
+  *Cells = Value;
+  return EFI_SUCCESS;
 }
 
 /**

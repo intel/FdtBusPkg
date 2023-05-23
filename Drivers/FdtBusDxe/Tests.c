@@ -12,6 +12,17 @@
 
 #define TEST_DT_SIZE  4096
 
+//
+// Encode the pointer as a 32-bit offset to not have to worry
+// when we go 128-bit.
+//
+
+#define NODE_TEST(Buffer, Test, ...)  do {                              \
+    if (Test != NULL) {                                                 \
+      fdt_property_u32 (Buffer, "uefi,FdtBusDxe-Test", (UINTN) Test - (UINTN) TestsInit); \
+    }                                                                   \
+  } while (0)
+
 #define BEGIN_NODE(Buffer, Name)  do {          \
     INTN  FdtErr;                               \
                                                 \
@@ -44,16 +55,9 @@
     }                                           \
   } while (0)
 
-//
-// Encode the pointer as a 32-bit offset to not have to worry
-// when we go 128-bit.
-//
-
 #define NEW_NODE(Buffer, Name, Test, ...)  do {                         \
     BEGIN_NODE (Buffer, Name);                                          \
-    if (Test != NULL) {                                                 \
-      fdt_property_u32 (Buffer, "uefi,FdtBusDxe-Test", (UINTN) Test - (UINTN) TestsInit); \
-    }                                                                   \
+    NODE_TEST (Buffer, Test);                                           \
     __VA_ARGS__;                                                        \
     END_NODE (Buffer, Name);                                            \
   } while (0)
@@ -61,7 +65,7 @@
 VOID  *gTestTreeBase;
 
 /**
-  Test node test.
+  Root node test.
 
   @param[in] DtDevice       Device to test.
 
@@ -72,14 +76,19 @@ VOID  *gTestTreeBase;
 STATIC
 BOOLEAN
 EFIAPI
-Test1Fn (
+RootTestFn (
   IN DT_DEVICE  *DtDevice
   )
 {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
-  ASSERT (DtIo->IsCompatible (DtIo, "test1_compatible") == EFI_SUCCESS);
-  ASSERT (!DtIo->IsDmaCoherent);
+  //
+  // Check default values as per 2.3.5 of DT spec,
+  // as test root node has no #address-cells or #size-cells.
+  //
+  ASSERT (DtIo->AddressCells == 2);
+  ASSERT (DtIo->SizeCells == 1);
+
   return TRUE;
 }
 
@@ -95,13 +104,140 @@ Test1Fn (
 STATIC
 BOOLEAN
 EFIAPI
-Test2Fn (
+TestG0Fn (
+  IN DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
+  ASSERT (DtIo->IsCompatible (DtIo, "test1_compatible") == EFI_SUCCESS);
+  ASSERT (!DtIo->IsDmaCoherent);
+
+  return TRUE;
+}
+
+/**
+  Test node test.
+
+  @param[in] DtDevice       Device to test.
+
+  @retval TRUE              Success.
+  @retval FALSE             Faulure.
+
+**/
+STATIC
+BOOLEAN
+EFIAPI
+TestG1Fn (
   IN DT_DEVICE  *DtDevice
   )
 {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->IsDmaCoherent);
+  return TRUE;
+}
+
+/**
+  Test node test.
+
+  @param[in] DtDevice       Device to test.
+
+  @retval TRUE              Success.
+  @retval FALSE             Faulure.
+
+**/
+STATIC
+BOOLEAN
+EFIAPI
+TestG2Fn (
+  IN DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
+  ASSERT (DtIo->AddressCells == 4);
+  ASSERT (DtIo->SizeCells == 3);
+  return TRUE;
+}
+
+/**
+  Test node test.
+
+  @param[in] DtDevice       Device to test.
+
+  @retval TRUE              Success.
+  @retval FALSE             Faulure.
+
+**/
+STATIC
+BOOLEAN
+EFIAPI
+TestG2P0Fn (
+  IN DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
+  //
+  // These should be inherited from g2.
+  //
+  ASSERT (DtIo->AddressCells == 4);
+  ASSERT (DtIo->SizeCells == 3);
+  return TRUE;
+}
+
+/**
+  Test node test.
+
+  @param[in] DtDevice       Device to test.
+
+  @retval TRUE              Success.
+  @retval FALSE             Faulure.
+
+**/
+STATIC
+BOOLEAN
+EFIAPI
+TestG2P0C1Fn  (
+  IN DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
+  //
+  // These should be the defaults, as Parent1 doesn't
+  // have own #address-cells and #size-cells and there is
+  // no inheritance.
+  //
+  ASSERT (DtIo->AddressCells == 2);
+  ASSERT (DtIo->SizeCells == 1);
+  return TRUE;
+}
+
+/**
+  Test node test.
+
+  @param[in] DtDevice       Device to test.
+
+  @retval TRUE              Success.
+  @retval FALSE             Faulure.
+
+**/
+STATIC
+BOOLEAN
+EFIAPI
+TestG2P1Fn (
+  IN DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
+  //
+  // These should be not inherited from g2.
+  //
+  ASSERT (DtIo->AddressCells == 2);
+  ASSERT (DtIo->SizeCells == 2);
   return TRUE;
 }
 
@@ -120,19 +256,54 @@ TestsPopulate (
   VOID  *Buffer
   )
 {
-  NEW_NODE (
-    Buffer,
-    Test1,
-    Test1Fn,
-    fdt_property_string (Buffer, "compatible", "test1_compatible")
-    );
+  //
+  // Test handling for default #address-cells and #size-cells.
+  //
+
+  NODE_TEST (Buffer, RootTestFn);
+
+  //
+  // Test compatible and dma-coherent properties.
+  //
 
   NEW_NODE (
     Buffer,
-    Test2,
-    Test2Fn,
+    g0,
+    TestG0Fn,
+    fdt_property_string (Buffer, "compatible", "test1_compatible")
+    );
+
+  //
+  // Test dma-coherent property.
+  //
+
+  NEW_NODE (
+    Buffer,
+    g1,
+    TestG1Fn,
     fdt_property (Buffer, "dma-coherent", NULL, 0)
     );
+
+  //
+  // More tests for #address-cells and #size-cells.
+  //
+
+  BEGIN_NODE (Buffer, g2);
+  NODE_TEST (Buffer, TestG2Fn);
+  fdt_property_u32 (Buffer, "#address-cells", 4);
+  fdt_property_u32 (Buffer, "#size-cells", 3);
+  BEGIN_NODE (Buffer, g2p0);
+  NODE_TEST (Buffer, TestG2P0Fn);
+  BEGIN_NODE (Buffer, g2p0c1);
+  NODE_TEST (Buffer, TestG2P0C1Fn);
+  END_NODE (Buffer, g2p0c1);
+  END_NODE (Buffer, g2p0);
+  BEGIN_NODE (Buffer, g2p1);
+  NODE_TEST (Buffer, TestG2P1Fn);
+  fdt_property_u32 (Buffer, "#address-cells", 2);
+  fdt_property_u32 (Buffer, "#size-cells", 2);
+  END_NODE (Buffer, g2p1);
+  END_NODE (Buffer, g2);
 
   return 0;
 }

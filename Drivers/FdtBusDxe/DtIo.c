@@ -270,6 +270,13 @@ DtIoParseProp (
 
   DtDevice = DT_DEV_FROM_THIS (This);
 
+  //
+  // Enforced in FdtGetAddressCells/FdtGetSizeCells.
+  //
+
+  ASSERT (This->AddressCells <= FDT_MAX_NCELLS);
+  ASSERT (This->SizeCells <= FDT_MAX_NCELLS);
+
   if (Type == EFI_DT_VALUE_REG) {
     ElemCells = This->AddressCells + This->SizeCells;
   } else {
@@ -291,13 +298,13 @@ DtIoParseProp (
     Reg       = Buffer;
     Reg->Base = 0;
     for (Iter = 0; Iter < This->AddressCells; Iter++, Buf++) {
-      Reg->Base |= ((UINTN)fdt32_to_cpu (*Buf)) <<
+      Reg->Base |= ((EFI_DT_BUS_ADDRESS)fdt32_to_cpu (*Buf)) <<
                    (32 * (This->AddressCells - (Iter + 1)));
     }
 
     Reg->Length = 0;
     for (Iter = 0; Iter < This->SizeCells; Iter++, Buf++) {
-      Reg->Length |= ((UINTN)fdt32_to_cpu (*Buf)) <<
+      Reg->Length |= ((EFI_DT_SIZE)fdt32_to_cpu (*Buf)) <<
                      (32 * (This->SizeCells - (Iter + 1)));
     }
 

@@ -98,13 +98,53 @@ TestG0Fn (
   IN DT_DEVICE  *DtDevice
   )
 {
+  EFI_DT_REG          Reg;
+  EFI_DT_PROPERTY     Property;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
+  ASSERT (
+    DtIo->IsCompatible (NULL, "test1_compatible") ==
+    EFI_INVALID_PARAMETER
+    );
+  ASSERT (DtIo->IsCompatible (DtIo, NULL) == EFI_INVALID_PARAMETER);
   ASSERT (DtIo->IsCompatible (DtIo, "test1_compatible") == EFI_SUCCESS);
+  ASSERT (DtIo->IsCompatible (DtIo, "asldflkasjf") == EFI_NOT_FOUND);
   ASSERT (AsciiStrCmp (DtIo->Model, "") == 0);
   ASSERT (AsciiStrCmp (DtIo->DeviceType, "") == 0);
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_OKAY);
   ASSERT (!DtIo->IsDmaCoherent);
+
+  ASSERT (
+    DtIo->GetProp (NULL, "compatible", &Property) ==
+    EFI_INVALID_PARAMETER
+    );
+  ASSERT (
+    DtIo->GetProp (DtIo, NULL, &Property) ==
+    EFI_INVALID_PARAMETER
+    );
+  ASSERT (
+    DtIo->GetProp (DtIo, "compatible", NULL) ==
+    EFI_INVALID_PARAMETER
+    );
+  ASSERT (
+    DtIo->GetProp (DtIo, "alskdflksmdf", &Property) ==
+    EFI_NOT_FOUND
+    );
+  ASSERT (
+    DtIo->GetProp (DtIo, "compatible", &Property) ==
+    EFI_SUCCESS
+    );
+  ASSERT (
+    AsciiStrnCmp (
+      Property.Begin,
+      "test1_compatible",
+      Property.End - Property.Begin
+      ) == 0
+    );
+
+  ASSERT (DtIo->GetReg (NULL, 0, &Reg) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetReg (DtIo, 0, NULL) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetReg (DtIo, 0, &Reg) == EFI_NOT_FOUND);
 
   return TRUE;
 }
@@ -149,6 +189,7 @@ TestG2P0Fn (
   IN DT_DEVICE  *DtDevice
   )
 {
+  EFI_DT_REG          Reg;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   //
@@ -156,6 +197,31 @@ TestG2P0Fn (
   //
   ASSERT (DtIo->AddressCells == 4);
   ASSERT (DtIo->SizeCells == 3);
+
+  //
+  // Correctly parse 'reg' based on address cells == 4 and
+  // size cells == 3.
+  //
+  ASSERT (!EFI_ERROR (DtIo->GetReg (DtIo, 0, &Reg)));
+  ASSERT (
+    (Reg.Base & (UINTN)-1UL) ==
+    0x0000000300000004
+    );
+  ASSERT (
+    ((Reg.Base >> 64) & (UINTN)-1UL) ==
+    0x0000000100000002
+    );
+  ASSERT (
+    (Reg.Length & (UINTN)-1UL) ==
+    0x0000000600000007
+    );
+  ASSERT (
+    ((Reg.Length >> 64) & (UINTN)-1UL) ==
+    0x0000000000000005
+    );
+
+  ASSERT (DtIo->GetReg (DtIo, 1, &Reg) == EFI_NOT_FOUND);
+
   return TRUE;
 }
 
@@ -297,6 +363,16 @@ TestsPopulate (
   VOID  *Buffer
   )
 {
+  UINT32  G2P0RegProp[] = {
+    cpu_to_fdt32 (0x1),
+    cpu_to_fdt32 (0x2),
+    cpu_to_fdt32 (0x3),
+    cpu_to_fdt32 (0x4),
+    cpu_to_fdt32 (0x5),
+    cpu_to_fdt32 (0x6),
+    cpu_to_fdt32 (0x7)
+  };
+
   //
   // Test handling for default #address-cells and #size-cells.
   //
@@ -304,7 +380,8 @@ TestsPopulate (
   NODE_TEST (Buffer, RootTestFn);
 
   //
-  // Test compatible, model, status, and dma-coherent properties.
+  // Test compatible, model, status, and dma-coherent properties,
+  // GetProp, IsCompatible, GetReg.
   //
 
   NEW_NODE (
@@ -328,7 +405,7 @@ TestsPopulate (
     );
 
   //
-  // More tests for #address-cells and #size-cells.
+  // More tests for #address-cells and #size-cells, reg/GetReg.
   //
 
   BEGIN_NODE (Buffer, g2);
@@ -337,6 +414,7 @@ TestsPopulate (
   fdt_property_u32 (Buffer, "#size-cells", 3);
   BEGIN_NODE (Buffer, g2p0);
   NODE_TEST (Buffer, TestG2P0Fn);
+  fdt_property (Buffer, "reg", G2P0RegProp, sizeof (G2P0RegProp));
   BEGIN_NODE (Buffer, g2p0c1);
   NODE_TEST (Buffer, TestG2P0C1Fn);
   END_NODE (Buffer, g2p0c1);

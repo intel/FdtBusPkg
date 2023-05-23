@@ -60,19 +60,19 @@ typedef enum {
   EfiDtIoDmaOperationMaximum
 } EFI_DT_IO_PROTOCOL_DMA_OPERATION;
 
-typedef UINTN  EFI_DT_ADDRESS;
-typedef UINTN  EFI_DT_SIZE;
-typedef UINT32 EFI_DT_CELL;
+typedef __int128 EFI_DT_BUS_ADDRESS;
+typedef __int128 EFI_DT_SIZE;
+typedef UINT32   EFI_DT_CELL;
 
 typedef struct {
-  EFI_DT_ADDRESS    Base;
-  EFI_DT_SIZE       Length;
+  EFI_DT_BUS_ADDRESS    Base;
+  EFI_DT_SIZE           Length;
 } EFI_DT_REG;
 
 typedef struct {
-  EFI_DT_ADDRESS    ChildBase;
-  EFI_DT_ADDRESS    ParentBase;
-  EFI_DT_SIZE       Size;
+  EFI_DT_BUS_ADDRESS    ChildBase;
+  EFI_DT_BUS_ADDRESS    ParentBase;
+  EFI_DT_SIZE           Size;
 } EFI_DT_RANGE;
 
 typedef enum {
@@ -114,7 +114,7 @@ typedef enum {
   ///
   /// An address encoded by #address-cells.
   ///
-  EFI_DT_VALUE_ADDRESS,
+  EFI_DT_VALUE_BUS_ADDRESS,
   ///
   /// A size encoded by #size-cells.
   ///

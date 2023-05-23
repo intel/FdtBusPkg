@@ -442,6 +442,13 @@ TestsInvoke (
     DT_DEVICE  *DtDevice
     );
 
+  if ((DtDevice->Flags & DT_DEVICE_TEST_RAN) != 0) {
+    //
+    // Only run tests once.
+    //
+    return;
+  }
+
   Buf = fdt_getprop (gTestTreeBase, DtDevice->FdtNode, "uefi,FdtBusDxe-Test", &Len);
   if (Buf == NULL) {
     ASSERT (Len == -FDT_ERR_NOTFOUND);
@@ -452,6 +459,8 @@ TestsInvoke (
   Fn = (VOID *)((INT32)fdt32_to_cpu (*((UINT32 *)Buf)) + (UINTN)TestsInit);
   DEBUG ((DEBUG_ERROR, "%a: running unit test\n", DtDevice->DtIo.Name));
   ASSERT (Fn (DtDevice));
+
+  DtDevice->Flags |= DT_DEVICE_TEST_RAN;
 }
 
 /**

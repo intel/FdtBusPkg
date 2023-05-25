@@ -77,7 +77,7 @@ STATIC
 BOOLEAN
 EFIAPI
 RootTestFn (
-  IN DT_DEVICE  *DtDevice
+  IN  DT_DEVICE  *DtDevice
   )
 {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
@@ -95,7 +95,7 @@ STATIC
 BOOLEAN
 EFIAPI
 TestG0Fn (
-  IN DT_DEVICE  *DtDevice
+  IN  DT_DEVICE  *DtDevice
   )
 {
   EFI_DT_REG          Reg;
@@ -153,7 +153,7 @@ STATIC
 BOOLEAN
 EFIAPI
 TestG1Fn (
-  IN DT_DEVICE  *DtDevice
+  IN  DT_DEVICE  *DtDevice
   )
 {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
@@ -168,7 +168,7 @@ STATIC
 BOOLEAN
 EFIAPI
 TestG2Fn (
-  IN DT_DEVICE  *DtDevice
+  IN  DT_DEVICE  *DtDevice
   )
 {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
@@ -186,7 +186,7 @@ STATIC
 BOOLEAN
 EFIAPI
 TestG2P0Fn (
-  IN DT_DEVICE  *DtDevice
+  IN  DT_DEVICE  *DtDevice
   )
 {
   EFI_DT_REG          Reg;
@@ -229,7 +229,7 @@ STATIC
 BOOLEAN
 EFIAPI
 TestG2P0C1Fn  (
-  IN DT_DEVICE  *DtDevice
+  IN  DT_DEVICE  *DtDevice
   )
 {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
@@ -248,7 +248,7 @@ STATIC
 BOOLEAN
 EFIAPI
 TestG2P1Fn (
-  IN DT_DEVICE  *DtDevice
+  IN  DT_DEVICE  *DtDevice
   )
 {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
@@ -261,7 +261,7 @@ STATIC
 BOOLEAN
 EFIAPI
 TestG2P2Fn (
-  IN DT_DEVICE  *DtDevice
+  IN  DT_DEVICE  *DtDevice
   )
 {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
@@ -274,7 +274,7 @@ STATIC
 BOOLEAN
 EFIAPI
 TestG3P0Fn (
-  IN DT_DEVICE  *DtDevice
+  IN  DT_DEVICE  *DtDevice
   )
 {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
@@ -287,7 +287,7 @@ STATIC
 BOOLEAN
 EFIAPI
 TestG3P1Fn (
-  IN DT_DEVICE  *DtDevice
+  IN  DT_DEVICE  *DtDevice
   )
 {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
@@ -300,7 +300,7 @@ STATIC
 BOOLEAN
 EFIAPI
 TestG3P2Fn (
-  IN DT_DEVICE  *DtDevice
+  IN  DT_DEVICE  *DtDevice
   )
 {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
@@ -313,7 +313,7 @@ STATIC
 BOOLEAN
 EFIAPI
 TestG3P3Fn (
-  IN DT_DEVICE  *DtDevice
+  IN  DT_DEVICE  *DtDevice
   )
 {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
@@ -326,7 +326,7 @@ STATIC
 BOOLEAN
 EFIAPI
 TestG3P4Fn (
-  IN DT_DEVICE  *DtDevice
+  IN  DT_DEVICE  *DtDevice
   )
 {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
@@ -339,7 +339,7 @@ STATIC
 BOOLEAN
 EFIAPI
 TestG3P5Fn (
-  IN DT_DEVICE  *DtDevice
+  IN  DT_DEVICE  *DtDevice
   )
 {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
@@ -490,7 +490,7 @@ TestsPopulate (
 **/
 VOID
 TestsInvoke (
-  IN DT_DEVICE  *DtDevice
+  IN  DT_DEVICE  *DtDevice
   )
 {
   CONST VOID      *Buf;

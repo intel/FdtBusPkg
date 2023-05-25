@@ -209,6 +209,18 @@ ProcessMemoryRanges (
       break;
     }
 
+    if (Reg.BusDtIo != NULL) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: range 0x%lx - 0x%lx are not CPU real addresses\n",
+        __func__,
+        Reg.Base,
+        Reg.Base + Reg.Length - 1
+        ));
+      Status = EFI_UNSUPPORTED;
+      break;
+    }
+
     Status = ProcessMemoryRange (&Reg);
     if (EFI_ERROR (Status)) {
       DEBUG ((

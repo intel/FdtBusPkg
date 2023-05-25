@@ -49,11 +49,12 @@ extern LIST_ENTRY                    gCriticalDevices;
 #endif /* MDEPKG_NDEBUG */
 #define DT_DEVICE_INHERITED  DT_DEVICE_TEST
 
-typedef struct {
+typedef struct _DT_DEVICE {
   UINTN                      Signature;
   EFI_HANDLE                 Handle;
   INTN                       FdtNode;
   EFI_DT_DEVICE_PATH_NODE    *DevicePath;
+  struct _DT_DEVICE          *Parent;
   EFI_DT_IO_PROTOCOL         DtIo;
   UINTN                      Flags;
   //
@@ -121,6 +122,15 @@ DtDeviceUnregister (
   IN  DT_DEVICE   *DtDevice,
   IN  EFI_HANDLE  ControllerHandle,
   IN  EFI_HANDLE  DriverBindingHandle
+  );
+
+EFI_STATUS
+DtDeviceTranslateRangeToCpu (
+  IN  DT_DEVICE                 *DtDevice,
+  IN  CONST EFI_DT_BUS_ADDRESS  *In,
+  IN  CONST EFI_DT_SIZE         *Length,
+  OUT EFI_DT_BUS_ADDRESS        *Out,
+  OUT DT_DEVICE                 **OutDevice
   );
 
 CONST CHAR8 *

@@ -67,6 +67,10 @@ typedef UINT32   EFI_DT_CELL;
 typedef struct {
   EFI_DT_BUS_ADDRESS    Base;
   EFI_DT_SIZE           Length;
+  //
+  // BusDevice == NULL means Base is a CPU real address.
+  //
+  EFI_DT_IO_PROTOCOL    *BusDtIo;
 } EFI_DT_REG;
 
 typedef struct {

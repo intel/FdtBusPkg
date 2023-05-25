@@ -203,6 +203,7 @@ TestG2P0Fn (
   // size cells == 3.
   //
   ASSERT (!EFI_ERROR (DtIo->GetReg (DtIo, 0, &Reg)));
+  ASSERT (Reg.BusDtIo == &(DtDevice->Parent->DtIo));
   ASSERT (
     (Reg.Base & (UINTN)-1UL) ==
     0x0000000300000004

@@ -76,6 +76,7 @@ DtDeviceCreate (
   //
   DtDevice->FdtNode    = FdtNode;
   DtDevice->DevicePath = FullPath;
+  DtDevice->Parent     = Parent;
 
   //
   // Properties useful to most clients.
@@ -463,6 +464,92 @@ DtDeviceScan (
     DEBUG ((DEBUG_ERROR, "%a: fdt_for_each_subnode: %a\n", __func__, fdt_strerror (Node)));
     return EFI_DEVICE_ERROR;
   }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Given an [In, In + Length) bus address range for DtDevice, translate it going
+  up the device hierarchy, stops once further translation is no longer possible, returning
+  the translated address in *Out and the matching bus device in *BusDevice. *BusDevice == NULL
+  means the translation went all the way up to the DT root and reflects a CPU real address.
+
+  @param[in]    DtDevice             DtDevice to translate bus address range for.
+  @param[in]    In                   Bus address range base.
+  @param[in]    Length               Bus address range length.
+  @param[out]   Out                  Translated bus address range base.
+  @param[out]   OutDevice            DtDevice in the bus address space of which *Out is valid,
+                                     or NULL.
+
+  @retval EFI_SUCCESS                Success.
+  @retval Other                      Errors.
+
+**/
+EFI_STATUS
+DtDeviceTranslateRangeToCpu (
+  IN  DT_DEVICE                 *DtDevice,
+  IN  CONST EFI_DT_BUS_ADDRESS  *In,
+  IN  CONST EFI_DT_SIZE         *Length,
+  OUT EFI_DT_BUS_ADDRESS        *Out,
+  OUT DT_DEVICE                 **BusDevice
+  )
+{
+  EFI_STATUS       Status;
+  EFI_DT_PROPERTY  Property;
+  DT_DEVICE        *CurDevice;
+  EFI_DT_BUS_ADDRESS CurAddress;
+
+  if ((DtDevice == NULL) || (In == NULL) || (Out == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  CurAddress = *In;
+  CurDevice = DtDevice->Parent;
+  while (CurDevice != NULL) {
+    BOOLEAN  IsIdentity;
+
+    IsIdentity = FALSE;
+    if (CurDevice->Parent == NULL) {
+      //
+      // Root node has no ranges.
+      //
+      IsIdentity = TRUE;
+    } else {
+      Status = DtIoGetProp (&CurDevice->DtIo, "ranges", &Property);
+      if (Status == EFI_NOT_FOUND) {
+        //
+        // Translation stops here.
+        //
+        break;
+      } else if (EFI_ERROR (Status)) {
+        return Status;
+      }
+
+      if (Property.End == Property.Begin) {
+        IsIdentity = TRUE;
+      }
+    }
+
+    if (!IsIdentity) {
+      return EFI_UNSUPPORTED;
+    }
+
+    CurDevice = CurDevice->Parent;
+  }
+
+  if (CurDevice == NULL) {
+    //
+    // Ensure this is a valid CPU address range.
+    //
+    if ((CurAddress > MAX_ADDRESS) ||
+        ((CurAddress + *Length - 1) > MAX_ADDRESS))
+    {
+      return EFI_UNSUPPORTED;
+    }
+  }
+
+  *Out       = CurAddress;
+  *BusDevice = CurDevice;
 
   return EFI_SUCCESS;
 }

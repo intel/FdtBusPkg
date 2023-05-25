@@ -263,6 +263,7 @@ DtIoParseProp (
   UINT8              Iter;
   UINTN              Cells;
   CONST EFI_DT_CELL  *Buf;
+  EFI_STATUS         Status;
 
   if ((This == NULL) || (Prop == NULL) || (Buffer == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -294,6 +295,7 @@ DtIoParseProp (
 
   if (Type == EFI_DT_VALUE_REG) {
     EFI_DT_REG  *Reg;
+    DT_DEVICE   *BusDevice;
 
     Reg       = Buffer;
     Reg->Base = 0;
@@ -308,10 +310,28 @@ DtIoParseProp (
                      (32 * (This->SizeCells - (Iter + 1)));
     }
 
-    //
-    // TODO: need to translate address instead of assuming
-    // reg always encodes a CPU address.
-    //
+    Reg->BusDtIo = NULL;
+    BusDevice    = NULL;
+    Status       = DtDeviceTranslateRangeToCpu (
+                     DtDevice,
+                     &Reg->Base,
+                     &Reg->Length,
+                     &Reg->Base,
+                     &BusDevice
+                     );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: DtDeviceTranslateRangeToCpu: %r\n",
+        __func__,
+        Status
+        ));
+      return Status;
+    }
+
+    if (BusDevice != NULL) {
+      Reg->BusDtIo = &BusDevice->DtIo;
+    }
   }
 
   Prop->Iter = Buf;

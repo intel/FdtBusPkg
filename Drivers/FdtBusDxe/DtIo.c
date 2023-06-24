@@ -437,7 +437,65 @@ DtIoReadReg (
   IN OUT VOID                      *Buffer
   )
 {
-  return EFI_UNSUPPORTED;
+  UINT8         *DataPtr;
+  UINTN         Index;
+
+  //
+  // Check for invalid input parameters
+  //
+  if (This == NULL || Reg == NULL || Buffer == NULL ||
+      Width > EfiDtIoWidthUint64) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Check if the offset is within the range of the register space
+  //
+  if (Offset + (Count * (1 << Width)) > Reg->Length) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Set the data pointer to the beginning of the buffer
+  //
+  DataPtr = (UINT8*)Buffer;
+
+  //
+  // Read data from the device register based on the specified width
+  //
+  for (Index = 0; Index < Count; ++Index) {
+    switch (Width) {
+    case EfiDtIoWidthUint8:
+      *(UINT8*)((UINTN)DataPtr) = *(UINT8*)((UINTN)(Reg->Base + Offset));
+      DataPtr++;
+      break;
+
+    case EfiDtIoWidthUint16:
+      *(UINT16*)((UINTN)DataPtr) = *(UINT16*)((UINTN)(Reg->Base + Offset));
+      DataPtr += sizeof (UINT16);
+      break;
+
+    case EfiDtIoWidthUint32:
+      *(UINT32*)((UINTN)DataPtr) = *(UINT32*)((UINTN)(Reg->Base + Offset));
+      DataPtr += sizeof (UINT32);
+      break;
+
+    case EfiDtIoWidthUint64:
+      *(UINT64*)((UINTN)DataPtr) = *(UINT64*)((UINTN)(Reg->Base + Offset));
+      DataPtr += sizeof (UINT64);
+      break;
+
+    default:
+      return EFI_UNSUPPORTED;
+    }
+
+    //
+    // Move to the next offset
+    //
+    Offset += 1 << Width;
+  }
+
+  return EFI_SUCCESS;
 }
 
 /**

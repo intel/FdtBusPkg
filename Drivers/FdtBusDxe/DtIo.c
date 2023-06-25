@@ -444,15 +444,17 @@ DtIoReadReg (
   // Check for invalid input parameters
   //
   if (This == NULL || Reg == NULL || Buffer == NULL ||
-      Width > EfiDtIoWidthUint64) {
+      Width > EfiDtIoWidthMaximum) {
     return EFI_INVALID_PARAMETER;
   }
 
   //
   // Check if the offset is within the range of the register space
   //
-  if (Offset + (Count * (1 << Width)) > Reg->Length) {
-    return EFI_INVALID_PARAMETER;
+  if ((Width >= EfiDtIoWidthUint8) && (Width <= EfiDtIoWidthUint64)) {
+    if (Offset + (Count * (1 << Width)) > Reg->Length) {
+      return EFI_INVALID_PARAMETER;
+    }
   }
 
   //

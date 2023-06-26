@@ -373,7 +373,55 @@ DtIoPollReg (
   OUT UINT64                    *Result
   )
 {
-  return EFI_UNSUPPORTED;
+  EFI_STATUS  Status;
+  UINT64      NumberOfTicks;
+  UINT32      Remainder;
+  UINT64      StartTick;
+  UINT64      EndTick;
+  UINT64      CurrentTick;
+  UINT64      ElapsedTick;
+  UINT64      Frequency;
+
+  if (This == NULL || Result == NULL || Width > EfiDtIoWidthMaximum) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // No matter what, always do a single poll.
+  //
+  Status = DtIoReadReg (This, Width, Reg, Offset, 1, Result);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  if (Delay == 0) {
+    return EFI_SUCCESS;
+  } else {
+    //
+    // NumberOfTicks = Frenquency * Delay / EFI_TIMER_PERIOD_SECONDS(1)
+    //
+    Frequency     = GetPerformanceCounterProperties (&StartTick, &EndTick);
+    NumberOfTicks = MultThenDivU64x64x32 (Frequency, Delay, (UINT32)EFI_TIMER_PERIOD_SECONDS (1), &Remainder);
+    if (Remainder >= (UINTN)EFI_TIMER_PERIOD_SECONDS (1) / 2) {
+      NumberOfTicks++;
+    }
+
+    for ( ElapsedTick = 0, CurrentTick = GetPerformanceCounter ();
+          ElapsedTick <= NumberOfTicks;
+          ElapsedTick += GetElapsedTick (&CurrentTick, StartTick, EndTick)
+          ) {
+      Status = DtIoReadReg (This, Width, Reg, Offset, 1, Result);
+      if (EFI_ERROR (Status)) {
+        return Status;
+      }
+
+      if ((*Result & Mask) == Value) {
+        return EFI_SUCCESS;
+      }
+    }
+  }
+
+  return EFI_TIMEOUT;
 }
 
 /**

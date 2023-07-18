@@ -402,7 +402,7 @@ DtIoPollReg (
   UINT64      ElapsedTick;
   UINT64      Frequency;
 
-  if (This == NULL || Result == NULL || Width > EfiDtIoWidthMaximum) {
+  if ((This == NULL) || (Result == NULL) || (Width >= EfiDtIoWidthMaximum)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -429,7 +429,8 @@ DtIoPollReg (
     for ( ElapsedTick = 0, CurrentTick = GetPerformanceCounter ();
           ElapsedTick <= NumberOfTicks;
           ElapsedTick += GetElapsedTick (&CurrentTick, StartTick, EndTick)
-          ) {
+          )
+    {
       Status = DtIoReadReg (This, Width, Reg, Offset, 1, Result);
       if (EFI_ERROR (Status)) {
         return Status;

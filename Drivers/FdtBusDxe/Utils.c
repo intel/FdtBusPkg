@@ -194,3 +194,85 @@ DtPathMatchesHandle (
 
   return FALSE;
 }
+
+/**
+  Return the result of (Multiplicand * Multiplier / Divisor).
+
+  @param Multiplicand A 64-bit unsigned value.
+  @param Multiplier   A 64-bit unsigned value.
+  @param Divisor      A 32-bit unsigned value.
+  @param Remainder    A pointer to a 32-bit unsigned value. This parameter is
+                      optional and may be NULL.
+
+  @return Multiplicand * Multiplier / Divisor.
+**/
+UINT64
+MultThenDivU64x64x32 (
+  IN      UINT64  Multiplicand,
+  IN      UINT64  Multiplier,
+  IN      UINT32  Divisor,
+  OUT     UINT32  *Remainder  OPTIONAL
+  )
+{
+  UINT64  Uint64;
+  UINT32  LocalRemainder;
+  UINT32  Uint32;
+
+  if (Multiplicand > DivU64x64Remainder (MAX_UINT64, Multiplier, NULL)) {
+    //
+    // Make sure Multiplicand is the bigger one.
+    //
+    if (Multiplicand < Multiplier) {
+      Uint64       = Multiplicand;
+      Multiplicand = Multiplier;
+      Multiplier   = Uint64;
+    }
+
+    //
+    // Because Multiplicand * Multiplier overflows,
+    //   Multiplicand * Multiplier / Divisor
+    // = (2 * Multiplicand' + 1) * Multiplier / Divisor
+    // = 2 * (Multiplicand' * Multiplier / Divisor) + Multiplier / Divisor
+    //
+    Uint64 = MultThenDivU64x64x32 (RShiftU64 (Multiplicand, 1), Multiplier, Divisor, &LocalRemainder);
+    Uint64 = LShiftU64 (Uint64, 1);
+    Uint32 = 0;
+    if ((Multiplicand & 0x1) == 1) {
+      Uint64 += DivU64x32Remainder (Multiplier, Divisor, &Uint32);
+    }
+
+    return Uint64 + DivU64x32Remainder (Uint32 + LShiftU64 (LocalRemainder, 1), Divisor, Remainder);
+  } else {
+    return DivU64x32Remainder (MultU64x64 (Multiplicand, Multiplier), Divisor, Remainder);
+  }
+}
+
+/**
+  Return the elapsed tick count from CurrentTick.
+
+  @param  CurrentTick  On input, the previous tick count.
+                       On output, the current tick count.
+  @param  StartTick    The value the performance counter starts with when it
+                       rolls over.
+  @param  EndTick      The value that the performance counter ends with before
+                       it rolls over.
+
+  @return  The elapsed tick count from CurrentTick.
+**/
+UINT64
+GetElapsedTick (
+  UINT64  *CurrentTick,
+  UINT64  StartTick,
+  UINT64  EndTick
+  )
+{
+  UINT64  PreviousTick;
+
+  PreviousTick = *CurrentTick;
+  *CurrentTick = GetPerformanceCounter ();
+  if (StartTick < EndTick) {
+    return *CurrentTick - PreviousTick;
+  } else {
+    return PreviousTick - *CurrentTick;
+  }
+}

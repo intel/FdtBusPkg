@@ -43,6 +43,7 @@
   HobLib
   FdtLib
   DevicePathLib
+  TimerLib
 
 [Protocols]
   gEfiDtIoProtocolGuid

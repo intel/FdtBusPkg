@@ -10,6 +10,7 @@
 #define __FDT_BUS_DXE_H__
 
 #include <Uefi.h>
+#include <Protocol/CpuIo2.h>
 #include <Protocol/DtIo.h>
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -27,7 +28,8 @@
 #define DT_DEV_FROM_THIS(a)  CR(a, DT_DEVICE, DtIo, DT_DEV_SIGNATURE)
 #define DT_DEV_FROM_LINK(a)  CR(a, DT_DEVICE, Link, DT_DEV_SIGNATURE)
 
-extern VOID  *gDeviceTreeBase;
+extern EFI_CPU_IO2_PROTOCOL  *gCpuIo2;
+extern VOID                  *gDeviceTreeBase;
 #ifndef MDEPKG_NDEBUG
 extern VOID  *gTestTreeBase;
 #else
@@ -239,7 +241,7 @@ DtIoPollReg (
   IN  EFI_DT_IO_PROTOCOL        *This,
   IN  EFI_DT_IO_PROTOCOL_WIDTH  Width,
   IN  EFI_DT_REG                *Reg,
-  IN  UINT64                    Offset,
+  IN  EFI_DT_SIZE               Offset,
   IN  UINT64                    Mask,
   IN  UINT64                    Value,
   IN  UINT64                    Delay,
@@ -252,7 +254,7 @@ DtIoWriteReg (
   IN     EFI_DT_IO_PROTOCOL        *This,
   IN     EFI_DT_IO_PROTOCOL_WIDTH  Width,
   IN     EFI_DT_REG                *Reg,
-  IN     UINT64                    Offset,
+  IN     EFI_DT_SIZE               Offset,
   IN     UINTN                     Count,
   IN OUT VOID                      *Buffer
   );
@@ -263,7 +265,7 @@ DtIoReadReg (
   IN     EFI_DT_IO_PROTOCOL        *This,
   IN     EFI_DT_IO_PROTOCOL_WIDTH  Width,
   IN     EFI_DT_REG                *Reg,
-  IN     UINT64                    Offset,
+  IN     EFI_DT_SIZE               Offset,
   IN     UINTN                     Count,
   IN OUT VOID                      *Buffer
   );
@@ -274,9 +276,9 @@ DtIoCopyReg (
   IN  EFI_DT_IO_PROTOCOL        *This,
   IN  EFI_DT_IO_PROTOCOL_WIDTH  Width,
   IN  EFI_DT_REG                *DestReg,
-  IN  UINT64                    DestOffset,
+  IN  EFI_DT_SIZE               DestOffset,
   IN  EFI_DT_REG                *SrcReg,
-  IN  UINT64                    SrcOffset,
+  IN  EFI_DT_SIZE               SrcOffset,
   IN  UINTN                     Count
   );
 

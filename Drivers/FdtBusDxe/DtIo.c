@@ -8,6 +8,26 @@
 
 #include "FdtBusDxe.h"
 
+//
+// For convenience, EFI_DT_IO_PROTOCOL_WIDTH exactly follows the CpuIo2
+// definitions.
+//
+#define _(x)  (UINTN)(EfiDtIoWidth##x) == (UINTN)(EfiCpuIoWidth##x), #x
+STATIC_ASSERT (_ (Uint8));
+STATIC_ASSERT (_ (Uint16));
+STATIC_ASSERT (_ (Uint32));
+STATIC_ASSERT (_ (Uint64));
+STATIC_ASSERT (_ (FifoUint8));
+STATIC_ASSERT (_ (FifoUint16));
+STATIC_ASSERT (_ (FifoUint32));
+STATIC_ASSERT (_ (FifoUint64));
+STATIC_ASSERT (_ (FillUint8));
+STATIC_ASSERT (_ (FillUint16));
+STATIC_ASSERT (_ (FillUint32));
+STATIC_ASSERT (_ (FillUint64));
+STATIC_ASSERT (_ (Maximum));
+#undef _
+
 /**
   Looks up an EFI_DT_IO_PROTOCOL instance given a path or alias.
 
@@ -366,7 +386,7 @@ DtIoPollReg (
   IN  EFI_DT_IO_PROTOCOL        *This,
   IN  EFI_DT_IO_PROTOCOL_WIDTH  Width,
   IN  EFI_DT_REG                *Reg,
-  IN  UINT64                    Offset,
+  IN  EFI_DT_SIZE               Offset,
   IN  UINT64                    Mask,
   IN  UINT64                    Value,
   IN  UINT64                    Delay,
@@ -400,7 +420,7 @@ DtIoWriteReg (
   IN     EFI_DT_IO_PROTOCOL        *This,
   IN     EFI_DT_IO_PROTOCOL_WIDTH  Width,
   IN     EFI_DT_REG                *Reg,
-  IN     UINT64                    Offset,
+  IN     EFI_DT_SIZE               Offset,
   IN     UINTN                     Count,
   IN OUT VOID                      *Buffer
   )
@@ -432,72 +452,62 @@ DtIoReadReg (
   IN     EFI_DT_IO_PROTOCOL        *This,
   IN     EFI_DT_IO_PROTOCOL_WIDTH  Width,
   IN     EFI_DT_REG                *Reg,
-  IN     UINT64                    Offset,
+  IN     EFI_DT_SIZE               Offset,
   IN     UINTN                     Count,
   IN OUT VOID                      *Buffer
   )
 {
-  UINT8         *DataPtr;
-  UINTN         Index;
+  UINTN  AddressIncrement = Count;
 
-  //
-  // Check for invalid input parameters
-  //
-  if (This == NULL || Reg == NULL || Buffer == NULL ||
-      Width > EfiDtIoWidthMaximum) {
+  if ((This == NULL) || (Reg == NULL) || (Buffer == NULL) ||
+      (Width >= EfiDtIoWidthMaximum))
+  {
     return EFI_INVALID_PARAMETER;
   }
 
-  //
-  // Check if the offset is within the range of the register space
-  //
-  if ((Width >= EfiDtIoWidthUint8) && (Width <= EfiDtIoWidthUint64)) {
-    if (Offset + (Count * (1 << Width)) > Reg->Length) {
-      return EFI_INVALID_PARAMETER;
-    }
+  if ((Width >= EfiDtIoWidthFifoUint8) && (Width <= EfiDtIoWidthFifoUint64)) {
+    AddressIncrement = 1;
   }
 
-  //
-  // Set the data pointer to the beginning of the buffer
-  //
-  DataPtr = (UINT8*)Buffer;
+  if (Offset + AddressIncrement * DT_IO_PROTOCOL_WIDTH (Width) >
+      Reg->Length)
+  {
+    return EFI_INVALID_PARAMETER;
+  }
 
-  //
-  // Read data from the device register based on the specified width
-  //
-  for (Index = 0; Index < Count; ++Index) {
-    switch (Width) {
-    case EfiDtIoWidthUint8:
-      *(UINT8*)((UINTN)DataPtr) = *(UINT8*)((UINTN)(Reg->Base + Offset));
-      DataPtr++;
-      break;
-
-    case EfiDtIoWidthUint16:
-      *(UINT16*)((UINTN)DataPtr) = *(UINT16*)((UINTN)(Reg->Base + Offset));
-      DataPtr += sizeof (UINT16);
-      break;
-
-    case EfiDtIoWidthUint32:
-      *(UINT32*)((UINTN)DataPtr) = *(UINT32*)((UINTN)(Reg->Base + Offset));
-      DataPtr += sizeof (UINT32);
-      break;
-
-    case EfiDtIoWidthUint64:
-      *(UINT64*)((UINTN)DataPtr) = *(UINT64*)((UINTN)(Reg->Base + Offset));
-      DataPtr += sizeof (UINT64);
-      break;
-
-    default:
+  if (Reg->BusDtIo != NULL) {
+    if (This == Reg->BusDtIo) {
+      //
+      // A bus driver-customized ReadReg would use this test to
+      // detect child device accesses.
+      //
       return EFI_UNSUPPORTED;
     }
 
     //
-    // Move to the next offset
+    // Reg addresses are not CPU addresses, use the parent bus
+    // accessor.
     //
-    Offset += 1 << Width;
+    return Reg->BusDtIo->ReadReg (
+                           Reg->BusDtIo,
+                           Width,
+                           Reg,
+                           Offset,
+                           Count,
+                           Buffer
+                           );
   }
 
-  return EFI_SUCCESS;
+  //
+  // CPU addresses.
+  //
+  return gCpuIo2->Mem.Read (
+                        gCpuIo2,
+                        (EFI_CPU_IO_PROTOCOL_WIDTH)Width,
+                        Reg->Base + Offset,
+                        Count,
+                        Buffer
+                        );
 }
 
 /**
@@ -532,9 +542,9 @@ DtIoCopyReg (
   IN  EFI_DT_IO_PROTOCOL        *This,
   IN  EFI_DT_IO_PROTOCOL_WIDTH  Width,
   IN  EFI_DT_REG                *DestReg,
-  IN  UINT64                    DestOffset,
+  IN  EFI_DT_SIZE               DestOffset,
   IN  EFI_DT_REG                *SrcReg,
-  IN  UINT64                    SrcOffset,
+  IN  EFI_DT_SIZE               SrcOffset,
   IN  UINTN                     Count
   )
 {

@@ -8,9 +8,10 @@
 
 #include "FdtBusDxe.h"
 
-VOID              *gDeviceTreeBase;
-STATIC EFI_EVENT  mPlatformHasDeviceTreeEvent;
-STATIC EFI_EVENT  mEndOfDxeEvent;
+VOID                  *gDeviceTreeBase;
+STATIC EFI_EVENT      mPlatformHasDeviceTreeEvent;
+STATIC EFI_EVENT      mEndOfDxeEvent;
+EFI_CPU_IO2_PROTOCOL  *gCpuIo2;
 
 /**
   Try to connect all DtDevices in the critical device list.
@@ -353,6 +354,16 @@ EntryPoint (
     DEBUG ((DEBUG_ERROR, "No FDT passed in to UEFI\n"));
     return EFI_NOT_FOUND;
   }
+
+  //
+  // gEfiCpuIo2ProtocolGuid is in the Depex list.
+  //
+  Status = gBS->LocateProtocol (
+                  &gEfiCpuIo2ProtocolGuid,
+                  NULL,
+                  (VOID **)&gCpuIo2
+                  );
+  ASSERT_EFI_ERROR (Status);
 
   DeviceTreeBase = (VOID *)(UINTN)*(UINT64 *)GET_GUID_HOB_DATA (Hob);
   if (fdt_check_header (DeviceTreeBase) != 0) {

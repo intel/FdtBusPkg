@@ -25,6 +25,11 @@ typedef struct {
 
 typedef struct _EFI_DT_IO_PROTOCOL EFI_DT_IO_PROTOCOL;
 
+//
+// This matches the CpuIo2 EFI_CPU_IO_PROTOCOL_WIDTH.
+// When we go 128-bit, this will need work.
+//
+
 typedef enum {
   EfiDtIoWidthUint8 = 0,
   EfiDtIoWidthUint16,
@@ -40,6 +45,11 @@ typedef enum {
   EfiDtIoWidthFillUint64,
   EfiDtIoWidthMaximum
 } EFI_DT_IO_PROTOCOL_WIDTH;
+
+///
+/// Convert EFI_DT_IO_PROTOCOL_WIDTH to the actual width.
+///
+#define DT_IO_PROTOCOL_WIDTH(x)  (1 << (x & 0x3))
 
 typedef enum {
   ///
@@ -322,7 +332,7 @@ EFI_STATUS
   IN  EFI_DT_IO_PROTOCOL           *This,
   IN  EFI_DT_IO_PROTOCOL_WIDTH     Width,
   IN  EFI_DT_REG                   *Reg,
-  IN  UINT64                       Offset,
+  IN  EFI_DT_SIZE                  Offset,
   IN  UINT64                       Mask,
   IN  UINT64                       Value,
   IN  UINT64                       Delay,
@@ -354,7 +364,7 @@ EFI_STATUS
   IN     EFI_DT_IO_PROTOCOL          *This,
   IN     EFI_DT_IO_PROTOCOL_WIDTH    Width,
   IN     EFI_DT_REG                  *Reg,
-  IN     UINT64                      Offset,
+  IN     EFI_DT_SIZE                 Offset,
   IN     UINTN                       Count,
   IN OUT VOID                        *Buffer
   );
@@ -391,9 +401,9 @@ EFI_STATUS
   IN  EFI_DT_IO_PROTOCOL          *This,
   IN  EFI_DT_IO_PROTOCOL_WIDTH    Width,
   IN  EFI_DT_REG                  *DestReg,
-  IN  UINT64                      DestOffset,
+  IN  EFI_DT_SIZE                 DestOffset,
   IN  EFI_DT_REG                  *SrcReg,
-  IN  UINT64                      SrcOffset,
+  IN  EFI_DT_SIZE                 SrcOffset,
   IN  UINTN                       Count
   );
 

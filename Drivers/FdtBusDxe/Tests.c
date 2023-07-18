@@ -189,6 +189,7 @@ TestG2P0Fn (
   IN  DT_DEVICE  *DtDevice
   )
 {
+  UINT8               Buffer;
   EFI_DT_REG          Reg;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
@@ -219,6 +220,35 @@ TestG2P0Fn (
   ASSERT (
     ((Reg.Length >> 64) & (UINTN)-1UL) ==
     0x0000000000000005
+    );
+
+  //
+  // EFI_UNSUPPORTED because Reg.BusDtIo != NULL and G2 didn't
+  // override the ReadReg function in its DtIo protocol.
+  //
+  ASSERT (
+    DtIo->ReadReg (DtIo, EfiDtIoWidthUint8, &Reg, 0, 1, &Buffer) ==
+    EFI_UNSUPPORTED
+    );
+  ASSERT (
+    DtIo->ReadReg (DtIo, EfiDtIoWidthMaximum, &Reg, 0, 1, &Buffer) ==
+    EFI_INVALID_PARAMETER
+    );
+  ASSERT (
+    DtIo->ReadReg (DtIo, EfiDtIoWidthUint8, NULL, 0, 1, &Buffer) ==
+    EFI_INVALID_PARAMETER
+    );
+  ASSERT (
+    DtIo->ReadReg (DtIo, EfiDtIoWidthUint8, &Reg, Reg.Length, 1, &Buffer) ==
+    EFI_INVALID_PARAMETER
+    );
+  ASSERT (
+    DtIo->ReadReg (DtIo, EfiDtIoWidthUint8, &Reg, Reg.Length - 1, 2, &Buffer) ==
+    EFI_INVALID_PARAMETER
+    );
+  ASSERT (
+    DtIo->ReadReg (DtIo, EfiDtIoWidthUint8, &Reg, 0, 1, NULL) ==
+    EFI_INVALID_PARAMETER
     );
 
   ASSERT (DtIo->GetReg (DtIo, 1, &Reg) == EFI_NOT_FOUND);

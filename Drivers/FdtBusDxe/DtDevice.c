@@ -494,17 +494,17 @@ DtDeviceTranslateRangeToCpu (
   OUT DT_DEVICE                 **BusDevice
   )
 {
-  EFI_STATUS       Status;
-  EFI_DT_PROPERTY  Property;
-  DT_DEVICE        *CurDevice;
-  EFI_DT_BUS_ADDRESS CurAddress;
+  EFI_STATUS          Status;
+  EFI_DT_PROPERTY     Property;
+  DT_DEVICE           *CurDevice;
+  EFI_DT_BUS_ADDRESS  CurAddress;
 
   if ((DtDevice == NULL) || (In == NULL) || (Out == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
   CurAddress = *In;
-  CurDevice = DtDevice->Parent;
+  CurDevice  = DtDevice->Parent;
   while (CurDevice != NULL) {
     BOOLEAN  IsIdentity;
 

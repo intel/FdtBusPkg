@@ -47,6 +47,7 @@
 [Protocols]
   gEfiDtIoProtocolGuid
   gEfiDevicePathProtocolGuid
+  gEfiCpuIo2ProtocolGuid
 
 [Guids]
   gFdtHobGuid
@@ -55,6 +56,6 @@
   gEfiEndOfDxeEventGroupGuid
 
 [Depex]
-  TRUE
+  gEfiCpuIo2ProtocolGuid
 
 [BuildOptions]

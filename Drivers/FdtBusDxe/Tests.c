@@ -64,6 +64,20 @@
 
 VOID  *gTestTreeBase;
 
+UINT32 Dt_DeviceRegs_TestTemplate00 [] = {
+  //0x86,0x80,0xAA,0x8F,0x00,0x01,0x02,0x00, 0x00,0x01,0x06,0x00,0x80,0x1A,0x06,0x00,    /* 00000000    "........" */
+  //0x00,0x00,0x0A,0x10,0x53,0x42,0x2E,0x50, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,    /* 00000010    "........" */
+  //0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00,0x3C,0x10,0x43,0x58,    /* 00000020    "........" */
+  //0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,    /* 00000030    "........" */
+  0x8FAA8086, 0x00020100, 0x00060100, 0x00061A80,
+  // 00000010
+  0x100A0000, 0x502E4253, 0x00000000, 0x00000000,
+  // 00000020
+  0x00000000, 0x00000000, 0x00000000, 0x5843103C,
+  // 00000030
+  0x00000000, 0x00000000, 0x00000000, 0x00000000
+};
+
 /**
   Node tests.
 
@@ -379,6 +393,76 @@ TestG3P5Fn (
   return TRUE;
 }
 
+STATIC
+BOOLEAN
+EFIAPI
+TestG5Fn (
+  IN  DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+  //
+  // #address-cells and #size-cells apply to children,
+  // not the node itself.
+  //
+  ASSERT (DtIo->AddressCells == 2);
+  ASSERT (DtIo->SizeCells == 1);
+  return TRUE;
+}
+
+STATIC
+BOOLEAN
+EFIAPI
+TestG5P1Fn (
+  IN  DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+  UINTN               TestRegionSize;
+  UINT8               *TempMemBuffer;
+  EFI_DT_REG          Reg00;
+  UINT8               Array1[32];
+  UINT8               Array2[32];
+  UINTN               Index;
+
+  TestRegionSize = sizeof (Dt_DeviceRegs_TestTemplate00);
+  TempMemBuffer  = AllocateZeroPool (TestRegionSize);
+  if (TempMemBuffer == NULL) {
+    DEBUG ((DEBUG_ERROR,"Warning: Run out memory. \n"));
+    goto ErrorExit;
+  }
+
+  for (Index = 0; Index < 32; Index++) {
+    Array1[Index] = Index;
+  }
+
+  CopyMem (TempMemBuffer, Dt_DeviceRegs_TestTemplate00, TestRegionSize);
+  CopyMem (Array2, Dt_DeviceRegs_TestTemplate00, 16);
+
+  ZeroMem (&Reg00, sizeof (EFI_DT_REG));
+  Reg00.Base   = (EFI_PHYSICAL_ADDRESS)TempMemBuffer;
+  Reg00.Length = TestRegionSize;
+  ASSERT (DtIo->WriteReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0x10, 16, Array1) == EFI_SUCCESS);
+  ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0x10, 16, Array2) == EFI_SUCCESS);
+  ASSERT (CompareMem (Array1, Array2, 16) == 0);
+  ASSERT (DtIo->WriteReg (DtIo, EfiDtIoWidthUint32, &Reg00, 0x20, 8, Array1) == EFI_SUCCESS);
+  ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint32, &Reg00, 0x20, 8, Array2) == EFI_SUCCESS);
+  ASSERT (CompareMem (Array1, Array2, 16) == 0);
+  ASSERT (DtIo->WriteReg (DtIo, EfiDtIoWidthUint32, &Reg00, 0x30, 8, Array1) == EFI_INVALID_PARAMETER);
+
+  DEBUG ((DEBUG_INFO,"%a: the test for WriteReg is passed. \n", __func__));
+  FreePool (TempMemBuffer);
+  return TRUE;
+
+ErrorExit:
+  DEBUG ((DEBUG_ERROR,"%a: does not accomplish the test.  \n", __func__));
+  if (TempMemBuffer != NULL) {
+    FreePool (TempMemBuffer);
+  }
+
+  return 0;
+}
+
 /**
   Populate test DT nodes.
 
@@ -507,6 +591,17 @@ TestsPopulate (
     fdt_property_string (Buffer, "status", "lkalksjdlkajsd")
     );
   END_NODE (Buffer, g3);
+
+  BEGIN_NODE (Buffer, g5);
+  NODE_TEST (Buffer, TestG5Fn);
+  fdt_property_u32 (Buffer, "#address-cells", 3);
+  fdt_property_u32 (Buffer, "#size-cells", 2);
+  NEW_NODE (
+    Buffer,
+    g5p1,
+    TestG5P1Fn
+    );
+  END_NODE (Buffer, g5);
 
   return 0;
 }

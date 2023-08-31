@@ -474,7 +474,55 @@ DtIoWriteReg (
   IN OUT VOID                      *Buffer
   )
 {
-  return EFI_UNSUPPORTED;
+  UINTN  AddressIncrement = Count;
+
+  if ((This == NULL) || (Reg == NULL) || (Buffer == NULL) ||
+      (Width >= EfiDtIoWidthMaximum)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if ((Width >= EfiDtIoWidthFifoUint8) && (Width <= EfiDtIoWidthFifoUint64)) {
+    AddressIncrement = 1;
+  }
+
+  if (Offset + AddressIncrement * DT_IO_PROTOCOL_WIDTH (Width) >
+      Reg->Length) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (Reg->BusDtIo != NULL) {
+    if (This == Reg->BusDtIo) {
+      //
+      // A bus driver-customized ReadReg would use this test to
+      // detect child device accesses.
+      //
+      return EFI_UNSUPPORTED;
+    }
+
+    //
+    // Reg addresses are not CPU addresses, use the parent bus
+    // accessor.
+    //
+    return Reg->BusDtIo->WriteReg (
+                           Reg->BusDtIo,
+                           Width,
+                           Reg,
+                           Offset,
+                           Count,
+                           Buffer
+                           );
+  }
+
+  //
+  // CPU addresses.
+  //
+  return gCpuIo2->Mem.Write (
+                        gCpuIo2,
+                        (EFI_CPU_IO_PROTOCOL_WIDTH)Width,
+                        Reg->Base + Offset,
+                        Count,
+                        Buffer
+                        );
 }
 
 /**

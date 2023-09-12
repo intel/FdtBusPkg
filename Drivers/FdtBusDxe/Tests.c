@@ -413,7 +413,7 @@ TestG5Fn (
 STATIC
 BOOLEAN
 EFIAPI
-TestG5P1Fn (
+TestG5P0Fn (
   IN  DT_DEVICE  *DtDevice
   )
 {
@@ -421,19 +421,16 @@ TestG5P1Fn (
   UINTN               TestRegionSize;
   UINT8               *TempMemBuffer;
   EFI_DT_REG          Reg00;
-  UINT8               Array1[32];
-  UINT8               Array2[32];
-  UINTN               Index;
+  EFI_DT_REG          *Reg11;
+  UINT8               Array1[16];
+  UINT8               Array2[16];
 
+  Reg11 = NULL;
   TestRegionSize = sizeof (Dt_DeviceRegs_TestTemplate00);
   TempMemBuffer  = AllocateZeroPool (TestRegionSize);
   if (TempMemBuffer == NULL) {
     DEBUG ((DEBUG_ERROR,"Warning: Run out memory. \n"));
     goto ErrorExit;
-  }
-
-  for (Index = 0; Index < 32; Index++) {
-    Array1[Index] = Index;
   }
 
   CopyMem (TempMemBuffer, Dt_DeviceRegs_TestTemplate00, TestRegionSize);
@@ -442,15 +439,24 @@ TestG5P1Fn (
   ZeroMem (&Reg00, sizeof (EFI_DT_REG));
   Reg00.Base   = (EFI_PHYSICAL_ADDRESS)TempMemBuffer;
   Reg00.Length = TestRegionSize;
-  ASSERT (DtIo->WriteReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0x10, 16, Array1) == EFI_SUCCESS);
-  ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0x10, 16, Array2) == EFI_SUCCESS);
+  ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0, 16, Array1) == EFI_SUCCESS);
   ASSERT (CompareMem (Array1, Array2, 16) == 0);
-  ASSERT (DtIo->WriteReg (DtIo, EfiDtIoWidthUint32, &Reg00, 0x20, 8, Array1) == EFI_SUCCESS);
-  ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint32, &Reg00, 0x20, 8, Array2) == EFI_SUCCESS);
+  ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint16, &Reg00, 0, 8, Array1) == EFI_SUCCESS);
   ASSERT (CompareMem (Array1, Array2, 16) == 0);
-  ASSERT (DtIo->WriteReg (DtIo, EfiDtIoWidthUint32, &Reg00, 0x30, 8, Array1) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint32, &Reg00, 0, 4, Array1) == EFI_SUCCESS);
+  ASSERT (CompareMem (Array1, Array2, 16) == 0);
+  ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint64, &Reg00, 0, 2, Array1) == EFI_SUCCESS);
+  ASSERT (CompareMem (Array1, Array2, 16) == 0);
 
-  DEBUG ((DEBUG_INFO,"%a: the test for WriteReg is passed. \n", __func__));
+  ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0, 256, Array1) == EFI_INVALID_PARAMETER);
+  //
+  // count==0 will be regarded as a reasonable read request
+  //
+  ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint16, &Reg00, 0, 0, Array1) == EFI_SUCCESS);
+  ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint32, &Reg00, 0, 1024, Array1) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint64, Reg11, 0, 2, Array1) == EFI_INVALID_PARAMETER);
+
+  DEBUG ((DEBUG_INFO,"%a: the test for ReadReg is passed. \n", __func__));
   FreePool (TempMemBuffer);
   return TRUE;
 
@@ -598,8 +604,8 @@ TestsPopulate (
   fdt_property_u32 (Buffer, "#size-cells", 2);
   NEW_NODE (
     Buffer,
-    g5p1,
-    TestG5P1Fn
+    g5p0,
+    TestG5P0Fn
     );
   END_NODE (Buffer, g5);
 

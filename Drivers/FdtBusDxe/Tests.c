@@ -64,11 +64,11 @@
 
 VOID  *gTestTreeBase;
 
-UINT32 Dt_DeviceRegs_TestTemplate00 [] = {
-  //0x86,0x80,0xAA,0x8F,0x00,0x01,0x02,0x00, 0x00,0x01,0x06,0x00,0x80,0x1A,0x06,0x00,    /* 00000000    "........" */
-  //0x00,0x00,0x0A,0x10,0x53,0x42,0x2E,0x50, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,    /* 00000010    "........" */
-  //0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00,0x3C,0x10,0x43,0x58,    /* 00000020    "........" */
-  //0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,    /* 00000030    "........" */
+UINT32  Dt_DeviceRegs_TestTemplate00[] = {
+  // 0x86,0x80,0xAA,0x8F,0x00,0x01,0x02,0x00, 0x00,0x01,0x06,0x00,0x80,0x1A,0x06,0x00,    /* 00000000    "........" */
+  // 0x00,0x00,0x0A,0x10,0x53,0x42,0x2E,0x50, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,    /* 00000010    "........" */
+  // 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00,0x3C,0x10,0x43,0x58,    /* 00000020    "........" */
+  // 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,    /* 00000030    "........" */
   0x8FAA8086, 0x00020100, 0x00060100, 0x00061A80,
   // 00000010
   0x100A0000, 0x502E4253, 0x00000000, 0x00000000,
@@ -401,6 +401,7 @@ TestG5Fn (
   )
 {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
   //
   // #address-cells and #size-cells apply to children,
   // not the node itself.
@@ -425,11 +426,11 @@ TestG5P0Fn (
   UINT8               Array1[16];
   UINT8               Array2[16];
 
-  Reg11 = NULL;
+  Reg11          = NULL;
   TestRegionSize = sizeof (Dt_DeviceRegs_TestTemplate00);
   TempMemBuffer  = AllocateZeroPool (TestRegionSize);
   if (TempMemBuffer == NULL) {
-    DEBUG ((DEBUG_ERROR,"Warning: Run out memory. \n"));
+    DEBUG ((DEBUG_ERROR, "Warning: Run out memory. \n"));
     goto ErrorExit;
   }
 
@@ -456,12 +457,12 @@ TestG5P0Fn (
   ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint32, &Reg00, 0, 1024, Array1) == EFI_INVALID_PARAMETER);
   ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint64, Reg11, 0, 2, Array1) == EFI_INVALID_PARAMETER);
 
-  DEBUG ((DEBUG_INFO,"%a: the test for ReadReg is passed. \n", __func__));
+  DEBUG ((DEBUG_INFO, "%a: the test for ReadReg is passed. \n", __func__));
   FreePool (TempMemBuffer);
   return TRUE;
 
 ErrorExit:
-  DEBUG ((DEBUG_ERROR,"%a: does not accomplish the test.  \n", __func__));
+  DEBUG ((DEBUG_ERROR, "%a: does not accomplish the test.  \n", __func__));
   if (TempMemBuffer != NULL) {
     FreePool (TempMemBuffer);
   }
@@ -485,7 +486,7 @@ TestG5P2Fn (
   TestRegionSize = sizeof (Dt_DeviceRegs_TestTemplate00);
   TempMemBuffer  = AllocateZeroPool (TestRegionSize);
   if (TempMemBuffer == NULL) {
-    DEBUG ((DEBUG_ERROR,"Warning: Run out memory. \n"));
+    DEBUG ((DEBUG_ERROR, "Warning: Run out memory. \n"));
     goto ErrorExit;
   }
 
@@ -500,12 +501,12 @@ TestG5P2Fn (
   ASSERT (DtIo->PollReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0, 0xFF, 0x17, 1000000, &Indicator) == EFI_TIMEOUT);
   ASSERT (DtIo->PollReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0, 0xFF, 0x86, 1000000, &Indicator) == EFI_SUCCESS);
 
-  DEBUG ((DEBUG_INFO,"%a: the test for PollReg is passed. \n", __func__));
+  DEBUG ((DEBUG_INFO, "%a: the test for PollReg is passed. \n", __func__));
   FreePool (TempMemBuffer);
   return TRUE;
 
 ErrorExit:
-  DEBUG ((DEBUG_ERROR,"%a: does not accomplish the test.  \n", __func__));
+  DEBUG ((DEBUG_ERROR, "%a: does not accomplish the test.  \n", __func__));
   if (TempMemBuffer != NULL) {
     FreePool (TempMemBuffer);
   }

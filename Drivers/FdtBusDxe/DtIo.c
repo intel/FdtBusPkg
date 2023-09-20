@@ -477,7 +477,8 @@ DtIoWriteReg (
   UINTN  AddressIncrement = Count;
 
   if ((This == NULL) || (Reg == NULL) || (Buffer == NULL) ||
-      (Width >= EfiDtIoWidthMaximum)) {
+      (Width >= EfiDtIoWidthMaximum))
+  {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -486,7 +487,8 @@ DtIoWriteReg (
   }
 
   if (Offset + AddressIncrement * DT_IO_PROTOCOL_WIDTH (Width) >
-      Reg->Length) {
+      Reg->Length)
+  {
     return EFI_INVALID_PARAMETER;
   }
 

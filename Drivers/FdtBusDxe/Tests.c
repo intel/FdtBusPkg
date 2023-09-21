@@ -469,6 +469,50 @@ ErrorExit:
   return 0;
 }
 
+STATIC
+BOOLEAN
+EFIAPI
+TestG5P2Fn (
+  IN  DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+  UINTN               TestRegionSize;
+  UINT8               *TempMemBuffer;
+  EFI_DT_REG          Reg00;
+  UINT64              Indicator;
+
+  TestRegionSize = sizeof (Dt_DeviceRegs_TestTemplate00);
+  TempMemBuffer  = AllocateZeroPool (TestRegionSize);
+  if (TempMemBuffer == NULL) {
+    DEBUG ((DEBUG_ERROR,"Warning: Run out memory. \n"));
+    goto ErrorExit;
+  }
+
+  CopyMem (TempMemBuffer, Dt_DeviceRegs_TestTemplate00, TestRegionSize);
+  ZeroMem (&Reg00, sizeof (EFI_DT_REG));
+  Reg00.Base   = (EFI_PHYSICAL_ADDRESS)TempMemBuffer;
+  Reg00.Length = TestRegionSize;
+
+  //
+  // offset 0 = 0x86 now.
+  //
+  ASSERT (DtIo->PollReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0, 0xFF, 0x17, 1000000, &Indicator) == EFI_TIMEOUT);
+  ASSERT (DtIo->PollReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0, 0xFF, 0x86, 1000000, &Indicator) == EFI_SUCCESS);
+
+  DEBUG ((DEBUG_INFO,"%a: the test for PollReg is passed. \n", __func__));
+  FreePool (TempMemBuffer);
+  return TRUE;
+
+ErrorExit:
+  DEBUG ((DEBUG_ERROR,"%a: does not accomplish the test.  \n", __func__));
+  if (TempMemBuffer != NULL) {
+    FreePool (TempMemBuffer);
+  }
+
+  return 0;
+}
+
 /**
   Populate test DT nodes.
 
@@ -606,6 +650,11 @@ TestsPopulate (
     Buffer,
     g5p0,
     TestG5P0Fn
+    );
+  NEW_NODE (
+    Buffer,
+    g5p2,
+    TestG5P2Fn
     );
   END_NODE (Buffer, g5);
 

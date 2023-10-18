@@ -246,22 +246,15 @@ DriverStop (
   AllChildrenStopped = TRUE;
 
   for (Index = 0; Index < NumberOfChildren; Index++) {
-    EFI_DT_IO_PROTOCOL  *DtIo;
-    DT_DEVICE           *DtDevice;
-
-    DtIo   = NULL;
-    Status = gBS->OpenProtocol (
-                    ChildHandleBuffer[Index],
-                    &gEfiDtIoProtocolGuid,
-                    (VOID **)&DtIo,
-                    This->DriverBindingHandle,
-                    ControllerHandle,
-                    EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                    );
+    Status = DtDeviceRemove (
+               ChildHandleBuffer[Index],
+               ControllerHandle,
+               This->DriverBindingHandle
+               );
     if (EFI_ERROR (Status)) {
       DEBUG ((
         DEBUG_ERROR,
-        "%a: OpenProtocol(%p): %r\n",
+        "%a: DtDeviceRemove(%p): %r\n",
         __func__,
         ChildHandleBuffer[Index],
         Status
@@ -269,26 +262,6 @@ DriverStop (
       AllChildrenStopped = FALSE;
       continue;
     }
-
-    DtDevice = DT_DEV_FROM_THIS (DtIo);
-    Status   = DtDeviceUnregister (
-                 DtDevice,
-                 ControllerHandle,
-                 This->DriverBindingHandle
-                 );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((
-        DEBUG_ERROR,
-        "%a: DtDeviceUnregister(%s): %r\n",
-        __func__,
-        DtIo->ComponentName,
-        Status
-        ));
-      AllChildrenStopped = FALSE;
-      continue;
-    }
-
-    DtDeviceCleanup (DtDevice);
   }
 
   if (!AllChildrenStopped) {

@@ -106,6 +106,7 @@ DtIoGetProp (
   create child handles with EFI_DT_IO_PROTOCOL for children nodes.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  DriverBindingHandle   Driver binding handle.
   @param  RemainingDevicePath   If present, describes the child handle that
                                 needs to be created.
 
@@ -120,37 +121,51 @@ EFI_STATUS
 EFIAPI
 DtIoScanChildren (
   IN  EFI_DT_IO_PROTOCOL        *This,
+  IN  EFI_HANDLE                DriverBindingHandle,
   IN  EFI_DEVICE_PATH_PROTOCOL  *RemainingDevicePath OPTIONAL
   )
 {
-  return EFI_UNSUPPORTED;
+  DT_DEVICE  *DtDevice;
+
+  if (This == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DtDevice = DT_DEV_FROM_THIS (This);
+
+  return DtDeviceScan (
+           DtDevice,
+           (EFI_DT_DEVICE_PATH_NODE *)RemainingDevicePath,
+           DriverBindingHandle
+           );
 }
 
 /**
   For a Device Tree node associated with the EFI_DT_IO_PROTOCOL instance,
-  tear down child handles with EFI_DT_IO_PROTOCOL on them. If NumberOfChildren
-  is not 0, only tear down the handles specified in ChildHandleBuffer.
+  tear down the specified child handle.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
-  @param  NumberOfChildren      The number of child device handles in ChildHandleBuffer.
-  @param  ChildHandleBuffer     An array of child handles to be freed. May be NULL if
-                                NumberOfChildren is 0.
+  @param  ChildHandle           Child handle to tear down.
+  @param  DriverBindingHandle   Driver binding handle.
 
-  @retval EFI_SUCCESS           Child handles created (all or 1 if RemainingDevicePath
-                                was not NULL).
+  @retval EFI_SUCCESS           Child handle destroyed.
+  @retval EFI_UNSUPPORTED       Child handle doesn't support EFI_DT_IO_PROTOCOL.
   @retval EFI_DEVICE_ERROR      Device Tree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
 EFI_STATUS
 EFIAPI
-DtIoRemoveChildren (
+DtIoRemoveChild (
   IN  EFI_DT_IO_PROTOCOL  *This,
-  IN  UINTN               NumberOfChildren,
-  IN  EFI_HANDLE          *ChildHandleBuffer OPTIONAL
+  IN  EFI_HANDLE          ChildHandle,
+  IN  EFI_HANDLE          DriverBindingHandle
   )
 {
-  return EFI_UNSUPPORTED;
+  DT_DEVICE  *DtDevice;
+
+  DtDevice = DT_DEV_FROM_THIS (This);
+  return DtDeviceRemove (ChildHandle, DtDevice->Handle, DriverBindingHandle);
 }
 
 /**

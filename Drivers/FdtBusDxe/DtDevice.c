@@ -154,10 +154,10 @@ DtDeviceCreate (
   //
   // Core.
   //
-  DtDevice->DtIo.Lookup         = DtIoLookup;
-  DtDevice->DtIo.GetProp        = DtIoGetProp;
-  DtDevice->DtIo.ScanChildren   = DtIoScanChildren;
-  DtDevice->DtIo.RemoveChildren = DtIoRemoveChildren;
+  DtDevice->DtIo.Lookup       = DtIoLookup;
+  DtDevice->DtIo.GetProp      = DtIoGetProp;
+  DtDevice->DtIo.ScanChildren = DtIoScanChildren;
+  DtDevice->DtIo.RemoveChild  = DtIoRemoveChild;
 
   //
   // Convenience calls.
@@ -224,8 +224,8 @@ DtDeviceCleanup (
 EFI_STATUS
 DtDeviceUnregister (
   IN  DT_DEVICE   *DtDevice,
-  IN  EFI_HANDLE  ControllerHandle,
-  IN  EFI_HANDLE  DriverBindingHandle
+  IN  EFI_HANDLE  ControllerHandle OPTIONAL,
+  IN  EFI_HANDLE  DriverBindingHandle OPTIONAL
   )
 {
   EFI_STATUS  Status;
@@ -290,6 +290,74 @@ DtDeviceUnregister (
 }
 
 /**
+  Wrapper over DtDeviceRegister and DtDeviceCleanup.
+
+  @param[in]    DeviceHandle        EFI_HANDLE.
+  @param[in]    ParentHandle        EFI_HANDLE.
+  @param[in]    DriverBindingHandle EFI_HANDLE.
+
+  @retval EFI_SUCCESS               *Out is populated.
+  @retval Others                    Errors.
+
+**/
+EFI_STATUS
+DtDeviceRemove (
+  IN EFI_HANDLE  DeviceHandle,
+  IN EFI_HANDLE  ParentHandle,
+  IN EFI_HANDLE  DriverBindingHandle
+  )
+{
+  EFI_STATUS          Status;
+  DT_DEVICE           *DtDevice;
+  EFI_DT_IO_PROTOCOL  *DtIo;
+
+  ASSERT (DriverBindingHandle != NULL);
+  ASSERT (ParentHandle != NULL);
+
+  Status = gBS->OpenProtocol (
+                  DeviceHandle,
+                  &gEfiDtIoProtocolGuid,
+                  (VOID **)&DtIo,
+                  DriverBindingHandle,
+                  ParentHandle,
+                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                  );
+  if (EFI_ERROR (Status)) {
+    if (Status != EFI_UNSUPPORTED) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: OpenProtocol(%p): %r\n",
+        __func__,
+        DeviceHandle,
+        Status
+        ));
+    }
+
+    return Status;
+  }
+
+  DtDevice = DT_DEV_FROM_THIS (DtIo);
+  Status   = DtDeviceUnregister (
+               DtDevice,
+               ParentHandle,
+               DriverBindingHandle
+               );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: DtDeviceUnregister(%s): %r\n",
+      __func__,
+      DtIo->ComponentName,
+      Status
+      ));
+    return Status;
+  }
+
+  DtDeviceCleanup (DtDevice);
+  return EFI_SUCCESS;
+}
+
+/**
   Given a DT_DEVICE, create a handle, installing relevant protocols on it
   (device path and DT I/O). If a controller handle is provided, register
   the handle a child of that.
@@ -305,8 +373,8 @@ DtDeviceUnregister (
 EFI_STATUS
 DtDeviceRegister (
   IN  DT_DEVICE   *DtDevice,
-  IN  EFI_HANDLE  ControllerHandle,
-  IN  EFI_HANDLE  DriverBindingHandle
+  IN  EFI_HANDLE  ControllerHandle OPTIONAL,
+  IN  EFI_HANDLE  DriverBindingHandle OPTIONAL
   )
 {
   EFI_STATUS  Status;
@@ -378,6 +446,8 @@ DtDeviceScan (
   INTN        Node;
   EFI_STATUS  Status;
   VOID        *TreeBase;
+
+  ASSERT (DriverBindingHandle != NULL);
 
   TreeBase = GetTreeBaseFromDeviceFlags (DtDevice->Flags);
 

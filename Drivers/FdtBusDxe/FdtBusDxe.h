@@ -116,15 +116,22 @@ DtDeviceScan (
 EFI_STATUS
 DtDeviceRegister (
   IN  DT_DEVICE   *DtDevice,
-  IN  EFI_HANDLE  ControllerHandle,
-  IN  EFI_HANDLE  DriverBindingHandle
+  IN  EFI_HANDLE  ControllerHandle OPTIONAL,
+  IN  EFI_HANDLE  DriverBindingHandle OPTIONAL
   );
 
 EFI_STATUS
 DtDeviceUnregister (
   IN  DT_DEVICE   *DtDevice,
-  IN  EFI_HANDLE  ControllerHandle,
-  IN  EFI_HANDLE  DriverBindingHandle
+  IN  EFI_HANDLE  ControllerHandle OPTIONAL,
+  IN  EFI_HANDLE  DriverBindingHandle OPTIONAL
+  );
+
+EFI_STATUS
+DtDeviceRemove (
+  IN EFI_HANDLE  DeviceHandle,
+  IN EFI_HANDLE  ParentHandle,
+  IN EFI_HANDLE  DriverBindingHandle
   );
 
 EFI_STATUS
@@ -200,15 +207,16 @@ EFI_STATUS
 EFIAPI
 DtIoScanChildren (
   IN  EFI_DT_IO_PROTOCOL        *This,
+  IN  EFI_HANDLE                DriverBindingHandle,
   IN  EFI_DEVICE_PATH_PROTOCOL  *RemainingDevicePath OPTIONAL
   );
 
 EFI_STATUS
 EFIAPI
-DtIoRemoveChildren (
+DtIoRemoveChild (
   IN  EFI_DT_IO_PROTOCOL  *This,
-  IN  UINTN               NumberOfChildren,
-  IN  EFI_HANDLE          *ChildHandleBuffer OPTIONAL
+  IN  EFI_HANDLE          ChildHandle,
+  IN  EFI_HANDLE          DriverBindingHandle
   );
 
 EFI_STATUS

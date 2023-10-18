@@ -197,6 +197,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_PROP)(
   create child handles with EFI_DT_IO_PROTOCOL for children nodes.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  DriverBindingHandle   Driver binding handle.
   @param  RemainingDevicePath   If present, describes the child handle that
                                 needs to be created.
 
@@ -210,6 +211,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_PROP)(
 typedef
 EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_SCAN_CHILDREN)(
   IN  EFI_DT_IO_PROTOCOL       *This,
+  IN  EFI_HANDLE                DriverBindingHandle,
   IN  EFI_DEVICE_PATH_PROTOCOL *RemainingDevicePath OPTIONAL
   );
 
@@ -219,20 +221,19 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_SCAN_CHILDREN)(
   is not 0, only tear down the handles specified in ChildHandleBuffer.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
-  @param  NumberOfChildren      The number of child device handles in ChildHandleBuffer.
-  @param  ChildHandleBuffer     An array of child handles to be freed. May be NULL if
-                                NumberOfChildren is 0.
+  @param  ChildHandle           Child handle to tear down.
+  @param  DriverBindingHandle   Driver binding handle.
 
-  @retval EFI_SUCCESS           Child handles created (all or 1 if RemainingDevicePath
-                                was not NULL)
+  @retval EFI_SUCCESS           Child handle destroyed.
+  @retval EFI_UNSUPPORTED       Child handle doesn't support EFI_DT_IO_PROTOCOL.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILDREN)(
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILD)(
   IN  EFI_DT_IO_PROTOCOL *This,
-  IN  UINTN              NumberOfChildren,
-  IN  EFI_HANDLE         *ChildHandleBuffer OPTIONAL
+  IN  EFI_HANDLE          ChildHandle,
+  IN  EFI_HANDLE          DriverBindingHandle
   );
 
 /**
@@ -542,14 +543,13 @@ struct _EFI_DT_IO_PROTOCOL {
   EFI_DT_IO_PROTOCOL_LOOKUP             Lookup;
   EFI_DT_IO_PROTOCOL_GET_PROP           GetProp;
   EFI_DT_IO_PROTOCOL_SCAN_CHILDREN      ScanChildren;
-  EFI_DT_IO_PROTOCOL_REMOVE_CHILDREN    RemoveChildren;
+  EFI_DT_IO_PROTOCOL_REMOVE_CHILD       RemoveChild;
   //
   // Convenience calls to use with or instead of GetProp.
   //
   EFI_DT_IO_PROTOCOL_PARSE_PROP         ParseProp;
   EFI_DT_IO_PROTOCOL_GET_REG            GetReg;
   EFI_DT_IO_PROTOCOL_IS_COMPATIBLE      IsCompatible;
-
   //
   // Device register access.
   //

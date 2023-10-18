@@ -197,6 +197,24 @@ TestG2Fn (
 }
 
 STATIC
+EFI_STATUS
+EFIAPI
+TestG2P0ReadChildReg (
+  IN     EFI_DT_IO_PROTOCOL        *This,
+  IN     EFI_DT_IO_PROTOCOL_WIDTH  Width,
+  IN     EFI_DT_REG                *Reg,
+  IN     EFI_DT_SIZE               Offset,
+  IN     UINTN                     Count,
+  IN OUT VOID                      *Buffer
+  )
+{
+  ASSERT (Offset == 0 && Count == 1 && Width == EfiDtIoWidthUint32);
+
+  *(UINT32 *)Buffer = 0xc0ff33c0;
+  return EFI_SUCCESS;
+}
+
+STATIC
 BOOLEAN
 EFIAPI
 TestG2P0Fn (
@@ -238,7 +256,7 @@ TestG2P0Fn (
 
   //
   // EFI_UNSUPPORTED because Reg.BusDtIo != NULL and G2 didn't
-  // override the ReadReg function in its DtIo protocol.
+  // set up the ReadChildReg function in its DtIo protocol.
   //
   ASSERT (
     DtIo->ReadReg (DtIo, EfiDtIoWidthUint8, &Reg, 0, 1, &Buffer) ==
@@ -267,6 +285,9 @@ TestG2P0Fn (
 
   ASSERT (DtIo->GetReg (DtIo, 1, &Reg) == EFI_NOT_FOUND);
 
+  // For TestG2P0C1Fn.
+  DtIo->DeviceCallbacks.ReadChildReg = TestG2P0ReadChildReg;
+
   return TRUE;
 }
 
@@ -277,6 +298,8 @@ TestG2P0C1Fn  (
   IN  DT_DEVICE  *DtDevice
   )
 {
+  UINT32              Buffer;
+  EFI_DT_REG          Reg;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   //
@@ -286,6 +309,20 @@ TestG2P0C1Fn  (
   //
   ASSERT (DtIo->AddressCells == 2);
   ASSERT (DtIo->SizeCells == 1);
+
+  ASSERT (!EFI_ERROR (DtIo->GetReg (DtIo, 0, &Reg)));
+  ASSERT (Reg.BusDtIo == &(DtDevice->Parent->DtIo));
+
+  //
+  // Invokes TestG2P0ReadChildReg.
+  //
+  ASSERT (
+    DtIo->ReadReg (DtIo, EfiDtIoWidthUint32, &Reg, 0, 1, &Buffer) ==
+    EFI_SUCCESS
+    );
+
+  ASSERT (Buffer == 0xc0ff33c0);
+
   return TRUE;
 }
 
@@ -538,6 +575,11 @@ TestsPopulate (
     cpu_to_fdt32 (0x6),
     cpu_to_fdt32 (0x7)
   };
+  UINT32  G2P0C1RegProp[] = {
+    cpu_to_fdt32 (0),
+    cpu_to_fdt32 (0),
+    cpu_to_fdt32 (0x4)
+  };
 
   //
   // Test handling for default #address-cells and #size-cells.
@@ -583,6 +625,7 @@ TestsPopulate (
   fdt_property (Buffer, "reg", G2P0RegProp, sizeof (G2P0RegProp));
   BEGIN_NODE (Buffer, g2p0c1);
   NODE_TEST (Buffer, TestG2P0C1Fn);
+  fdt_property (Buffer, "reg", G2P0C1RegProp, sizeof (G2P0C1RegProp));
   END_NODE (Buffer, g2p0c1);
   END_NODE (Buffer, g2p0);
   NEW_NODE (

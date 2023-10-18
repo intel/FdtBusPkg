@@ -23,7 +23,8 @@ typedef struct {
   CHAR8                 Name[];
 } EFI_DT_DEVICE_PATH_NODE;
 
-typedef struct _EFI_DT_IO_PROTOCOL EFI_DT_IO_PROTOCOL;
+typedef struct _EFI_DT_IO_PROTOCOL     EFI_DT_IO_PROTOCOL;
+typedef struct _EFI_DT_IO_PROTOCOL_CB  EFI_DT_IO_PROTOCOL_CB;
 
 //
 // This matches the CpuIo2 EFI_CPU_IO_PROTOCOL_WIDTH.
@@ -70,9 +71,9 @@ typedef enum {
   EfiDtIoDmaOperationMaximum
 } EFI_DT_IO_PROTOCOL_DMA_OPERATION;
 
-typedef __int128 EFI_DT_BUS_ADDRESS;
-typedef __int128 EFI_DT_SIZE;
-typedef UINT32   EFI_DT_CELL;
+typedef __int128  EFI_DT_BUS_ADDRESS;
+typedef __int128  EFI_DT_SIZE;
+typedef UINT32    EFI_DT_CELL;
 
 typedef struct {
   EFI_DT_BUS_ADDRESS    Base;
@@ -507,6 +508,15 @@ EFI_STATUS
   );
 
 ///
+/// EFI_DT_IO_PROTOCOL_CB allows a device driver to provide some
+/// callbacks for use by the bus driver.
+///
+struct _EFI_DT_IO_PROTOCOL_CB {
+  EFI_DT_IO_PROTOCOL_IO_REG    ReadChildReg;
+  EFI_DT_IO_PROTOCOL_IO_REG    WriteChildReg;
+};
+
+///
 /// The EFI_DT_IO_PROTOCOL provides the basic Property, Register and DMA
 /// interfaces used to abstract access to devices exposed using a Device
 /// Tree node.
@@ -564,6 +574,17 @@ struct _EFI_DT_IO_PROTOCOL {
   EFI_DT_IO_PROTOCOL_UNMAP              Unmap;
   EFI_DT_IO_PROTOCOL_ALLOCATE_BUFFER    AllocateBuffer;
   EFI_DT_IO_PROTOCOL_FREE_BUFFER        FreeBuffer;
+  //
+  // These are device-driver specific callbacks that can
+  // be set by a device driver starting on the handle.
+  //
+  // Danger zone!
+  // ------------
+  // It is the responsibility of the device driver to
+  // clear these out when stopping on a handle, as the
+  // bus driver cannot detect when a driver disconnects.
+  //
+  EFI_DT_IO_PROTOCOL_CB    DeviceCallbacks;
 };
 
 extern EFI_GUID  gEfiDtIoProtocolGuid;

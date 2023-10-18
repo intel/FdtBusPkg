@@ -509,11 +509,22 @@ DtIoWriteReg (
 
   if (Reg->BusDtIo != NULL) {
     if (This == Reg->BusDtIo) {
-      //
-      // A bus driver-customized ReadReg would use this test to
-      // detect child device accesses.
-      //
-      return EFI_UNSUPPORTED;
+      if (Reg->BusDtIo->DeviceCallbacks.WriteChildReg == NULL) {
+        //
+        // The driver didn't expect to be asked to write registers
+        // on behalf of a child device.
+        //
+        return EFI_UNSUPPORTED;
+      }
+
+      return Reg->BusDtIo->DeviceCallbacks.WriteChildReg (
+                                             Reg->BusDtIo,
+                                             Width,
+                                             Reg,
+                                             Offset,
+                                             Count,
+                                             Buffer
+                                             );
     }
 
     //
@@ -591,11 +602,22 @@ DtIoReadReg (
 
   if (Reg->BusDtIo != NULL) {
     if (This == Reg->BusDtIo) {
-      //
-      // A bus driver-customized ReadReg would use this test to
-      // detect child device accesses.
-      //
-      return EFI_UNSUPPORTED;
+      if (Reg->BusDtIo->DeviceCallbacks.ReadChildReg == NULL) {
+        //
+        // The driver didn't expect to be asked to read registers
+        // on behalf of a child device.
+        //
+        return EFI_UNSUPPORTED;
+      }
+
+      return Reg->BusDtIo->DeviceCallbacks.ReadChildReg (
+                                             Reg->BusDtIo,
+                                             Width,
+                                             Reg,
+                                             Offset,
+                                             Count,
+                                             Buffer
+                                             );
     }
 
     //

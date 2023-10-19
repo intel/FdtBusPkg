@@ -684,7 +684,62 @@ DtIoCopyReg (
   IN  UINTN                     Count
   )
 {
-  return EFI_UNSUPPORTED;
+  VOID        *Buffer;
+  UINTN       BufferSize;
+  EFI_STATUS  Status;
+
+  if ((This == NULL) || (DestReg == NULL) ||
+      (SrcReg == NULL) || (Width >= EfiDtIoWidthMaximum))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  BufferSize = DT_IO_PROTOCOL_WIDTH (Width) * Count;
+  if (BufferSize == 0) {
+    //
+    // We don't want to return EFI_SUCCESS on Count == 0, but
+    // instead make sure all the parameter validation happens
+    // e.g. in DtIoReadReg and gCpuIo2->Mem.Read. So make sure
+    // AllocateZeroPool succeeds.
+    //
+    BufferSize++;
+  }
+
+  Buffer = AllocateZeroPool (BufferSize);
+  if (Buffer == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  Status = DtIoReadReg (
+             This,
+             Width,
+             SrcReg,
+             SrcOffset,
+             Count,
+             Buffer
+             );
+  if (EFI_ERROR (Status)) {
+    goto Exit;
+  }
+
+  Status = DtIoWriteReg (
+             This,
+             Width,
+             DestReg,
+             DestOffset,
+             Count,
+             Buffer
+             );
+  if (EFI_ERROR (Status)) {
+    goto Exit;
+  }
+
+Exit:
+  if (Buffer != NULL) {
+    FreePool (Buffer);
+  }
+
+  return Status;
 }
 
 /**

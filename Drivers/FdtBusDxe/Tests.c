@@ -551,6 +551,51 @@ ErrorExit:
   return 0;
 }
 
+STATIC
+BOOLEAN
+EFIAPI
+TestG5P3Fn (
+  IN  DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+  UINTN               TestRegionSize;
+  UINT8               *TempMemBuffer;
+  EFI_DT_REG          Reg00;
+  EFI_DT_REG          Reg11;
+  UINT8               Array2[32];
+
+  TestRegionSize = sizeof (Dt_DeviceRegs_TestTemplate00);
+  TempMemBuffer  = AllocateZeroPool (TestRegionSize);
+  if (TempMemBuffer == NULL) {
+    DEBUG ((DEBUG_ERROR, "Warning: Run out memory. \n"));
+    goto ErrorExit;
+  }
+
+  CopyMem (TempMemBuffer, Dt_DeviceRegs_TestTemplate00, TestRegionSize);
+  ZeroMem (&Reg00, sizeof (EFI_DT_REG));
+  Reg00.Base   = (EFI_PHYSICAL_ADDRESS)TempMemBuffer;
+  Reg00.Length = TestRegionSize;
+
+  ZeroMem (&Reg11, sizeof (EFI_DT_REG));
+  Reg11.Base   = (EFI_DT_BUS_ADDRESS)(UINTN)Array2;
+  Reg11.Length = 32;
+  ASSERT (DtIo->CopyReg (DtIo, EfiDtIoWidthUint32, &Reg11, 0, &Reg00, 0, 8) == EFI_SUCCESS);
+  ASSERT (CompareMem ((UINT8 *)(UINTN)Reg00.Base, (UINT8 *)(UINTN)Reg11.Base, 32) == 0);
+
+  DEBUG ((DEBUG_INFO, "%a: the test for CopyReg is passed. \n", __func__));
+  FreePool (TempMemBuffer);
+  return TRUE;
+
+ErrorExit:
+  DEBUG ((DEBUG_ERROR, "%a: does not accomplish the test.  \n", __func__));
+  if (TempMemBuffer != NULL) {
+    FreePool (TempMemBuffer);
+  }
+
+  return 0;
+}
+
 /**
   Populate test DT nodes.
 
@@ -699,6 +744,11 @@ TestsPopulate (
     Buffer,
     g5p2,
     TestG5P2Fn
+    );
+  NEW_NODE (
+    Buffer,
+    g5p3,
+    TestG5P3Fn
     );
   END_NODE (Buffer, g5);
 

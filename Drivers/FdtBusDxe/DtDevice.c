@@ -58,7 +58,7 @@ DtDeviceCreate (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  if (DtPathMatchesHandle ((VOID *)FullPath)) {
+  if (DtPathMatchesHandle ((VOID *)FullPath, NULL)) {
     return EFI_ALREADY_STARTED;
   }
 

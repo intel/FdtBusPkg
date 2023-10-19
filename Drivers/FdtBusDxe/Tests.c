@@ -170,11 +170,23 @@ TestG1Fn (
   IN  DT_DEVICE  *DtDevice
   )
 {
+  EFI_HANDLE          FoundHandle;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->IsDmaCoherent);
   ASSERT (AsciiStrCmp (DtIo->Model, "foo") == 0);
   ASSERT (AsciiStrCmp (DtIo->DeviceType, "bar") == 0);
+
+  ASSERT (DtIo->Lookup (NULL, "/g0", FALSE, &FoundHandle) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->Lookup (DtIo, NULL, FALSE, &FoundHandle) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->Lookup (DtIo, "/g0", FALSE, NULL) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->Lookup (DtIo, "/g0", FALSE, &FoundHandle) == EFI_SUCCESS);
+  ASSERT (DtIo->Lookup (DtIo, "/somethinginvalid", FALSE, &FoundHandle) == EFI_NOT_FOUND);
+  //
+  // Should return NOT_FOUND as it's connect connected yet.
+  //
+  ASSERT (DtIo->Lookup (DtIo, "/g2/g2p1", FALSE, &FoundHandle) == EFI_NOT_FOUND);
+
   return TRUE;
 }
 
@@ -185,6 +197,7 @@ TestG2Fn (
   IN  DT_DEVICE  *DtDevice
   )
 {
+  EFI_HANDLE          FoundHandle;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   //
@@ -193,6 +206,10 @@ TestG2Fn (
   //
   ASSERT (DtIo->AddressCells == 2);
   ASSERT (DtIo->SizeCells == 1);
+
+  ASSERT (DtIo->Lookup (DtIo, "somethingrelativeinvalid", FALSE, &FoundHandle) == EFI_NOT_FOUND);
+  ASSERT (DtIo->Lookup (DtIo, "g2p0", FALSE, &FoundHandle) == EFI_SUCCESS);
+
   return TRUE;
 }
 

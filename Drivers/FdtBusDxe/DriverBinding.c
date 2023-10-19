@@ -83,7 +83,10 @@ DriverSupported (
   DtDevice = DT_DEV_FROM_THIS (DtIo);
 
   if (((DtDevice->Flags & DT_DEVICE_TEST) != 0) ||
-      (AsciiStrCmp (DtIo->Name, "/DtRoot") == 0) ||
+      (AsciiStrCmp (
+         DtIo->Name,
+         GetDtRootNameFromDeviceFlags (DtDevice->Flags)
+         ) == 0) ||
       (DtIo->IsCompatible (DtIo, "simple-bus") == EFI_SUCCESS))
   {
     Status = EFI_SUCCESS;

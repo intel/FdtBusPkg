@@ -29,8 +29,12 @@
 #define DT_DEV_FROM_THIS(a)  CR(a, DT_DEVICE, DtIo, DT_DEV_SIGNATURE)
 #define DT_DEV_FROM_LINK(a)  CR(a, DT_DEVICE, Link, DT_DEV_SIGNATURE)
 
+typedef struct _DT_DEVICE DT_DEVICE;
+
 extern EFI_CPU_IO2_PROTOCOL  *gCpuIo2;
 extern VOID                  *gDeviceTreeBase;
+extern DT_DEVICE             *gRootDtDevice;
+extern DT_DEVICE             *gTestRootDtDevice;
 #ifndef MDEPKG_NDEBUG
 extern VOID  *gTestTreeBase;
 #else
@@ -52,7 +56,7 @@ extern LIST_ENTRY                    gCriticalDevices;
 #endif /* MDEPKG_NDEBUG */
 #define DT_DEVICE_INHERITED  DT_DEVICE_TEST
 
-typedef struct _DT_DEVICE {
+struct _DT_DEVICE {
   UINTN                      Signature;
   EFI_HANDLE                 Handle;
   INTN                       FdtNode;
@@ -65,10 +69,20 @@ typedef struct _DT_DEVICE {
   // is set.
   //
   LIST_ENTRY                 Link;
-} DT_DEVICE;
+};
 
 VOID *
 GetTreeBaseFromDeviceFlags (
+  IN UINTN  DeviceFlags
+  );
+
+CONST CHAR8 *
+GetDtRootNameFromDeviceFlags (
+  IN UINTN  DeviceFlags
+  );
+
+CONST DT_DEVICE *
+GetDtRootFromDeviceFlags (
   IN UINTN  DeviceFlags
   );
 
@@ -89,7 +103,8 @@ DtPathNodeCreate (
 
 BOOLEAN
 DtPathMatchesHandle (
-  IN  EFI_DEVICE_PATH_PROTOCOL  *Path
+  IN  EFI_DEVICE_PATH_PROTOCOL  *Path,
+  OUT EFI_HANDLE                *FoundHandle OPTIONAL
   );
 
 EFI_STATUS
@@ -192,7 +207,8 @@ EFIAPI
 DtIoLookup (
   IN  EFI_DT_IO_PROTOCOL  *This,
   IN  CONST CHAR8         *PathOrAlias,
-  OUT EFI_DT_IO_PROTOCOL  **Device
+  IN  BOOLEAN             Connect,
+  OUT EFI_HANDLE          *FoundHandle
   );
 
 EFI_STATUS

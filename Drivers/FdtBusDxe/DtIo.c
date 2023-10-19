@@ -29,15 +29,16 @@ STATIC_ASSERT (_ (Maximum));
 #undef _
 
 /**
-  Looks up an EFI_DT_IO_PROTOCOL instance given a path or alias.
+  Looks up an EFI_DT_IO_PROTOCOL handle given a DT path or alias, optionally
+  connecting any missing drivers along the way.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
-  @param  PathOrAlias           Path or alias looked up.
-  @param  Device                Pointer to the EFI_DT_IO_PROTOCOL located.
+  @param  PathOrAlias           DT path or alias looked up.
+  @param  Connect               Connect missing drivers during lookup.
+  @param  FoundHandle           Matching EFI_HANDLE.
 
   @retval EFI_SUCCESS           Lookup successful.
-  @retval EFI_NOT_FOUND         Could not resolve PathOrAlias to a EFI_DT_IO_PROTOCOL
-                                instance.
+  @retval EFI_NOT_FOUND         Not found.
   @retval EFI_DEVICE_ERROR      Device Tree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
@@ -47,10 +48,114 @@ EFIAPI
 DtIoLookup (
   IN  EFI_DT_IO_PROTOCOL  *This,
   IN  CONST CHAR8         *PathOrAlias,
-  OUT EFI_DT_IO_PROTOCOL  **Device
+  IN  BOOLEAN             Connect,
+  OUT EFI_HANDLE          *FoundHandle
   )
 {
-  return EFI_UNSUPPORTED;
+  DT_DEVICE                 *DtDevice;
+  VOID                      *TreeBase;
+  CONST CHAR8               *Resolved;
+  CHAR8                     *Copied;
+  CHAR8                     *Iter;
+  EFI_DEVICE_PATH_PROTOCOL  *CurrentDp;
+  EFI_STATUS                Status;
+
+  if ((This == NULL) || (PathOrAlias == NULL) || (FoundHandle == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  CurrentDp = NULL;
+  DtDevice  = DT_DEV_FROM_THIS (This);
+  TreeBase  = GetTreeBaseFromDeviceFlags (DtDevice->Flags);
+
+  //
+  // PathOrAlias could be an:
+  // - alias
+  // - relative path (foo/bar), relative to DtDevice.
+  // - absolute path (/foo/bar)
+  //
+  //
+  Resolved = fdt_get_alias (TreeBase, PathOrAlias);
+  if (Resolved == NULL) {
+    //
+    // Not an alias.
+    //
+    Resolved = PathOrAlias;
+  }
+
+  //
+  // Copy as we're going to mutate it as part of parsing.
+  //
+  Copied = Iter = AllocateCopyPool (AsciiStrSize (Resolved), Resolved);
+
+  if (*Iter == '/') {
+    Iter++;
+    CurrentDp = AppendDevicePath ((VOID *)GetDtRootFromDeviceFlags (DtDevice->Flags)->DevicePath, NULL);
+  } else {
+    CurrentDp = AppendDevicePath ((VOID *)DtDevice->DevicePath, NULL);
+  }
+
+  if (CurrentDp == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: CurrentDp\n", __func__));
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Out;
+  }
+
+  while (*Iter != '\0') {
+    EFI_DEVICE_PATH_PROTOCOL  *NewDp;
+    EFI_DT_DEVICE_PATH_NODE   *DpNode;
+    CHAR8                     *StartOfName;
+    CHAR8                     *EndOfName;
+
+    StartOfName = Iter;
+    //
+    // Really ought to be strchr or strchrnul (even better).
+    //
+    EndOfName = AsciiStrStr (Iter, "/");
+    if (EndOfName != NULL) {
+      *EndOfName = '\0';
+      Iter       = EndOfName + 1;
+    } else {
+      Iter = Iter + AsciiStrLen (Iter);
+    }
+
+    DpNode = DtPathNodeCreate (StartOfName);
+    if (DpNode == NULL) {
+      DEBUG ((DEBUG_ERROR, "%a: DtDevicePathNodeCreate\n", __func__));
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Out;
+    }
+
+    NewDp = (VOID *)AppendDevicePathNode (CurrentDp, (VOID *)DpNode);
+    FreePool (DpNode);
+    if (NewDp == NULL) {
+      DEBUG ((DEBUG_ERROR, "%a: AppendDevicePathNode\n", __func__));
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Out;
+    }
+
+    FreePool (CurrentDp);
+    CurrentDp = NewDp;
+  }
+
+  //
+  // At this point we have a fully assembled device path to
+  // the handle of interest.
+  //
+  if (!Connect) {
+    Status = DtPathMatchesHandle (CurrentDp, FoundHandle) ? EFI_SUCCESS :
+             EFI_NOT_FOUND;
+  } else {
+    Status = EFI_UNSUPPORTED;
+  }
+
+Out:
+  if (CurrentDp != NULL) {
+    FreePool (CurrentDp);
+  }
+
+  FreePool (Copied);
+  return Status;
 }
 
 /**

@@ -9,6 +9,8 @@
 #include "FdtBusDxe.h"
 
 VOID                  *gDeviceTreeBase;
+DT_DEVICE             *gRootDtDevice;
+DT_DEVICE             *gTestRootDtDevice;
 STATIC EFI_EVENT      mPlatformHasDeviceTreeEvent;
 STATIC EFI_EVENT      mEndOfDxeEvent;
 EFI_CPU_IO2_PROTOCOL  *gCpuIo2;
@@ -239,8 +241,7 @@ CreateRootHandle (
 
   Status = DtDeviceCreate (
              RootNode,
-             (DeviceFlags & DT_DEVICE_TEST) != 0 ?
-             "/DtTestRoot" : "/DtRoot",
+             GetDtRootNameFromDeviceFlags (DeviceFlags),
              NULL,
              DeviceFlags,
              &RootDtDevice
@@ -278,20 +279,18 @@ RegisterBusDriver (
   )
 {
   EFI_STATUS  Status;
-  DT_DEVICE   *RootDtDevice;
-  DT_DEVICE   *TestRootDtDevice;
 
-  RootDtDevice     = NULL;
-  TestRootDtDevice = NULL;
+  gRootDtDevice     = NULL;
+  gTestRootDtDevice = NULL;
 
-  Status = CreateRootHandle (0, &RootDtDevice);
+  Status = CreateRootHandle (0, &gRootDtDevice);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: CreateRootHandle: %r\n", __func__, Status));
     goto done;
   }
 
   if (gTestTreeBase != NULL) {
-    Status = CreateRootHandle (DT_DEVICE_TEST, &TestRootDtDevice);
+    Status = CreateRootHandle (DT_DEVICE_TEST, &gTestRootDtDevice);
     if (EFI_ERROR (Status)) {
       DEBUG ((DEBUG_ERROR, "%a: CreateRootHandle(Test): %r\n", __func__, Status));
       goto done;
@@ -314,14 +313,16 @@ RegisterBusDriver (
 
 done:
   if (EFI_ERROR (Status)) {
-    if (TestRootDtDevice != NULL) {
-      DtDeviceUnregister (TestRootDtDevice, NULL, NULL);
-      DtDeviceCleanup (TestRootDtDevice);
+    if (gTestRootDtDevice != NULL) {
+      DtDeviceUnregister (gTestRootDtDevice, NULL, NULL);
+      DtDeviceCleanup (gTestRootDtDevice);
+      gTestRootDtDevice = NULL;
     }
 
-    if (RootDtDevice != NULL) {
-      DtDeviceUnregister (RootDtDevice, NULL, NULL);
-      DtDeviceCleanup (RootDtDevice);
+    if (gRootDtDevice != NULL) {
+      DtDeviceUnregister (gRootDtDevice, NULL, NULL);
+      DtDeviceCleanup (gRootDtDevice);
+      gRootDtDevice = NULL;
     }
   }
 

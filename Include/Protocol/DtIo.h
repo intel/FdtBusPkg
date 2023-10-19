@@ -153,24 +153,26 @@ typedef enum {
 } EFI_DT_VALUE_TYPE;
 
 /**
-  Looks up an EFI_DT_IO_PROTOCOL instance given a path or alias.
+  Looks up an EFI_DT_IO_PROTOCOL handle given a DT path or alias, optionally
+  connecting any missing drivers along the way.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
-  @param  PathOrAlias           Path or alias looked up.
-  @param  Device                Pointer to the EFI_DT_IO_PROTOCOL located.
+  @param  PathOrAlias           DT path or alias looked up.
+  @param  Connect               Connect missing drivers during lookup.
+  @param  FoundHandle           Matching EFI_HANDLE.
 
   @retval EFI_SUCCESS           Lookup successful.
-  @retval EFI_NOT_FOUND         Could not resolve PathOrAlias to a EFI_DT_IO_PROTOCOL
-                                instance.
+  @retval EFI_NOT_FOUND         Not found.
   @retval EFI_DEVICE_ERROR      Device Tree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
 typedef
 EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_LOOKUP)(
-  IN  EFI_DT_IO_PROTOCOL *This,
-  IN  CONST CHAR8        *PathOrAlias,
-  OUT EFI_DT_IO_PROTOCOL **Device
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  CONST CHAR8         *PathOrAlias,
+  IN  BOOLEAN             Connect,
+  OUT EFI_HANDLE          *FoundHandle
   );
 
 /**

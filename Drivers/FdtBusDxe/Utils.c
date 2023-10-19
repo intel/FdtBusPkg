@@ -34,6 +34,50 @@ GetTreeBaseFromDeviceFlags (
 }
 
 /**
+  Given DeviceFlags, return the DT root node name.
+
+  @param[in]    DeviceFlags    DT_DEVICE DeviceFlags.
+
+  @retval CHAR8 *              Name.
+
+**/
+CONST CHAR8 *
+GetDtRootNameFromDeviceFlags (
+  IN UINTN  DeviceFlags
+  )
+{
+  CONST CHAR8  *Name;
+
+  Name = (DeviceFlags & DT_DEVICE_TEST) != 0 ?
+         "DtTestRoot" : "DtRoot";
+
+  ASSERT (Name != NULL);
+  return Name;
+}
+
+/**
+  Given DeviceFlags, return the matching root DT_DEVICE.
+
+  @param[in]    DeviceFlags    DT_DEVICE DeviceFlags.
+
+  @retval DT_DEVICE *          Root DT_DEVICE.
+
+**/
+CONST DT_DEVICE *
+GetDtRootFromDeviceFlags (
+  IN UINTN  DeviceFlags
+  )
+{
+  CONST DT_DEVICE  *Device;
+
+  Device = (DeviceFlags & DT_DEVICE_TEST) != 0 ?
+           gTestRootDtDevice : gRootDtDevice;
+
+  ASSERT (Device != NULL);
+  return Device;
+}
+
+/**
   Given a EFI_HANDLE, return if the handle has a driver started
   on it.
 
@@ -165,6 +209,7 @@ DtPathNodeCreate (
   See if a handle with exactly matching device path already exists.
 
   @param[in]    Path           Device Path.
+  @param[out]   FoundHandle    Optional pointer for storing found handle.
 
   @retval TRUE                 Exists.
   @retval FALSE                Does not exist or error.
@@ -172,7 +217,8 @@ DtPathNodeCreate (
 **/
 BOOLEAN
 DtPathMatchesHandle (
-  IN  EFI_DEVICE_PATH_PROTOCOL  *Path
+  IN  EFI_DEVICE_PATH_PROTOCOL  *Path,
+  OUT EFI_HANDLE                *FoundHandle OPTIONAL
   )
 {
   EFI_STATUS  Status;
@@ -189,6 +235,10 @@ DtPathMatchesHandle (
   }
 
   if (IsDevicePathEnd ((VOID *)Path)) {
+    if (FoundHandle != NULL) {
+      *FoundHandle = Handle;
+    }
+
     return TRUE;
   }
 

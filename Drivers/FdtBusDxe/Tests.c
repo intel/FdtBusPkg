@@ -510,6 +510,59 @@ ErrorExit:
 STATIC
 BOOLEAN
 EFIAPI
+TestG5P1Fn (
+  IN  DT_DEVICE  *DtDevice
+  )
+{
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+  UINTN               TestRegionSize;
+  UINT8               *TempMemBuffer;
+  EFI_DT_REG          Reg00;
+  UINT8               Array1[32];
+  UINT8               Array2[32];
+  UINTN               Index;
+
+  TestRegionSize = sizeof (Dt_DeviceRegs_TestTemplate00);
+  TempMemBuffer  = AllocateZeroPool (TestRegionSize);
+  if (TempMemBuffer == NULL) {
+    DEBUG ((DEBUG_ERROR, "Warning: Run out memory. \n"));
+    goto ErrorExit;
+  }
+
+  for (Index = 0; Index < 32; Index++) {
+    Array1[Index] = Index;
+  }
+
+  CopyMem (TempMemBuffer, Dt_DeviceRegs_TestTemplate00, TestRegionSize);
+  CopyMem (Array2, Dt_DeviceRegs_TestTemplate00, 16);
+
+  ZeroMem (&Reg00, sizeof (EFI_DT_REG));
+  Reg00.Base   = (EFI_PHYSICAL_ADDRESS)TempMemBuffer;
+  Reg00.Length = TestRegionSize;
+  ASSERT (DtIo->WriteReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0x10, 16, Array1) == EFI_SUCCESS);
+  ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0x10, 16, Array2) == EFI_SUCCESS);
+  ASSERT (CompareMem (Array1, Array2, 16) == 0);
+  ASSERT (DtIo->WriteReg (DtIo, EfiDtIoWidthUint32, &Reg00, 0x20, 8, Array1) == EFI_SUCCESS);
+  ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint32, &Reg00, 0x20, 8, Array2) == EFI_SUCCESS);
+  ASSERT (CompareMem (Array1, Array2, 16) == 0);
+  ASSERT (DtIo->WriteReg (DtIo, EfiDtIoWidthUint32, &Reg00, 0x30, 8, Array1) == EFI_INVALID_PARAMETER);
+
+  DEBUG ((DEBUG_INFO, "%a: the test for WriteReg is passed. \n", __func__));
+  FreePool (TempMemBuffer);
+  return TRUE;
+
+ErrorExit:
+  DEBUG ((DEBUG_ERROR, "%a: does not accomplish the test.  \n", __func__));
+  if (TempMemBuffer != NULL) {
+    FreePool (TempMemBuffer);
+  }
+
+  return 0;
+}
+
+STATIC
+BOOLEAN
+EFIAPI
 TestG5P2Fn (
   IN  DT_DEVICE  *DtDevice
   )
@@ -739,6 +792,11 @@ TestsPopulate (
     Buffer,
     g5p0,
     TestG5P0Fn
+    );
+  NEW_NODE (
+    Buffer,
+    g5p1,
+    TestG5P1Fn
     );
   NEW_NODE (
     Buffer,

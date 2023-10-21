@@ -531,3 +531,65 @@ DtIoGetReg (
 
   return EFI_SUCCESS;
 }
+
+/**
+  Given a string list property name and a value of one of the strings,
+  returns the strings index.
+
+  This is useful to look up other properties indexed by name, e.g.
+  foo = < value1 value2 value3 >
+  foo-names = "index1", "index2", "index3"
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Name                  Property to examine.
+  @param  Value                 String to search for.
+
+  @retval EFI_SUCCESS           String found.
+  @retval EFI_NOT_FOUND         Could not find property or string.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+EFI_STATUS
+EFIAPI
+DtIoGetStringIndex (
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  CONST CHAR8         *Name,
+  IN  CONST CHAR8         *Value,
+  OUT UINTN               *Index
+  )
+{
+  EFI_STATUS       Status;
+  UINTN            CurrentIndex;
+  EFI_DT_PROPERTY  Property;
+  CONST CHAR8      *EndOfString;
+
+  if ((This == NULL) || (Name == NULL) ||
+      (Value == NULL) || (Index == NULL))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Status = This->GetProp (This, Name, &Property);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  CurrentIndex = 0;
+  while (Property.Iter < Property.End) {
+    EndOfString = AsciiStrFindEnd (Property.Iter, Property.End);
+    if (EndOfString == NULL) {
+      return EFI_NOT_FOUND;
+    }
+
+    if (AsciiStrCmp (Property.Iter, Value) == 0) {
+      *Index = CurrentIndex;
+      return EFI_SUCCESS;
+    }
+
+    CurrentIndex++;
+    Property.Iter = EndOfString;
+  }
+
+  return EFI_NOT_FOUND;
+}

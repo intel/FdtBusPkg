@@ -524,11 +524,20 @@ TEST_DEF (G6) {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
   CHAR8               *String;
   CHAR8               *String2;
+  UINTN               Index;
 
   ASSERT (DtIo->GetProp (DtIo, "string", &Property) == EFI_SUCCESS);
   ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String) == EFI_SUCCESS);
   ASSERT (AsciiStrCmp (String, "a string") == 0);
   ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String) == EFI_NOT_FOUND);
+  Index = 1;
+  ASSERT (DtIo->GetStringIndex (DtIo, "string", "a string", &Index) == EFI_SUCCESS);
+  ASSERT (Index == 0);
+  ASSERT (DtIo->GetStringIndex (DtIo, "string", "ya nah", &Index) == EFI_NOT_FOUND);
+  ASSERT (DtIo->GetStringIndex (NULL, "string", "ya nah", &Index) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetStringIndex (DtIo, NULL, "ya nah", &Index) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetStringIndex (DtIo, "string", NULL, &Index) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetStringIndex (DtIo, "string", "ya nah", NULL) == EFI_INVALID_PARAMETER);
 
   ASSERT (DtIo->GetProp (DtIo, "svals1", &Property) == EFI_SUCCESS);
   ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String) == EFI_SUCCESS);
@@ -541,11 +550,18 @@ TEST_DEF (G6) {
   ASSERT (AsciiStrCmp (String, "string2") == 0);
   Property.Iter = Property.Begin;
   ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 2, &String) == EFI_NOT_FOUND);
+  ASSERT (DtIo->GetStringIndex (DtIo, "svals1", "string3", &Index) == EFI_NOT_FOUND);
+  ASSERT (DtIo->GetStringIndex (DtIo, "svals1", "string2", &Index) == EFI_SUCCESS);
+  ASSERT (Index == 1);
+  ASSERT (DtIo->GetStringIndex (DtIo, "svals1", "string1", &Index) == EFI_SUCCESS);
+  ASSERT (Index == 0);
 
   ASSERT (DtIo->GetProp (DtIo, "empty", &Property) == EFI_SUCCESS);
   ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String) == EFI_NOT_FOUND);
   ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String) == EFI_NOT_FOUND);
   ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 100, &String) == EFI_NOT_FOUND);
+  ASSERT (DtIo->GetStringIndex (DtIo, "empty", "", &Index) == EFI_NOT_FOUND);
+  ASSERT (DtIo->GetStringIndex (DtIo, "empty", "something else", &Index) == EFI_NOT_FOUND);
 
   ASSERT (DtIo->GetProp (DtIo, "svals2", &Property) == EFI_SUCCESS);
   ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String) == EFI_SUCCESS);
@@ -559,6 +575,10 @@ TEST_DEF (G6) {
   ASSERT (AsciiStrCmp (String2, "") == 0);
   ASSERT (String2 > String);
   ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String2) == EFI_NOT_FOUND);
+  ASSERT (DtIo->GetStringIndex (DtIo, "svals2", "", &Index) == EFI_SUCCESS);
+  ASSERT (Index == 0);
+  ASSERT (DtIo->GetStringIndex (DtIo, "svals2", "1", &Index) == EFI_SUCCESS);
+  ASSERT (Index == 2);
 
   return TRUE;
 }

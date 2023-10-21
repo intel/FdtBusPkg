@@ -302,11 +302,36 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_IS_COMPATIBLE)(
 
 **/
 typedef EFI_STATUS (EFIAPI *EFI_DT_IO_PROTOCOL_PARSE_PROP)(
-  IN  EFI_DT_IO_PROTOCOL *This,
-  IN  OUT EFI_DT_PROPERTY    *Prop,
-  IN  EFI_DT_VALUE_TYPE  Type,
-  IN  UINTN              Index,
-  OUT VOID               *Buffer
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  OUT EFI_DT_PROPERTY *Prop,
+  IN  EFI_DT_VALUE_TYPE   Type,
+  IN  UINTN               Index,
+  OUT VOID                *Buffer
+  );
+
+/**
+  Given a string list property name and a value of one of the strings,
+  returns the strings index.
+
+  This is useful to look up other properties indexed by name, e.g.
+  foo = < value1 value2 value3 >
+  foo-names = "index1", "index2", "index3"
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Name                  Property to examine.
+  @param  Value                 String to search for.
+
+  @retval EFI_SUCCESS           String found.
+  @retval EFI_NOT_FOUND         Could not find property or string.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+typedef EFI_STATUS (EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING_INDEX)(
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  CONST CHAR8         *Name,
+  IN  CONST CHAR8         *Value,
+  OUT UINTN               *Index
   );
 
 /**
@@ -538,43 +563,44 @@ struct _EFI_DT_IO_PROTOCOL {
   // it mostly useful (EFI_COMPONENT_NAME_PROTOCOL) is missing
   // CONST qualifier in ComponentNameGetControllerName arg.
   //
-  CHAR16                                *ComponentName;
-  CONST CHAR8                           *Name;
-  CONST CHAR8                           *DeviceType;
-  EFI_DT_STATUS                         DeviceStatus;
-  UINT8                                 AddressCells;
-  UINT8                                 SizeCells;
-  UINT8                                 ChildAddressCells;
-  UINT8                                 ChildSizeCells;
+  CHAR16                                 *ComponentName;
+  CONST CHAR8                            *Name;
+  CONST CHAR8                            *DeviceType;
+  EFI_DT_STATUS                          DeviceStatus;
+  UINT8                                  AddressCells;
+  UINT8                                  SizeCells;
+  UINT8                                  ChildAddressCells;
+  UINT8                                  ChildSizeCells;
 
-  BOOLEAN                               IsDmaCoherent;
+  BOOLEAN                                IsDmaCoherent;
   //
   // Core.
   //
-  EFI_DT_IO_PROTOCOL_LOOKUP             Lookup;
-  EFI_DT_IO_PROTOCOL_GET_PROP           GetProp;
-  EFI_DT_IO_PROTOCOL_SCAN_CHILDREN      ScanChildren;
-  EFI_DT_IO_PROTOCOL_REMOVE_CHILD       RemoveChild;
+  EFI_DT_IO_PROTOCOL_LOOKUP              Lookup;
+  EFI_DT_IO_PROTOCOL_GET_PROP            GetProp;
+  EFI_DT_IO_PROTOCOL_SCAN_CHILDREN       ScanChildren;
+  EFI_DT_IO_PROTOCOL_REMOVE_CHILD        RemoveChild;
   //
   // Convenience calls to use with or instead of GetProp.
   //
-  EFI_DT_IO_PROTOCOL_PARSE_PROP         ParseProp;
-  EFI_DT_IO_PROTOCOL_GET_REG            GetReg;
-  EFI_DT_IO_PROTOCOL_IS_COMPATIBLE      IsCompatible;
+  EFI_DT_IO_PROTOCOL_PARSE_PROP          ParseProp;
+  EFI_DT_IO_PROTOCOL_GET_STRING_INDEX    GetStringIndex;
+  EFI_DT_IO_PROTOCOL_GET_REG             GetReg;
+  EFI_DT_IO_PROTOCOL_IS_COMPATIBLE       IsCompatible;
   //
   // Device register access.
   //
-  EFI_DT_IO_PROTOCOL_POLL_REG           PollReg;
-  EFI_DT_IO_PROTOCOL_IO_REG             ReadReg;
-  EFI_DT_IO_PROTOCOL_IO_REG             WriteReg;
-  EFI_DT_IO_PROTOCOL_COPY_REG           CopyReg;
+  EFI_DT_IO_PROTOCOL_POLL_REG            PollReg;
+  EFI_DT_IO_PROTOCOL_IO_REG              ReadReg;
+  EFI_DT_IO_PROTOCOL_IO_REG              WriteReg;
+  EFI_DT_IO_PROTOCOL_COPY_REG            CopyReg;
   //
   // DMA operations.
   //
-  EFI_DT_IO_PROTOCOL_MAP                Map;
-  EFI_DT_IO_PROTOCOL_UNMAP              Unmap;
-  EFI_DT_IO_PROTOCOL_ALLOCATE_BUFFER    AllocateBuffer;
-  EFI_DT_IO_PROTOCOL_FREE_BUFFER        FreeBuffer;
+  EFI_DT_IO_PROTOCOL_MAP                 Map;
+  EFI_DT_IO_PROTOCOL_UNMAP               Unmap;
+  EFI_DT_IO_PROTOCOL_ALLOCATE_BUFFER     AllocateBuffer;
+  EFI_DT_IO_PROTOCOL_FREE_BUFFER         FreeBuffer;
   //
   // These are device-driver specific callbacks that can
   // be set by a device driver starting on the handle.

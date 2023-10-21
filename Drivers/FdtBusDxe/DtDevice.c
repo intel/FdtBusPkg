@@ -161,9 +161,10 @@ DtDeviceCreate (
   //
   // Convenience calls.
   //
-  DtDevice->DtIo.ParseProp    = DtIoParseProp;
-  DtDevice->DtIo.GetReg       = DtIoGetReg;
-  DtDevice->DtIo.IsCompatible = DtIoIsCompatible;
+  DtDevice->DtIo.ParseProp      = DtIoParseProp;
+  DtDevice->DtIo.GetStringIndex = DtIoGetStringIndex;
+  DtDevice->DtIo.GetReg         = DtIoGetReg;
+  DtDevice->DtIo.IsCompatible   = DtIoIsCompatible;
 
   //
   // Device register access.

@@ -256,6 +256,15 @@ DtIoParseProp (
 
 EFI_STATUS
 EFIAPI
+DtIoGetStringIndex (
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  CONST CHAR8         *Name,
+  IN  CONST CHAR8         *Value,
+  OUT UINTN               *Index
+  );
+
+EFI_STATUS
+EFIAPI
 DtIoPollReg (
   IN  EFI_DT_IO_PROTOCOL        *This,
   IN  EFI_DT_IO_PROTOCOL_WIDTH  Width,

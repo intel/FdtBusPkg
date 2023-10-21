@@ -365,6 +365,68 @@ Out:
 }
 
 /**
+  Parses out string property value, advancing Prop->Iter on success.
+
+  The returned pointer points to the actual embedded string data, it is
+  not a copy.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
+                                current position.
+  @param  Type                  Type of the field to parse out.
+  @param  Index                 Index of the field to return, starting from the
+                                current buffer position within the EFI_DT_PROPERTY.
+  @param  String                Pointer to CHAR8.
+  @retval EFI_SUCCESS           Parsing successful.
+  @retval EFI_NOT_FOUND         Not enough remaining property buffer to contain
+                                the field of specified type.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+DtIoParsePropString (
+  IN  DT_DEVICE            *DtDevice,
+  IN  OUT EFI_DT_PROPERTY  *Prop,
+  IN  UINTN                Index,
+  OUT CONST CHAR8          **String
+  )
+{
+  UINTN        CurrentIndex;
+  CONST VOID   *Iter;
+  CONST CHAR8  *EndOfString;
+
+  CurrentIndex = 0;
+  Iter         = Prop->Iter;
+
+  while (Iter < Prop->End) {
+    EndOfString = AsciiStrFindEnd (Iter, Prop->End);
+    if (EndOfString == NULL) {
+      return EFI_NOT_FOUND;
+    }
+
+    if (Index != CurrentIndex) {
+      CurrentIndex++;
+      Iter = EndOfString;
+    } else {
+      //
+      // Iter points to string of interest.
+      //
+      break;
+    }
+  }
+
+  if (Iter < Prop->End) {
+    *String    = Iter;
+    Prop->Iter = EndOfString;
+    return EFI_SUCCESS;
+  }
+
+  return EFI_NOT_FOUND;
+}
+
+/**
   Parses out a field encoded in the property, advancing Prop->Iter on success.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
@@ -412,6 +474,7 @@ DtIoParseProp (
       return DtIoParsePropReg (DtDevice, Prop, Index, Buffer);
     case EFI_DT_VALUE_RANGE:
     case EFI_DT_VALUE_STRING:
+      return DtIoParsePropString (DtDevice, Prop, Index, Buffer);
     case EFI_DT_VALUE_LOOKUP:
       break;
   }

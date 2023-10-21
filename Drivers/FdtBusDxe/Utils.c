@@ -326,3 +326,29 @@ GetElapsedTick (
     return PreviousTick - *CurrentTick;
   }
 }
+
+/**
+  Return the pointer to the end of a string, which is the byte following
+  th NUL terminator, or NULL if the NUL terminator is not found.
+
+  @param   Start  Beginning of buffer to consider.
+  @param   End    End of buffer (i.e. pointer to first byte beyond).
+
+  @return  Pointer between [Start, End) or NULL.
+**/
+CONST CHAR8 *
+AsciiStrFindEnd (
+  IN  CONST CHAR8  *Start,
+  IN  CONST CHAR8  *End
+  )
+{
+  CONST CHAR8  *Iter;
+
+  for (Iter = Start; Iter < End; Iter++) {
+    if (*Iter == '\0') {
+      return Iter + 1;
+    }
+  }
+
+  return NULL;
+}

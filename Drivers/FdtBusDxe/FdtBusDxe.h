@@ -351,6 +351,12 @@ GetElapsedTick (
   IN  UINT64  EndTick
   );
 
+CONST CHAR8 *
+AsciiStrFindEnd (
+  IN  CONST CHAR8  *Start,
+  IN  CONST CHAR8  *End
+  );
+
 #ifndef MDEPKG_NDEBUG
 EFI_STATUS
 TestsInit (

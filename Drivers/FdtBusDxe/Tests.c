@@ -516,6 +516,53 @@ TEST_DEF (G5P3) {
   return TRUE;
 }
 
+//
+// String properties.
+//
+TEST_DEF (G6) {
+  EFI_DT_PROPERTY     Property;
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+  CHAR8               *String;
+  CHAR8               *String2;
+
+  ASSERT (DtIo->GetProp (DtIo, "string", &Property) == EFI_SUCCESS);
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String) == EFI_SUCCESS);
+  ASSERT (AsciiStrCmp (String, "a string") == 0);
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String) == EFI_NOT_FOUND);
+
+  ASSERT (DtIo->GetProp (DtIo, "svals1", &Property) == EFI_SUCCESS);
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String) == EFI_SUCCESS);
+  ASSERT (AsciiStrCmp (String, "string1") == 0);
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String) == EFI_SUCCESS);
+  ASSERT (AsciiStrCmp (String, "string2") == 0);
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String) == EFI_NOT_FOUND);
+  Property.Iter = Property.Begin;
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 1, &String) == EFI_SUCCESS);
+  ASSERT (AsciiStrCmp (String, "string2") == 0);
+  Property.Iter = Property.Begin;
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 2, &String) == EFI_NOT_FOUND);
+
+  ASSERT (DtIo->GetProp (DtIo, "empty", &Property) == EFI_SUCCESS);
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String) == EFI_NOT_FOUND);
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String) == EFI_NOT_FOUND);
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 100, &String) == EFI_NOT_FOUND);
+
+  ASSERT (DtIo->GetProp (DtIo, "svals2", &Property) == EFI_SUCCESS);
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String) == EFI_SUCCESS);
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String2) == EFI_SUCCESS);
+  ASSERT (AsciiStrCmp (String, "") == 0);
+  ASSERT (AsciiStrCmp (String2, "") == 0);
+  ASSERT (String2 > String);
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String2) == EFI_SUCCESS);
+  ASSERT (AsciiStrCmp (String2, "1") == 0);
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String2) == EFI_SUCCESS);
+  ASSERT (AsciiStrCmp (String2, "") == 0);
+  ASSERT (String2 > String);
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String2) == EFI_NOT_FOUND);
+
+  return TRUE;
+}
+
 STATIC TestDesc  TestDescs[] = {
   TEST_DECL (DtTestRoot),
   TEST_DECL (G0),
@@ -535,7 +582,8 @@ STATIC TestDesc  TestDescs[] = {
   TEST_DECL (G5P0),
   TEST_DECL (G5P1),
   TEST_DECL (G5P2),
-  TEST_DECL (G5P3)
+  TEST_DECL (G5P3),
+  TEST_DECL (G6),
 };
 
 /**

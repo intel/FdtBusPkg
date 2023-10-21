@@ -336,42 +336,19 @@ DtIoFreeBuffer (
   IN  VOID                *HostAddress
   );
 
-/**
-  Return the result of (Multiplicand * Multiplier / Divisor).
-
-  @param Multiplicand A 64-bit unsigned value.
-  @param Multiplier   A 64-bit unsigned value.
-  @param Divisor      A 32-bit unsigned value.
-  @param Remainder    A pointer to a 32-bit unsigned value. This parameter is
-                      optional and may be NULL.
-
-  @return Multiplicand * Multiplier / Divisor.
-**/
 UINT64
 MultThenDivU64x64x32 (
-  IN      UINT64  Multiplicand,
-  IN      UINT64  Multiplier,
-  IN      UINT32  Divisor,
-  OUT     UINT32  *Remainder  OPTIONAL
+  IN  UINT64  Multiplicand,
+  IN  UINT64  Multiplier,
+  IN  UINT32  Divisor,
+  OUT UINT32  *Remainder OPTIONAL
   );
 
-/**
-  Return the elapsed tick count from CurrentTick.
-
-  @param  CurrentTick  On input, the previous tick count.
-                       On output, the current tick count.
-  @param  StartTick    The value the performance counter starts with when it
-                       rolls over.
-  @param  EndTick      The value that the performance counter ends with before
-                       it rolls over.
-
-  @return  The elapsed tick count from CurrentTick.
-**/
 UINT64
 GetElapsedTick (
-  UINT64  *CurrentTick,
-  UINT64  StartTick,
-  UINT64  EndTick
+  IN  UINT64  *CurrentTick,
+  IN  UINT64  StartTick,
+  IN  UINT64  EndTick
   );
 
 #ifndef MDEPKG_NDEBUG

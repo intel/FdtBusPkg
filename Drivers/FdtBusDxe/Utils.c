@@ -258,10 +258,10 @@ DtPathMatchesHandle (
 **/
 UINT64
 MultThenDivU64x64x32 (
-  IN      UINT64  Multiplicand,
-  IN      UINT64  Multiplier,
-  IN      UINT32  Divisor,
-  OUT     UINT32  *Remainder  OPTIONAL
+  IN  UINT64  Multiplicand,
+  IN  UINT64  Multiplier,
+  IN  UINT32  Divisor,
+  OUT UINT32  *Remainder OPTIONAL
   )
 {
   UINT64  Uint64;
@@ -311,9 +311,9 @@ MultThenDivU64x64x32 (
 **/
 UINT64
 GetElapsedTick (
-  UINT64  *CurrentTick,
-  UINT64  StartTick,
-  UINT64  EndTick
+  IN  UINT64  *CurrentTick,
+  IN  UINT64  StartTick,
+  IN  UINT64  EndTick
   )
 {
   UINT64  PreviousTick;

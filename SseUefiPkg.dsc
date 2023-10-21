@@ -18,6 +18,7 @@
   SUPPORTED_ARCHITECTURES        = AARCH64|RISCV64
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
+  PREBUILD                       = sh SseUefiPkg/Drivers/FdtBusDxe/TestDt.sh
 
 !include MdePkg/MdeLibs.dsc.inc
 

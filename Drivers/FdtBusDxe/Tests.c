@@ -9,62 +9,26 @@
 #include "FdtBusDxe.h"
 
 #ifndef MDEPKG_NDEBUG
+  #include "TestDt.dtbi"
 
-#define TEST_DT_SIZE  4096
+#define TEST_DECL(x)  { #x, Test ## x ## Fn }
 
-//
-// Encode the pointer as a 32-bit offset to not have to worry
-// when we go 128-bit.
-//
+#define TEST_DEF(x)                             \
+  STATIC                                        \
+  BOOLEAN                                       \
+  EFIAPI                                        \
+  Test ## x ## Fn (                             \
+    IN  DT_DEVICE  *DtDevice                    \
+  )                                             \
 
-#define NODE_TEST(Buffer, Test, ...)  do {                              \
-    if (Test != NULL) {                                                 \
-      fdt_property_u32 (Buffer, "uefi,FdtBusDxe-Test", (UINTN) Test - (UINTN) TestsInit); \
-    }                                                                   \
-  } while (0)
-
-#define BEGIN_NODE(Buffer, Name)  do {          \
-    INTN  FdtErr;                               \
-                                                \
-    FdtErr = fdt_begin_node (Buffer, #Name);    \
-    if (FdtErr < 0) {                           \
-      DEBUG ((                                  \
-               DEBUG_ERROR,                     \
-               "%a: fdt_begin_node(%a): %a\n",  \
-               __func__,                        \
-               #Name,                           \
-               fdt_strerror (FdtErr)            \
-               ));                              \
-      return FdtErr;                            \
-    }                                           \
-  } while (0)
-
-#define END_NODE(Buffer, Name)  do {            \
-    INTN  FdtErr;                               \
-                                                \
-    FdtErr =  fdt_end_node (Buffer);            \
-    if (FdtErr < 0) {                           \
-      DEBUG ((                                  \
-               DEBUG_ERROR,                     \
-               "%a: fdt_end_node(%a): %a\n",    \
-               __func__,                        \
-               #Name,                           \
-               fdt_strerror (FdtErr)            \
-               ));                              \
-      return FdtErr;                            \
-    }                                           \
-  } while (0)
-
-#define NEW_NODE(Buffer, Name, Test, ...)  do {                         \
-    BEGIN_NODE (Buffer, Name);                                          \
-    NODE_TEST (Buffer, Test);                                           \
-    __VA_ARGS__;                                                        \
-    END_NODE (Buffer, Name);                                            \
-  } while (0)
+typedef struct {
+  const char    *Name;
+  BOOLEAN EFIAPI (*Fn)(IN  DT_DEVICE *DtDevice);
+} TestDesc;
 
 VOID  *gTestTreeBase;
 
-UINT32  Dt_DeviceRegs_TestTemplate00[] = {
+STATIC UINT32  Dt_DeviceRegs_TestTemplate00[] = {
   // 0x86,0x80,0xAA,0x8F,0x00,0x01,0x02,0x00, 0x00,0x01,0x06,0x00,0x80,0x1A,0x06,0x00,    /* 00000000    "........" */
   // 0x00,0x00,0x0A,0x10,0x53,0x42,0x2E,0x50, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,    /* 00000010    "........" */
   // 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00,0x3C,0x10,0x43,0x58,    /* 00000020    "........" */
@@ -87,13 +51,7 @@ UINT32  Dt_DeviceRegs_TestTemplate00[] = {
   @retval FALSE             Failure.
 
 **/
-STATIC
-BOOLEAN
-EFIAPI
-RootTestFn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+TEST_DEF (DtTestRoot) {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   //
@@ -105,13 +63,7 @@ RootTestFn (
   return TRUE;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG0Fn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+TEST_DEF (G0) {
   EFI_DT_REG          Reg;
   EFI_DT_PROPERTY     Property;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
@@ -162,39 +114,27 @@ TestG0Fn (
   return TRUE;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG1Fn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+TEST_DEF (G1) {
   EFI_HANDLE          FoundHandle;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->IsDmaCoherent);
   ASSERT (AsciiStrCmp (DtIo->DeviceType, "bar") == 0);
 
-  ASSERT (DtIo->Lookup (NULL, "/g0", FALSE, &FoundHandle) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->Lookup (NULL, "/G0", FALSE, &FoundHandle) == EFI_INVALID_PARAMETER);
   ASSERT (DtIo->Lookup (DtIo, NULL, FALSE, &FoundHandle) == EFI_INVALID_PARAMETER);
-  ASSERT (DtIo->Lookup (DtIo, "/g0", FALSE, NULL) == EFI_INVALID_PARAMETER);
-  ASSERT (DtIo->Lookup (DtIo, "/g0", FALSE, &FoundHandle) == EFI_SUCCESS);
+  ASSERT (DtIo->Lookup (DtIo, "/G0", FALSE, NULL) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->Lookup (DtIo, "/G0", FALSE, &FoundHandle) == EFI_SUCCESS);
   ASSERT (DtIo->Lookup (DtIo, "/somethinginvalid", FALSE, &FoundHandle) == EFI_NOT_FOUND);
   //
   // Should return NOT_FOUND as it's connect connected yet.
   //
-  ASSERT (DtIo->Lookup (DtIo, "/g2/g2p1", FALSE, &FoundHandle) == EFI_NOT_FOUND);
+  ASSERT (DtIo->Lookup (DtIo, "/G2/G2P1", FALSE, &FoundHandle) == EFI_NOT_FOUND);
 
   return TRUE;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG2Fn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+TEST_DEF (G2) {
   EFI_HANDLE          FoundHandle;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
@@ -206,7 +146,7 @@ TestG2Fn (
   ASSERT (DtIo->SizeCells == 1);
 
   ASSERT (DtIo->Lookup (DtIo, "somethingrelativeinvalid", FALSE, &FoundHandle) == EFI_NOT_FOUND);
-  ASSERT (DtIo->Lookup (DtIo, "g2p0", FALSE, &FoundHandle) == EFI_SUCCESS);
+  ASSERT (DtIo->Lookup (DtIo, "G2P0", FALSE, &FoundHandle) == EFI_SUCCESS);
 
   return TRUE;
 }
@@ -229,13 +169,7 @@ TestG2P0ReadChildReg (
   return EFI_SUCCESS;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG2P0Fn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+TEST_DEF (G2P0) {
   UINT8               Buffer;
   EFI_DT_REG          Reg;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
@@ -306,13 +240,7 @@ TestG2P0Fn (
   return TRUE;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG2P0C1Fn  (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+TEST_DEF (G2P0C1) {
   UINT32              Buffer;
   EFI_DT_REG          Reg;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
@@ -341,117 +269,63 @@ TestG2P0C1Fn  (
   return TRUE;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG2P1Fn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+TEST_DEF (G2P1) {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_BROKEN);
   return TRUE;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG2P2Fn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+TEST_DEF (G2P2) {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_BROKEN);
   return TRUE;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG3P0Fn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+TEST_DEF (G3P0) {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_DISABLED);
   return TRUE;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG3P1Fn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+TEST_DEF (G3P1) {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_RESERVED);
   return TRUE;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG3P2Fn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+TEST_DEF (G3P2) {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_FAIL);
   return TRUE;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG3P3Fn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+TEST_DEF (G3P3) {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_FAIL_WITH_CONDITION);
   return TRUE;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG3P4Fn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+TEST_DEF (G3P4) {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_OKAY);
   return TRUE;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG3P5Fn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+TEST_DEF (G3P5) {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_BROKEN);
   return TRUE;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG5Fn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+TEST_DEF (G5) {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   //
@@ -463,13 +337,10 @@ TestG5Fn (
   return TRUE;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG5P0Fn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+//
+// ReadReg Test.
+//
+TEST_DEF (G5P0) {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
   UINTN               TestRegionSize;
   UINT8               *TempMemBuffer;
@@ -481,10 +352,7 @@ TestG5P0Fn (
   Reg11          = NULL;
   TestRegionSize = sizeof (Dt_DeviceRegs_TestTemplate00);
   TempMemBuffer  = AllocateZeroPool (TestRegionSize);
-  if (TempMemBuffer == NULL) {
-    DEBUG ((DEBUG_ERROR, "Warning: Run out memory. \n"));
-    goto ErrorExit;
-  }
+  ASSERT (TempMemBuffer != NULL);
 
   CopyMem (TempMemBuffer, Dt_DeviceRegs_TestTemplate00, TestRegionSize);
   CopyMem (Array2, Dt_DeviceRegs_TestTemplate00, 16);
@@ -509,26 +377,14 @@ TestG5P0Fn (
   ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint32, &Reg00, 0, 1024, Array1) == EFI_INVALID_PARAMETER);
   ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint64, Reg11, 0, 2, Array1) == EFI_INVALID_PARAMETER);
 
-  DEBUG ((DEBUG_INFO, "%a: the test for ReadReg is passed. \n", __func__));
   FreePool (TempMemBuffer);
   return TRUE;
-
-ErrorExit:
-  DEBUG ((DEBUG_ERROR, "%a: does not accomplish the test.  \n", __func__));
-  if (TempMemBuffer != NULL) {
-    FreePool (TempMemBuffer);
-  }
-
-  return 0;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG5P1Fn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+//
+// WriteReg Test.
+//
+TEST_DEF (G5P1) {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
   UINTN               TestRegionSize;
   UINT8               *TempMemBuffer;
@@ -539,10 +395,7 @@ TestG5P1Fn (
 
   TestRegionSize = sizeof (Dt_DeviceRegs_TestTemplate00);
   TempMemBuffer  = AllocateZeroPool (TestRegionSize);
-  if (TempMemBuffer == NULL) {
-    DEBUG ((DEBUG_ERROR, "Warning: Run out memory. \n"));
-    goto ErrorExit;
-  }
+  ASSERT (TempMemBuffer != NULL);
 
   for (Index = 0; Index < 32; Index++) {
     Array1[Index] = Index;
@@ -562,26 +415,14 @@ TestG5P1Fn (
   ASSERT (CompareMem (Array1, Array2, 16) == 0);
   ASSERT (DtIo->WriteReg (DtIo, EfiDtIoWidthUint32, &Reg00, 0x30, 8, Array1) == EFI_INVALID_PARAMETER);
 
-  DEBUG ((DEBUG_INFO, "%a: the test for WriteReg is passed. \n", __func__));
   FreePool (TempMemBuffer);
   return TRUE;
-
-ErrorExit:
-  DEBUG ((DEBUG_ERROR, "%a: does not accomplish the test.  \n", __func__));
-  if (TempMemBuffer != NULL) {
-    FreePool (TempMemBuffer);
-  }
-
-  return 0;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG5P2Fn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+//
+// PollReg Test.
+//
+TEST_DEF (G5P2) {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
   UINTN               TestRegionSize;
   UINT8               *TempMemBuffer;
@@ -590,10 +431,7 @@ TestG5P2Fn (
 
   TestRegionSize = sizeof (Dt_DeviceRegs_TestTemplate00);
   TempMemBuffer  = AllocateZeroPool (TestRegionSize);
-  if (TempMemBuffer == NULL) {
-    DEBUG ((DEBUG_ERROR, "Warning: Run out memory. \n"));
-    goto ErrorExit;
-  }
+  ASSERT (TempMemBuffer != NULL);
 
   CopyMem (TempMemBuffer, Dt_DeviceRegs_TestTemplate00, TestRegionSize);
   ZeroMem (&Reg00, sizeof (EFI_DT_REG));
@@ -606,26 +444,14 @@ TestG5P2Fn (
   ASSERT (DtIo->PollReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0, 0xFF, 0x17, 1000000, &Indicator) == EFI_TIMEOUT);
   ASSERT (DtIo->PollReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0, 0xFF, 0x86, 1000000, &Indicator) == EFI_SUCCESS);
 
-  DEBUG ((DEBUG_INFO, "%a: the test for PollReg is passed. \n", __func__));
   FreePool (TempMemBuffer);
   return TRUE;
-
-ErrorExit:
-  DEBUG ((DEBUG_ERROR, "%a: does not accomplish the test.  \n", __func__));
-  if (TempMemBuffer != NULL) {
-    FreePool (TempMemBuffer);
-  }
-
-  return 0;
 }
 
-STATIC
-BOOLEAN
-EFIAPI
-TestG5P3Fn (
-  IN  DT_DEVICE  *DtDevice
-  )
-{
+//
+// CopyReg Test.
+//
+TEST_DEF (G5P3) {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
   UINTN               TestRegionSize;
   UINT8               *TempMemBuffer;
@@ -635,10 +461,7 @@ TestG5P3Fn (
 
   TestRegionSize = sizeof (Dt_DeviceRegs_TestTemplate00);
   TempMemBuffer  = AllocateZeroPool (TestRegionSize);
-  if (TempMemBuffer == NULL) {
-    DEBUG ((DEBUG_ERROR, "Warning: Run out memory. \n"));
-    goto ErrorExit;
-  }
+  ASSERT (TempMemBuffer != NULL);
 
   CopyMem (TempMemBuffer, Dt_DeviceRegs_TestTemplate00, TestRegionSize);
   ZeroMem (&Reg00, sizeof (EFI_DT_REG));
@@ -651,181 +474,31 @@ TestG5P3Fn (
   ASSERT (DtIo->CopyReg (DtIo, EfiDtIoWidthUint32, &Reg11, 0, &Reg00, 0, 8) == EFI_SUCCESS);
   ASSERT (CompareMem ((UINT8 *)(UINTN)Reg00.Base, (UINT8 *)(UINTN)Reg11.Base, 32) == 0);
 
-  DEBUG ((DEBUG_INFO, "%a: the test for CopyReg is passed. \n", __func__));
   FreePool (TempMemBuffer);
   return TRUE;
-
-ErrorExit:
-  DEBUG ((DEBUG_ERROR, "%a: does not accomplish the test.  \n", __func__));
-  if (TempMemBuffer != NULL) {
-    FreePool (TempMemBuffer);
-  }
-
-  return 0;
 }
 
-/**
-  Populate test DT nodes.
-
-  @param[in] Buffer         Test DT to populate.
-
-  @retval 0                 Success.
-  @retval other             Some libfdt error occured.
-
-**/
-STATIC
-INTN
-TestsPopulate (
-  VOID  *Buffer
-  )
-{
-  UINT32  G2P0RegProp[] = {
-    cpu_to_fdt32 (0x1),
-    cpu_to_fdt32 (0x2),
-    cpu_to_fdt32 (0x3),
-    cpu_to_fdt32 (0x4),
-    cpu_to_fdt32 (0x5),
-    cpu_to_fdt32 (0x6),
-    cpu_to_fdt32 (0x7)
-  };
-  UINT32  G2P0C1RegProp[] = {
-    cpu_to_fdt32 (0),
-    cpu_to_fdt32 (0),
-    cpu_to_fdt32 (0x4)
-  };
-
-  //
-  // Test handling for default #address-cells and #size-cells.
-  //
-
-  NODE_TEST (Buffer, RootTestFn);
-
-  //
-  // Test compatible, status, and dma-coherent properties,
-  // GetProp, IsCompatible, GetReg.
-  //
-
-  NEW_NODE (
-    Buffer,
-    g0,
-    TestG0Fn,
-    fdt_property_string (Buffer, "compatible", "test1_compatible")
-    );
-
-  //
-  // Test device_type, dma-coherent property.
-  //
-
-  NEW_NODE (
-    Buffer,
-    g1,
-    TestG1Fn,
-    fdt_property (Buffer, "dma-coherent", NULL, 0),
-    fdt_property_string (Buffer, "device_type", "bar")
-    );
-
-  //
-  // More tests for #address-cells and #size-cells, reg/GetReg.
-  //
-
-  BEGIN_NODE (Buffer, g2);
-  NODE_TEST (Buffer, TestG2Fn);
-  fdt_property_u32 (Buffer, "#address-cells", 4);
-  fdt_property_u32 (Buffer, "#size-cells", 3);
-  BEGIN_NODE (Buffer, g2p0);
-  NODE_TEST (Buffer, TestG2P0Fn);
-  fdt_property (Buffer, "reg", G2P0RegProp, sizeof (G2P0RegProp));
-  BEGIN_NODE (Buffer, g2p0c1);
-  NODE_TEST (Buffer, TestG2P0C1Fn);
-  fdt_property (Buffer, "reg", G2P0C1RegProp, sizeof (G2P0C1RegProp));
-  END_NODE (Buffer, g2p0c1);
-  END_NODE (Buffer, g2p0);
-  NEW_NODE (
-    Buffer,
-    g2p1,
-    TestG2P1Fn,
-    fdt_property_u32 (Buffer, "#address-cells", 5),
-    fdt_property_u32 (Buffer, "#size-cells", 2)
-    );
-  NEW_NODE (
-    Buffer,
-    g2p2,
-    TestG2P2Fn,
-    fdt_property_u32 (Buffer, "#address-cells", 2),
-    fdt_property_u32 (Buffer, "#size-cells", 5)
-    );
-  END_NODE (Buffer, g2);
-
-  //
-  // More tests for device_status.
-  //
-  BEGIN_NODE (Buffer, g3);
-  NEW_NODE (
-    Buffer,
-    g3p0,
-    TestG3P0Fn,
-    fdt_property_string (Buffer, "status", "disabled")
-    );
-  NEW_NODE (
-    Buffer,
-    g3p1,
-    TestG3P1Fn,
-    fdt_property_string (Buffer, "status", "reserved")
-    );
-  NEW_NODE (
-    Buffer,
-    g3p2,
-    TestG3P2Fn,
-    fdt_property_string (Buffer, "status", "fail")
-    );
-  NEW_NODE (
-    Buffer,
-    g3p3,
-    TestG3P3Fn,
-    fdt_property_string (Buffer, "status", "fail-foo")
-    );
-  NEW_NODE (
-    Buffer,
-    g3p4,
-    TestG3P4Fn,
-    fdt_property_string (Buffer, "status", "okay")
-    );
-  NEW_NODE (
-    Buffer,
-    g3p5,
-    TestG3P5Fn,
-    fdt_property_string (Buffer, "status", "lkalksjdlkajsd")
-    );
-  END_NODE (Buffer, g3);
-
-  BEGIN_NODE (Buffer, g5);
-  NODE_TEST (Buffer, TestG5Fn);
-  fdt_property_u32 (Buffer, "#address-cells", 3);
-  fdt_property_u32 (Buffer, "#size-cells", 2);
-  NEW_NODE (
-    Buffer,
-    g5p0,
-    TestG5P0Fn
-    );
-  NEW_NODE (
-    Buffer,
-    g5p1,
-    TestG5P1Fn
-    );
-  NEW_NODE (
-    Buffer,
-    g5p2,
-    TestG5P2Fn
-    );
-  NEW_NODE (
-    Buffer,
-    g5p3,
-    TestG5P3Fn
-    );
-  END_NODE (Buffer, g5);
-
-  return 0;
-}
+STATIC TestDesc  TestDescs[] = {
+  TEST_DECL (DtTestRoot),
+  TEST_DECL (G0),
+  TEST_DECL (G1),
+  TEST_DECL (G2),
+  TEST_DECL (G2P0),
+  TEST_DECL (G2P0C1),
+  TEST_DECL (G2P1),
+  TEST_DECL (G2P2),
+  TEST_DECL (G3P0),
+  TEST_DECL (G3P1),
+  TEST_DECL (G3P2),
+  TEST_DECL (G3P3),
+  TEST_DECL (G3P4),
+  TEST_DECL (G3P5),
+  TEST_DECL (G5),
+  TEST_DECL (G5P0),
+  TEST_DECL (G5P1),
+  TEST_DECL (G5P2),
+  TEST_DECL (G5P3)
+};
 
 /**
   Invoke a DT node test, if present.
@@ -840,11 +513,7 @@ TestsInvoke (
   IN  DT_DEVICE  *DtDevice
   )
 {
-  CONST VOID      *Buf;
-  INT32           Len;
-  BOOLEAN EFIAPI  (*Fn)(
-    DT_DEVICE  *DtDevice
-    );
+  UINTN  Index;
 
   if ((DtDevice->Flags & DT_DEVICE_TEST_RAN) != 0) {
     //
@@ -853,18 +522,15 @@ TestsInvoke (
     return;
   }
 
-  Buf = fdt_getprop (gTestTreeBase, DtDevice->FdtNode, "uefi,FdtBusDxe-Test", &Len);
-  if (Buf == NULL) {
-    ASSERT (Len == -FDT_ERR_NOTFOUND);
-    return;
+  for (Index = 0; Index < ARRAY_SIZE (TestDescs); Index++) {
+    TestDesc  *Test = &TestDescs[Index];
+    if (AsciiStrCmp (DtDevice->DtIo.Name, Test->Name) == 0) {
+      DEBUG ((DEBUG_ERROR, "%a: running unit test\n", DtDevice->DtIo.Name));
+      ASSERT (Test->Fn (DtDevice));
+      DtDevice->Flags |= DT_DEVICE_TEST_RAN;
+      break;
+    }
   }
-
-  ASSERT (Len == sizeof (UINT32));
-  Fn = (VOID *)((INT32)fdt32_to_cpu (*((UINT32 *)Buf)) + (UINTN)TestsInit);
-  DEBUG ((DEBUG_ERROR, "%a: running unit test\n", DtDevice->DtIo.Name));
-  ASSERT (Fn (DtDevice));
-
-  DtDevice->Flags |= DT_DEVICE_TEST_RAN;
 }
 
 /**
@@ -879,98 +545,17 @@ TestsInit (
   VOID
   )
 {
-  VOID  *Buffer;
-  INTN  FdtErr;
-
-  Buffer = AllocateZeroPool (TEST_DT_SIZE);
-  if (Buffer == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a: AllocateZeroPool\n", __func__));
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  FdtErr = fdt_create (Buffer, TEST_DT_SIZE);
-  if (FdtErr < 0) {
+  if (fdt_check_header (TestDt_dtb) != 0) {
     DEBUG ((
       DEBUG_ERROR,
-      "%a: fdt_create: %a\n",
+      "%a: test DTB @ %p seems corrupted?\n",
       __func__,
-      fdt_strerror (FdtErr)
+      TestDt_dtb
       ));
-    goto done;
+    return EFI_NOT_FOUND;
   }
 
-  FdtErr = fdt_finish_reservemap (Buffer);
-  if (FdtErr < 0) {
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: fdt_finish_reservemap: %a\n",
-      __func__,
-      fdt_strerror (FdtErr)
-      ));
-    goto done;
-  }
-
-  FdtErr = fdt_begin_node (Buffer, "");
-  if (FdtErr < 0) {
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: fdt_begin_node: %a\n",
-      __func__,
-      fdt_strerror (FdtErr)
-      ));
-    goto done;
-  }
-
-  FdtErr = TestsPopulate (Buffer);
-  if (FdtErr < 0) {
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: TestsPopulate: %a\n",
-      __func__,
-      fdt_strerror (FdtErr)
-      ));
-    goto done;
-  }
-
-  FdtErr =  fdt_end_node (Buffer);
-  if (FdtErr < 0) {
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: fdt_end_node: %a\n",
-      __func__,
-      fdt_strerror (FdtErr)
-      ));
-    goto done;
-  }
-
-  FdtErr = fdt_finish (Buffer);
-  if (FdtErr < 0) {
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: fdt_finish: %a\n",
-      __func__,
-      fdt_strerror (FdtErr)
-      ));
-    goto done;
-  }
-
-  FdtErr = fdt_open_into (Buffer, Buffer, TEST_DT_SIZE);
-  if (FdtErr < 0) {
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: fdt_open_into: %a\n",
-      __func__,
-      fdt_strerror (FdtErr)
-      ));
-    goto done;
-  }
-
-  gTestTreeBase = Buffer;
-done:
-  if (FdtErr < 0) {
-    FreePool (Buffer);
-    return EFI_DEVICE_ERROR;
-  }
+  gTestTreeBase = TestDt_dtb;
 
   return EFI_SUCCESS;
 }
@@ -986,7 +571,6 @@ TestsCleanup (
   VOID
   )
 {
-  FreePool (gTestTreeBase);
   gTestTreeBase = NULL;
 }
 

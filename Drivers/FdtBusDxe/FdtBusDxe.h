@@ -159,12 +159,6 @@ DtDeviceTranslateRangeToCpu (
   );
 
 CONST CHAR8 *
-FdtGetModel (
-  IN VOID  *TreeBase,
-  IN INTN  FdtNode
-  );
-
-CONST CHAR8 *
 FdtGetDeviceType (
   IN VOID  *TreeBase,
   IN INTN  FdtNode

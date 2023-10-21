@@ -9,37 +9,12 @@
 #include "FdtBusDxe.h"
 
 /**
-  Given an FdtNode, return the model name property or the empty string.
-
-  @param[in]    TreeBase         Device Tree blob base
-  @param[in]    FdtNode          INTN
-
-  @retval CHAR8 *                Model name or empty string.
-
-**/
-CONST CHAR8 *
-FdtGetModel (
-  IN VOID  *TreeBase,
-  IN INTN  FdtNode
-  )
-{
-  CONST CHAR8  *Buf;
-
-  Buf = fdt_getprop (TreeBase, FdtNode, "model", NULL);
-  if (Buf == NULL) {
-    return "";
-  }
-
-  return Buf;
-}
-
-/**
   Given an FdtNode, return the device_type property or the empty string.
 
   @param[in]    TreeBase         Device Tree blob base
   @param[in]    FdtNode          INTN
 
-  @retval CHAR8 *                Model name or empty string.
+  @retval CHAR8 *                Device type or empty string.
 
 **/
 CONST CHAR8 *

@@ -83,7 +83,6 @@ DtDeviceCreate (
   //
   DtDevice->DtIo.ComponentName = FormatComponentName (Name);
   DtDevice->DtIo.Name          = Name;
-  DtDevice->DtIo.Model         = FdtGetModel (TreeBase, FdtNode);
   DtDevice->DtIo.DeviceType    = FdtGetDeviceType (TreeBase, FdtNode);
   DtDevice->DtIo.DeviceStatus  = FdtGetStatus (TreeBase, FdtNode);
   if (DtDevice->DtIo.DeviceStatus == EFI_DT_STATUS_BROKEN) {

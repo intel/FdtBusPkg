@@ -123,7 +123,6 @@ TestG0Fn (
   ASSERT (DtIo->IsCompatible (DtIo, NULL) == EFI_INVALID_PARAMETER);
   ASSERT (DtIo->IsCompatible (DtIo, "test1_compatible") == EFI_SUCCESS);
   ASSERT (DtIo->IsCompatible (DtIo, "asldflkasjf") == EFI_NOT_FOUND);
-  ASSERT (AsciiStrCmp (DtIo->Model, "") == 0);
   ASSERT (AsciiStrCmp (DtIo->DeviceType, "") == 0);
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_OKAY);
   ASSERT (!DtIo->IsDmaCoherent);
@@ -174,7 +173,6 @@ TestG1Fn (
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->IsDmaCoherent);
-  ASSERT (AsciiStrCmp (DtIo->Model, "foo") == 0);
   ASSERT (AsciiStrCmp (DtIo->DeviceType, "bar") == 0);
 
   ASSERT (DtIo->Lookup (NULL, "/g0", FALSE, &FoundHandle) == EFI_INVALID_PARAMETER);
@@ -703,7 +701,7 @@ TestsPopulate (
   NODE_TEST (Buffer, RootTestFn);
 
   //
-  // Test compatible, model, status, and dma-coherent properties,
+  // Test compatible, status, and dma-coherent properties,
   // GetProp, IsCompatible, GetReg.
   //
 
@@ -715,7 +713,7 @@ TestsPopulate (
     );
 
   //
-  // Test model, dma-coherent property.
+  // Test device_type, dma-coherent property.
   //
 
   NEW_NODE (
@@ -723,7 +721,6 @@ TestsPopulate (
     g1,
     TestG1Fn,
     fdt_property (Buffer, "dma-coherent", NULL, 0),
-    fdt_property_string (Buffer, "model", "foo"),
     fdt_property_string (Buffer, "device_type", "bar")
     );
 

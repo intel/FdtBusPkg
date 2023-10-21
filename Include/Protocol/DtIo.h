@@ -540,7 +540,6 @@ struct _EFI_DT_IO_PROTOCOL {
   //
   CHAR16                                *ComponentName;
   CONST CHAR8                           *Name;
-  CONST CHAR8                           *Model;
   CONST CHAR8                           *DeviceType;
   EFI_DT_STATUS                         DeviceStatus;
   UINT8                                 AddressCells;

@@ -239,6 +239,14 @@ DtIoGetReg (
 
 EFI_STATUS
 EFIAPI
+DtIoGetRegByName (
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  CHAR8               *Name,
+  OUT EFI_DT_REG          *Reg
+  );
+
+EFI_STATUS
+EFIAPI
 DtIoIsCompatible (
   IN  EFI_DT_IO_PROTOCOL  *This,
   IN  CONST CHAR8         *CompatibleString

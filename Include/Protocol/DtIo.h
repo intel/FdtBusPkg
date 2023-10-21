@@ -240,7 +240,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILD)(
   );
 
 /**
-  Looks up a reg property value by name for a EFI_DT_IO_PROTOCOL instance.
+  Looks up a reg property value by index for a EFI_DT_IO_PROTOCOL instance.
 
   Note: The returned address is in CPU space, not bus space, if these are
   different.
@@ -259,6 +259,31 @@ typedef
 EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  UINTN              Index,
+  OUT EFI_DT_REG         *Reg
+  );
+
+/**
+  Looks up a reg property value by name for a EFI_DT_IO_PROTOCOL instance.
+
+  Note: Lookups by name involve examining the reg-names property.
+
+  Note 2: The returned address is in CPU space, not bus space, if these are
+  different.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Name                  Name of the reg value to return.
+  @param  Reg                   Pointer to the EFI_DT_REG to fill.
+
+  @retval EFI_SUCCESS           Lookup successful.
+  @retval EFI_NOT_FOUND         Could not find property.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CHAR8              *Name,
   OUT EFI_DT_REG         *Reg
   );
 
@@ -586,6 +611,7 @@ struct _EFI_DT_IO_PROTOCOL {
   EFI_DT_IO_PROTOCOL_PARSE_PROP          ParseProp;
   EFI_DT_IO_PROTOCOL_GET_STRING_INDEX    GetStringIndex;
   EFI_DT_IO_PROTOCOL_GET_REG             GetReg;
+  EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME     GetRegByName;
   EFI_DT_IO_PROTOCOL_IS_COMPATIBLE       IsCompatible;
   //
   // Device register access.

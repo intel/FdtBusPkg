@@ -483,7 +483,7 @@ DtIoParseProp (
 }
 
 /**
-  Looks up a reg property value by name for a EFI_DT_IO_PROTOCOL instance.
+  Looks up a reg property value by index for a EFI_DT_IO_PROTOCOL instance.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Index                 Index of the reg value to return.
@@ -530,6 +530,47 @@ DtIoGetReg (
   }
 
   return EFI_SUCCESS;
+}
+
+/**
+  Looks up a reg property value by name for a EFI_DT_IO_PROTOCOL instance.
+
+  Note: Lookups by name involve examining the reg-names property.
+
+  Note 2: The returned address is in CPU space, not bus space, if these are
+  different.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Name                  Name of the reg value to return.
+  @param  Reg                   Pointer to the EFI_DT_REG to fill.
+
+  @retval EFI_SUCCESS           Lookup successful.
+  @retval EFI_NOT_FOUND         Could not find property.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+EFI_STATUS
+EFIAPI
+DtIoGetRegByName (
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  CHAR8               *Name,
+  OUT EFI_DT_REG          *Reg
+  )
+{
+  EFI_STATUS  Status;
+  UINTN       Index;
+
+  if ((This == NULL) || (Name == NULL) || (Reg == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Status = This->GetStringIndex (This, "reg-names", Name, &Index);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  return DtIoGetReg (This, Index, Reg);
 }
 
 /**

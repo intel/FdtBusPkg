@@ -69,4 +69,16 @@ l1: G2P0 {
     empty;
     svals2 = "", "", "1", "";
   };
+  G7 {
+    #address-cells = <2>;
+    #size-cells = <2>;
+    G7P0 {
+      reg = <0x1 0x00000002 0x3 0x00000004>,
+            <0x5 0x00000006 0x7 0x00000008>,
+            <0x9 0x0000000A 0xB 0x0000000C>,
+            <0xD 0x0000000E 0xF 0x00000011>,
+            <0x12 0x00000013 0x14 0x00000015>;
+      reg-names = "apple", "banana", "orange", "grape", "peach";
+    };
+  };
 };

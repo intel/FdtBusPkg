@@ -164,6 +164,7 @@ DtDeviceCreate (
   DtDevice->DtIo.ParseProp      = DtIoParseProp;
   DtDevice->DtIo.GetStringIndex = DtIoGetStringIndex;
   DtDevice->DtIo.GetReg         = DtIoGetReg;
+  DtDevice->DtIo.GetRegByName   = DtIoGetRegByName;
   DtDevice->DtIo.IsCompatible   = DtIoIsCompatible;
 
   //

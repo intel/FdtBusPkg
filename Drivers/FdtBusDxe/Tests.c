@@ -583,6 +583,31 @@ TEST_DEF (G6) {
   return TRUE;
 }
 
+//
+// GetRegByName tests.
+//
+TEST_DEF (G7P0) {
+  EFI_DT_REG          Reg;
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
+  ASSERT (DtIo->GetRegByName (NULL, "apple", &Reg) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetRegByName (DtIo, NULL, &Reg) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetRegByName (DtIo, "apple", NULL) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetRegByName (DtIo, "apple", &Reg) == EFI_SUCCESS);
+  ASSERT (((UINT64)Reg.Base == 0x100000002) && ((UINT64)Reg.Length == 0x300000004));
+
+  ASSERT (DtIo->GetRegByName (DtIo, "orange", &Reg) == EFI_SUCCESS);
+  ASSERT (((UINT64)Reg.Base == 0x90000000A) && ((UINT64)Reg.Length == 0xB0000000C));
+
+  ASSERT (DtIo->GetRegByName (DtIo, "peach", &Reg) == EFI_SUCCESS);
+  ASSERT (((UINT64)Reg.Base == 0x1200000013) && ((UINT64)Reg.Length == 0x1400000015));
+
+  ASSERT (DtIo->GetRegByName (DtIo, "gsdfsdfds", &Reg) == EFI_NOT_FOUND);
+  ASSERT (DtIo->GetRegByName (DtIo, "", &Reg) == EFI_NOT_FOUND);
+
+  return TRUE;
+}
+
 STATIC TestDesc  TestDescs[] = {
   TEST_DECL (DtTestRoot),
   TEST_DECL (G0),
@@ -604,6 +629,7 @@ STATIC TestDesc  TestDescs[] = {
   TEST_DECL (G5P2),
   TEST_DECL (G5P3),
   TEST_DECL (G6),
+  TEST_DECL (G7P0),
 };
 
 /**

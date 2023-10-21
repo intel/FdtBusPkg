@@ -204,6 +204,25 @@ TEST_DEF (G2P0) {
     0x0000000000000005
     );
 
+  ASSERT (!EFI_ERROR (DtIo->GetReg (DtIo, 1, &Reg)));
+  ASSERT (Reg.BusDtIo == &(DtDevice->Parent->DtIo));
+  ASSERT (
+    (Reg.Base & (UINTN)-1UL) ==
+    0x000000030000000b
+    );
+  ASSERT (
+    ((Reg.Base >> 64) & (UINTN)-1UL) ==
+    0x000000010000000a
+    );
+  ASSERT (
+    (Reg.Length & (UINTN)-1UL) ==
+    0x0000000c00000007
+    );
+  ASSERT (
+    ((Reg.Length >> 64) & (UINTN)-1UL) ==
+    0x0000000000000005
+    );
+
   //
   // EFI_UNSUPPORTED because Reg.BusDtIo != NULL and G2 didn't
   // set up the ReadChildReg function in its DtIo protocol.
@@ -233,7 +252,7 @@ TEST_DEF (G2P0) {
     EFI_INVALID_PARAMETER
     );
 
-  ASSERT (DtIo->GetReg (DtIo, 1, &Reg) == EFI_NOT_FOUND);
+  ASSERT (DtIo->GetReg (DtIo, 2, &Reg) == EFI_NOT_FOUND);
 
   // For TestG2P0C1Fn.
   DtIo->DeviceCallbacks.ReadChildReg = TestG2P0ReadChildReg;

@@ -23,6 +23,7 @@
   DriverBinding.c
   DtDevice.c
   DtIo.c
+  DtIoProp.c
   Entry.c
   Fdt.c
   Utils.c

@@ -1,0 +1,53 @@
+## @file
+#
+#  PCI Host Bridge Library instance for a sample SOC
+#
+#  Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010019
+  BASE_NAME                      = PciHostBridgeLib
+  FILE_GUID                      = 5E1895A8-A246-4B15-BC4B-0D373CDFACFA
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = PciHostBridgeLib|DXE_DRIVER
+
+#
+# The following information is for reference only and not required by the build
+# tools.
+#
+#  VALID_ARCHITECTURES           = ARM AARCH64 RISCV64
+#
+
+[Sources]
+  PciHostBridgeLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  SseUefiPkg/SseUefiPkg.dec
+
+[LibraryClasses]
+  DebugLib
+  DevicePathLib
+  MemoryAllocationLib
+  PcdLib
+  UefiBootServicesTableLib
+
+[Pcd]
+  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdSegmentNumber
+  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdSupportedAttributes
+  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdInitialAttributes
+  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdDmaAbove4G
+  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdNoExtendedConfigSpace
+  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdResourceAssigned
+
+[Protocols]
+  gEfiDtIoProtocolGuid                    ## CONSUMES
+
+[Depex]
+  gEfiDtIoProtocolGuid

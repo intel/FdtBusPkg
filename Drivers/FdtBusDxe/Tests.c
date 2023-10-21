@@ -127,7 +127,7 @@ TEST_DEF (G1) {
   ASSERT (DtIo->Lookup (DtIo, "/G0", FALSE, &FoundHandle) == EFI_SUCCESS);
   ASSERT (DtIo->Lookup (DtIo, "/somethinginvalid", FALSE, &FoundHandle) == EFI_NOT_FOUND);
   //
-  // Should return NOT_FOUND as it's connect connected yet.
+  // Should return NOT_FOUND as it's not connected yet.
   //
   ASSERT (DtIo->Lookup (DtIo, "/G2/G2P1", FALSE, &FoundHandle) == EFI_NOT_FOUND);
 
@@ -147,6 +147,7 @@ TEST_DEF (G2) {
 
   ASSERT (DtIo->Lookup (DtIo, "somethingrelativeinvalid", FALSE, &FoundHandle) == EFI_NOT_FOUND);
   ASSERT (DtIo->Lookup (DtIo, "G2P0", FALSE, &FoundHandle) == EFI_SUCCESS);
+  ASSERT (DtIo->Lookup (DtIo, "alias-G2P0", FALSE, &FoundHandle) == EFI_SUCCESS);
 
   return TRUE;
 }

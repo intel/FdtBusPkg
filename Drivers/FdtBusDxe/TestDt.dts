@@ -1,6 +1,10 @@
 /dts-v1/;
 
 / {
+  aliases {
+    alias-G2P0 = &l1;
+  };
+
   G0 {
     compatible = "test1_compatible";
   };
@@ -11,7 +15,7 @@
   G2 {
     #address-cells = <4>;
     #size-cells = <3>;
-    G2P0 {
+l1: G2P0 {
       reg = < 0x1 0x2 0x3 0x4 0x5 0x6 0x7 >;
       G2P0C1 {
         reg = < 0 0 0x4 >;

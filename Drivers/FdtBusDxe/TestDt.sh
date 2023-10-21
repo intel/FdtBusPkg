@@ -23,4 +23,6 @@ trap cleanup EXIT
   dtc -I dts -O dtb -o TestDt.dtb TestDt.dts
   xxd -i TestDt.dtb TestDt.dtbi
   rm TestDt.dtb
+  unix2dos TestDt.dts
+  unix2dos TestDt.dtbi
 )

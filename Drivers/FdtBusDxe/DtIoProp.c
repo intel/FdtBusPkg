@@ -57,6 +57,99 @@ DtIoGetProp (
 }
 
 /**
+  Parses out a U32 property value, advancing Prop->Iter on success.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
+                                current position.
+  @param  Type                  Type of the field to parse out.
+  @param  Index                 Index of the field to return, starting from the
+                                current buffer position within the EFI_DT_PROPERTY.
+  @param  U32                   Pointer to a UINT32.
+  @retval EFI_SUCCESS           Parsing successful.
+  @retval EFI_NOT_FOUND         Not enough remaining property buffer to contain
+                                the field of specified type.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+DtIoParsePropU32 (
+  IN  DT_DEVICE            *DtDevice,
+  IN  OUT EFI_DT_PROPERTY  *Prop,
+  IN  UINTN                Index,
+  OUT UINT32               *U32
+  )
+{
+  UINTN              Cells;
+  CONST EFI_DT_CELL  *Buf;
+
+  Cells = (Prop->End - Prop->Iter) / sizeof (EFI_DT_CELL);
+  Buf   = Prop->Iter;
+
+  if (Cells <= Index) {
+    return EFI_NOT_FOUND;
+  }
+
+  Buf       += Index;
+  *U32       = fdt32_to_cpu (*Buf);
+  Prop->Iter = Buf + 1;
+  return EFI_SUCCESS;
+}
+
+/**
+  Parses out a U64 property value, advancing Prop->Iter on success.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
+                                current position.
+  @param  Type                  Type of the field to parse out.
+  @param  Index                 Index of the field to return, starting from the
+                                current buffer position within the EFI_DT_PROPERTY.
+  @param  U64                   Pointer to a UINT64.
+  @retval EFI_SUCCESS           Parsing successful.
+  @retval EFI_NOT_FOUND         Not enough remaining property buffer to contain
+                                the field of specified type.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+DtIoParsePropU64 (
+  IN  DT_DEVICE            *DtDevice,
+  IN  OUT EFI_DT_PROPERTY  *Prop,
+  IN  UINTN                Index,
+  OUT UINT64               *U64
+  )
+{
+  UINTN              ElemCells;
+  UINT8              Iter;
+  UINTN              Cells;
+  CONST EFI_DT_CELL  *Buf;
+
+  ElemCells = 2;
+  Cells     = (Prop->End - Prop->Iter) / sizeof (EFI_DT_CELL);
+  Buf       = Prop->Iter;
+
+  if ((Cells / ElemCells) <= Index) {
+    return EFI_NOT_FOUND;
+  }
+
+  Buf += ElemCells * Index;
+
+  *U64 = 0;
+  for (Iter = 0; Iter < ElemCells; Iter++, Buf++) {
+    *U64 |= ((UINT64)fdt32_to_cpu (*Buf)) <<
+            (32 * (ElemCells - (Iter + 1)));
+  }
+
+  Prop->Iter = Buf;
+  return EFI_SUCCESS;
+}
+
+/**
   Parses out a bus address property value, advancing Prop->Iter on success.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
@@ -107,9 +200,9 @@ DtIoParsePropBusAddress (
   Buf += ElemCells * Index;
 
   *BusAddress = 0;
-  for (Iter = 0; Iter < AddressCells; Iter++, Buf++) {
+  for (Iter = 0; Iter < ElemCells; Iter++, Buf++) {
     *BusAddress |= ((EFI_DT_BUS_ADDRESS)fdt32_to_cpu (*Buf)) <<
-                   (32 * (AddressCells - (Iter + 1)));
+                   (32 * (ElemCells - (Iter + 1)));
   }
 
   Prop->Iter = Buf;
@@ -167,9 +260,9 @@ DtIoParsePropSize (
   Buf += ElemCells * Index;
 
   *Size = 0;
-  for (Iter = 0; Iter < SizeCells; Iter++, Buf++) {
+  for (Iter = 0; Iter < ElemCells; Iter++, Buf++) {
     *Size |= ((EFI_DT_SIZE)fdt32_to_cpu (*Buf)) <<
-             (32 * (SizeCells - (Iter + 1)));
+             (32 * (ElemCells - (Iter + 1)));
   }
 
   Prop->Iter = Buf;
@@ -308,12 +401,13 @@ DtIoParseProp (
 
   switch (Type) {
     case EFI_DT_VALUE_U32:
+      return DtIoParsePropU32 (DtDevice, Prop, Index, Buffer);
     case EFI_DT_VALUE_U64:
+      return DtIoParsePropU64 (DtDevice, Prop, Index, Buffer);
     case EFI_DT_VALUE_BUS_ADDRESS:
       return DtIoParsePropBusAddress (DtDevice, Prop, Index, Buffer);
     case EFI_DT_VALUE_SIZE:
       return DtIoParsePropSize (DtDevice, Prop, Index, Buffer);
-      break;
     case EFI_DT_VALUE_REG:
       return DtIoParsePropReg (DtDevice, Prop, Index, Buffer);
     case EFI_DT_VALUE_RANGE:

@@ -173,6 +173,9 @@ TestG2P0ReadChildReg (
 TEST_DEF (G2P0) {
   UINT8               Buffer;
   EFI_DT_REG          Reg;
+  EFI_DT_PROPERTY     Property;
+  UINT32              U32;
+  UINT64              U64;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   //
@@ -180,6 +183,21 @@ TEST_DEF (G2P0) {
   //
   ASSERT (DtIo->AddressCells == 4);
   ASSERT (DtIo->SizeCells == 3);
+
+  ASSERT (DtIo->GetProp (DtIo, "reg", &Property) == EFI_SUCCESS);
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_U32, 0, &U32) == EFI_SUCCESS);
+  ASSERT (U32 == 0x1);
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_U32, 1, &U32) == EFI_SUCCESS);
+  ASSERT (U32 == 0x3);
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_U32, 2, &U32) == EFI_SUCCESS);
+  ASSERT (U32 == 0x6);
+  Property.Iter = Property.Begin;
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_U32, 13, &U32) == EFI_SUCCESS);
+  ASSERT (U32 == 0x7);
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_U32, 0, &U32) == EFI_NOT_FOUND);
+  Property.Iter = Property.Begin;
+  ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_U64, 0, &U64) == EFI_SUCCESS);
+  ASSERT (U64 == 0x0000000100000002);
 
   //
   // Correctly parse 'reg' based on address cells == 4 and

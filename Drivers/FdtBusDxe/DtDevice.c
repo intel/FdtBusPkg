@@ -163,8 +163,16 @@ DtDeviceCreate (
   //
   DtDevice->DtIo.ParseProp      = DtIoParseProp;
   DtDevice->DtIo.GetStringIndex = DtIoGetStringIndex;
+  DtDevice->DtIo.GetU32         = DtIoGetU32;
+  DtDevice->DtIo.GetU64         = DtIoGetU64;
+  DtDevice->DtIo.GetU128        = DtIoGetU128;
+  DtDevice->DtIo.GetBusAddress  = DtIoGetBusAddress;
+  DtDevice->DtIo.GetSize        = DtIoGetSize;
   DtDevice->DtIo.GetReg         = DtIoGetReg;
   DtDevice->DtIo.GetRegByName   = DtIoGetRegByName;
+  DtDevice->DtIo.GetRange       = DtIoGetRange;
+  DtDevice->DtIo.GetString      = DtIoGetString;
+  DtDevice->DtIo.GetDevice      = DtIoGetDevice;
   DtDevice->DtIo.IsCompatible   = DtIoIsCompatible;
 
   //

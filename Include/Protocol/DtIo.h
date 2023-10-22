@@ -74,6 +74,7 @@ typedef enum {
 typedef __int128  EFI_DT_BUS_ADDRESS;
 typedef __int128  EFI_DT_SIZE;
 typedef UINT32    EFI_DT_CELL;
+typedef __int128  EFI_DT_U128;
 
 typedef struct {
   EFI_DT_BUS_ADDRESS    Base;
@@ -127,6 +128,10 @@ typedef enum {
   ///
   EFI_DT_VALUE_U64,
   ///
+  /// A 128-bit value.
+  ///
+  EFI_DT_VALUE_U128,
+  ///
   /// An address encoded by #address-cells.
   ///
   EFI_DT_VALUE_BUS_ADDRESS,
@@ -147,9 +152,9 @@ typedef enum {
   ///
   EFI_DT_VALUE_STRING,
   ///
-  /// A reference to another EFI_DT_IO_PROTOCOL.
+  /// An EFI_HANDLE for a device reference property.
   ///
-  EFI_DT_VALUE_LOOKUP
+  EFI_DT_VALUE_DEVICE
 } EFI_DT_VALUE_TYPE;
 
 /**
@@ -176,7 +181,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_LOOKUP)(
   );
 
 /**
-  Looks up property by name for a EFI_DT_IO_PROTOCOL instance.
+  Looks up property by name.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Name                  Property to look up.
@@ -240,7 +245,117 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILD)(
   );
 
 /**
-  Looks up a reg property value by index for a EFI_DT_IO_PROTOCOL instance.
+  Looks up a U32 property value by index.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Name                  Name of the property.
+  @param  Index                 Index of the reg value to return.
+  @param  U32                   Pointer to a UINT32.
+
+  @retval EFI_SUCCESS           Lookup successful.
+  @retval EFI_NOT_FOUND         Could not find property.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U32)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CONST CHAR8        *Name,
+  IN  UINTN              Index,
+  OUT UINT32             *U32
+  );
+
+/**
+  Looks up a U64 property value by index.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Name                  Name of the property.
+  @param  Index                 Index of the reg value to return.
+  @param  U64                   Pointer to a UINT64.
+
+  @retval EFI_SUCCESS           Lookup successful.
+  @retval EFI_NOT_FOUND         Could not find property.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U64)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CONST CHAR8        *Name,
+  IN  UINTN              Index,
+  OUT UINT64             *U64
+  );
+
+/**
+  Looks up an EFI_DT_U128 property value by index.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Name                  Name of the property.
+  @param  Index                 Index of the reg value to return.
+  @param  U128                  Pointer to an EFI_DT_U128.
+
+  @retval EFI_SUCCESS           Lookup successful.
+  @retval EFI_NOT_FOUND         Could not find property.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U128)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CONST CHAR8        *Name,
+  IN  UINTN              Index,
+  OUT EFI_DT_U128        *U128
+  );
+
+/**
+  Looks up an EFI_DT_BUS_ADDRESS property value by index.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Name                  Name of the property.
+  @param  Index                 Index of the reg value to return.
+  @param  BusAddress            Pointer to an EFI_DT_BUS_ADDRESS.
+
+  @retval EFI_SUCCESS           Lookup successful.
+  @retval EFI_NOT_FOUND         Could not find property.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_BUS_ADDRESS)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CONST CHAR8        *Name,
+  IN  UINTN              Index,
+  OUT EFI_DT_BUS_ADDRESS *BusAddress
+  );
+
+/**
+  Looks up an EFI_DT_SIZE property value by index.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Name                  Name of the property.
+  @param  Index                 Index of the reg value to return.
+  @param  Size                  Pointer to an EFI_DT_SIZE.
+
+  @retval EFI_SUCCESS           Lookup successful.
+  @retval EFI_NOT_FOUND         Could not find property.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_SIZE)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CONST CHAR8        *Name,
+  IN  UINTN              Index,
+  OUT EFI_DT_SIZE        *Size
+  );
+
+/**
+  Looks up a reg property value by index.
 
   Note: The returned address is in CPU space, not bus space, if these are
   different.
@@ -263,7 +378,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG)(
   );
 
 /**
-  Looks up a reg property value by name for a EFI_DT_IO_PROTOCOL instance.
+  Looks up a reg property value by name.
 
   Note: Lookups by name involve examining the reg-names property.
 
@@ -285,6 +400,70 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CHAR8              *Name,
   OUT EFI_DT_REG         *Reg
+  );
+
+/**
+  Looks up a ranges property value by index.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Index                 Index of the reg value to return.
+  @param  Range                 Pointer to an EF_DT_RANGE.
+
+  @retval EFI_SUCCESS           Lookup successful.
+  @retval EFI_NOT_FOUND         Could not find property.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_RANGE)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  UINTN              Index,
+  OUT EFI_DT_REG         *Range
+  );
+
+/**
+  Looks up a string property value by index.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Name                  Name of the property.
+  @param  Index                 Index of the reg value to return.
+  @param  String                Pointer to a CHAR8*.
+
+  @retval EFI_SUCCESS           Lookup successful.
+  @retval EFI_NOT_FOUND         Could not find property.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CONST CHAR8        *Name,
+  IN  UINTN              Index,
+  OUT CONST CHAR8 **String
+  );
+
+/**
+  Looks up a device EFI_HANDLE from property value by index.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Name                  Name of the property.
+  @param  Index                 Index of the reg value to return.
+  @param  Handle                Pointer to an EFI_HANDLE.
+
+  @retval EFI_SUCCESS           Lookup successful.
+  @retval EFI_NOT_FOUND         Could not find property.
+  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_DEVICE)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CONST CHAR8        *Name,
+  IN  UINTN              Index,
+  OUT EFI_HANDLE         *Handle
   );
 
 /**
@@ -610,8 +789,16 @@ struct _EFI_DT_IO_PROTOCOL {
   //
   EFI_DT_IO_PROTOCOL_PARSE_PROP          ParseProp;
   EFI_DT_IO_PROTOCOL_GET_STRING_INDEX    GetStringIndex;
+  EFI_DT_IO_PROTOCOL_GET_U32             GetU32;
+  EFI_DT_IO_PROTOCOL_GET_U64             GetU64;
+  EFI_DT_IO_PROTOCOL_GET_U128            GetU128;
+  EFI_DT_IO_PROTOCOL_GET_BUS_ADDRESS     GetBusAddress;
+  EFI_DT_IO_PROTOCOL_GET_SIZE            GetSize;
   EFI_DT_IO_PROTOCOL_GET_REG             GetReg;
   EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME     GetRegByName;
+  EFI_DT_IO_PROTOCOL_GET_RANGE           GetRange;
+  EFI_DT_IO_PROTOCOL_GET_STRING          GetString;
+  EFI_DT_IO_PROTOCOL_GET_DEVICE          GetDevice;
   EFI_DT_IO_PROTOCOL_IS_COMPATIBLE       IsCompatible;
   //
   // Device register access.

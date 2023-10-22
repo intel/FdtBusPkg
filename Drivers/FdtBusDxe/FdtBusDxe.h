@@ -295,7 +295,7 @@ EFIAPI
 DtIoGetRange (
   IN  EFI_DT_IO_PROTOCOL  *This,
   IN  UINTN               Index,
-  OUT EFI_DT_REG          *Range
+  OUT EFI_DT_RANGE        *Range
   );
 
 EFI_STATUS

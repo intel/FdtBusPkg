@@ -93,7 +93,33 @@ DtIoGetU32 (
   OUT UINT32              *U32
   )
 {
-  return EFI_UNSUPPORTED;
+  EFI_STATUS       Status;
+  EFI_DT_PROPERTY  Property;
+  DT_DEVICE        *DtDevice;
+
+  if ((This == NULL) || (Name == NULL) || (U32 == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DtDevice = DT_DEV_FROM_THIS (This);
+
+  Status = DtIoGetProp (This, Name, &Property);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = DtIoParseProp (
+             This,
+             &Property,
+             EFI_DT_VALUE_U32,
+             Index,
+             U32
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -119,7 +145,33 @@ DtIoGetU64 (
   OUT UINT64              *U64
   )
 {
-  return EFI_UNSUPPORTED;
+  EFI_STATUS       Status;
+  EFI_DT_PROPERTY  Property;
+  DT_DEVICE        *DtDevice;
+
+  if ((This == NULL) || (Name == NULL) || (U64 == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DtDevice = DT_DEV_FROM_THIS (This);
+
+  Status = DtIoGetProp (This, Name, &Property);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = DtIoParseProp (
+             This,
+             &Property,
+             EFI_DT_VALUE_U64,
+             Index,
+             U64
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -145,7 +197,33 @@ DtIoGetU128 (
   OUT EFI_DT_U128         *U128
   )
 {
-  return EFI_UNSUPPORTED;
+  EFI_STATUS       Status;
+  EFI_DT_PROPERTY  Property;
+  DT_DEVICE        *DtDevice;
+
+  if ((This == NULL) || (Name == NULL) || (U128 == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DtDevice = DT_DEV_FROM_THIS (This);
+
+  Status = DtIoGetProp (This, Name, &Property);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = DtIoParseProp (
+             This,
+             &Property,
+             EFI_DT_VALUE_U128,
+             Index,
+             U128
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -171,7 +249,33 @@ DtIoGetBusAddress (
   OUT EFI_DT_BUS_ADDRESS  *BusAddress
   )
 {
-  return EFI_UNSUPPORTED;
+  EFI_STATUS       Status;
+  EFI_DT_PROPERTY  Property;
+  DT_DEVICE        *DtDevice;
+
+  if ((This == NULL) || (Name == NULL) || (BusAddress == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DtDevice = DT_DEV_FROM_THIS (This);
+
+  Status = DtIoGetProp (This, Name, &Property);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = DtIoParseProp (
+             This,
+             &Property,
+             EFI_DT_VALUE_BUS_ADDRESS,
+             Index,
+             BusAddress
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -197,7 +301,33 @@ DtIoGetSize (
   OUT EFI_DT_SIZE         *Size
   )
 {
-  return EFI_UNSUPPORTED;
+  EFI_STATUS       Status;
+  EFI_DT_PROPERTY  Property;
+  DT_DEVICE        *DtDevice;
+
+  if ((This == NULL) || (Name == NULL) || (Size == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DtDevice = DT_DEV_FROM_THIS (This);
+
+  Status = DtIoGetProp (This, Name, &Property);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = DtIoParseProp (
+             This,
+             &Property,
+             EFI_DT_VALUE_SIZE,
+             Index,
+             Size
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -296,7 +426,7 @@ DtIoGetRegByName (
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Index                 Index of the reg value to return.
-  @param  Range                 Pointer to an EF_DT_RANGE.
+  @param  Range                 Pointer to an EFI_DT_RANGE.
 
   @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not find property.
@@ -309,10 +439,36 @@ EFIAPI
 DtIoGetRange (
   IN  EFI_DT_IO_PROTOCOL  *This,
   IN  UINTN               Index,
-  OUT EFI_DT_REG          *Range
+  OUT EFI_DT_RANGE        *Range
   )
 {
-  return EFI_UNSUPPORTED;
+  EFI_STATUS       Status;
+  EFI_DT_PROPERTY  Property;
+  DT_DEVICE        *DtDevice;
+
+  if ((This == NULL) || (Range == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DtDevice = DT_DEV_FROM_THIS (This);
+
+  Status = DtIoGetProp (This, "ranges", &Property);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = DtIoParseProp (
+             This,
+             &Property,
+             EFI_DT_VALUE_RANGE,
+             Index,
+             Range
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -338,7 +494,33 @@ DtIoGetString (
   OUT CONST CHAR8         **String
   )
 {
-  return EFI_UNSUPPORTED;
+  EFI_STATUS       Status;
+  EFI_DT_PROPERTY  Property;
+  DT_DEVICE        *DtDevice;
+
+  if ((This == NULL) || (Name == NULL) || (String == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DtDevice = DT_DEV_FROM_THIS (This);
+
+  Status = DtIoGetProp (This, Name, &Property);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = DtIoParseProp (
+             This,
+             &Property,
+             EFI_DT_VALUE_STRING,
+             Index,
+             String
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -364,5 +546,31 @@ DtIoGetDevice (
   OUT EFI_HANDLE          *Handle
   )
 {
-  return EFI_UNSUPPORTED;
+  EFI_STATUS       Status;
+  EFI_DT_PROPERTY  Property;
+  DT_DEVICE        *DtDevice;
+
+  if ((This == NULL) || (Name == NULL) || (Handle == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DtDevice = DT_DEV_FROM_THIS (This);
+
+  Status = DtIoGetProp (This, Name, &Property);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = DtIoParseProp (
+             This,
+             &Property,
+             EFI_DT_VALUE_DEVICE,
+             Index,
+             Handle
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  return EFI_SUCCESS;
 }

@@ -199,6 +199,18 @@ TEST_DEF (G2P0) {
   ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_U64, 0, &U64) == EFI_SUCCESS);
   ASSERT (U64 == 0x0000000100000002);
 
+  ASSERT (DtIo->GetU32 (DtIo, "reg", 2, &U32) == EFI_SUCCESS);
+  ASSERT (U32 == 0x3);
+  ASSERT (DtIo->GetU32 (NULL, "reg", 2, &U32) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetU32 (DtIo, NULL, 2, &U32) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetU32 (DtIo, "reg", 2, NULL) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetU32 (DtIo, "reg", 14, &U32) == EFI_NOT_FOUND);
+  ASSERT (DtIo->GetU64 (DtIo, "reg", 1, &U64) == EFI_SUCCESS);
+  ASSERT (U64 == 0x0000000300000004);
+  ASSERT (DtIo->GetU64 (NULL, "reg", 1, &U64) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetU64 (DtIo, NULL, 1, &U64) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetU64 (DtIo, "reg", 1, NULL) == EFI_INVALID_PARAMETER);
+
   //
   // Correctly parse 'reg' based on address cells == 4 and
   // size cells == 3.
@@ -522,8 +534,8 @@ TEST_DEF (G5P3) {
 TEST_DEF (G6) {
   EFI_DT_PROPERTY     Property;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-  CHAR8               *String;
-  CHAR8               *String2;
+  CONST CHAR8         *String;
+  CONST CHAR8         *String2;
   UINTN               Index;
 
   ASSERT (DtIo->GetProp (DtIo, "string", &Property) == EFI_SUCCESS);
@@ -556,6 +568,13 @@ TEST_DEF (G6) {
   ASSERT (DtIo->GetStringIndex (DtIo, "svals1", "string1", &Index) == EFI_SUCCESS);
   ASSERT (Index == 0);
 
+  ASSERT (DtIo->GetString (DtIo, "svals1", 0, &String) == EFI_SUCCESS);
+  ASSERT (AsciiStrCmp (String, "string1") == 0);
+  ASSERT (DtIo->GetString (DtIo, "svals1", 100, &String) == EFI_NOT_FOUND);
+  ASSERT (DtIo->GetString (NULL, "svals1", 0, &String) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetString (DtIo, NULL, 0, &String) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetString (DtIo, "svals1", 0, NULL) == EFI_INVALID_PARAMETER);
+
   ASSERT (DtIo->GetProp (DtIo, "empty", &Property) == EFI_SUCCESS);
   ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String) == EFI_NOT_FOUND);
   ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String) == EFI_NOT_FOUND);
@@ -584,10 +603,12 @@ TEST_DEF (G6) {
 }
 
 //
-// GetRegByName tests.
+// GetRegByName, GetBusAddress and GetSize tests.
 //
 TEST_DEF (G7P0) {
   EFI_DT_REG          Reg;
+  EFI_DT_BUS_ADDRESS  BusAddress;
+  EFI_DT_SIZE         Size;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->GetRegByName (NULL, "apple", &Reg) == EFI_INVALID_PARAMETER);
@@ -604,6 +625,18 @@ TEST_DEF (G7P0) {
 
   ASSERT (DtIo->GetRegByName (DtIo, "gsdfsdfds", &Reg) == EFI_NOT_FOUND);
   ASSERT (DtIo->GetRegByName (DtIo, "", &Reg) == EFI_NOT_FOUND);
+
+  ASSERT (DtIo->GetBusAddress (DtIo, "reg", 1, &BusAddress) == EFI_SUCCESS);
+  ASSERT (BusAddress == 0x300000004);
+  ASSERT (DtIo->GetBusAddress (NULL, "reg", 1, &BusAddress) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetBusAddress (DtIo, NULL, 1, &BusAddress) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetBusAddress (DtIo, "reg", 1, NULL) == EFI_INVALID_PARAMETER);
+
+  ASSERT (DtIo->GetSize (DtIo, "reg", 2, &Size) == EFI_SUCCESS);
+  ASSERT (Size == 0x500000006);
+  ASSERT (DtIo->GetSize (NULL, "reg", 2, &Size) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetSize (DtIo, NULL, 2, &Size) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetSize (DtIo, "reg", 2, NULL) == EFI_INVALID_PARAMETER);
 
   return TRUE;
 }

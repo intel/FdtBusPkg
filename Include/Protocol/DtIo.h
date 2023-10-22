@@ -407,7 +407,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME)(
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Index                 Index of the reg value to return.
-  @param  Range                 Pointer to an EF_DT_RANGE.
+  @param  Range                 Pointer to an EFI_DT_RANGE.
 
   @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not find property.
@@ -419,7 +419,7 @@ typedef
 EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_RANGE)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  UINTN              Index,
-  OUT EFI_DT_REG         *Range
+  OUT EFI_DT_RANGE       *Range
   );
 
 /**

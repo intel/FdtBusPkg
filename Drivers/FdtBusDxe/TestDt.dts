@@ -51,6 +51,12 @@ l1: G2P0 {
       status = "lkalksjdlkajsd";
     };
   };
+  G4 {
+    #address-cells = <3>;
+    #size-cells = <2>;
+    ranges = <0x1 0x2 0x3 0x5 0x6 0x7 0x8
+              0xa 0xb 0xc 0xd 0xe 0xf 0x1>;
+  };
   G5 {
     #address-cells = <3>;
     #size-cells = <2>;

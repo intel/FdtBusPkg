@@ -210,6 +210,66 @@ DtIoParsePropBusAddress (
 }
 
 /**
+  Parses out a child bus address property value, advancing Prop->Iter on success.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
+                                current position.
+  @param  Type                  Type of the field to parse out.
+  @param  Index                 Index of the field to return, starting from the
+                                current buffer position within the EFI_DT_PROPERTY.
+  @param  BusAddress            Pointer to EFI_DT_BUS_ADDRESS.
+  @retval EFI_SUCCESS           Parsing successful.
+  @retval EFI_NOT_FOUND         Not enough remaining property buffer to contain
+                                the field of specified type.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+DtIoParsePropChildBusAddress (
+  IN  DT_DEVICE            *DtDevice,
+  IN  OUT EFI_DT_PROPERTY  *Prop,
+  IN  UINTN                Index,
+  OUT EFI_DT_BUS_ADDRESS   *BusAddress
+  )
+{
+  UINTN              ElemCells;
+  UINT8              Iter;
+  UINTN              Cells;
+  CONST EFI_DT_CELL  *Buf;
+  UINT8              ChildAddressCells;
+
+  ChildAddressCells = DtDevice->DtIo.ChildAddressCells;
+
+  //
+  // Enforced in FdtGetAddressCells.
+  //
+
+  ASSERT (ChildAddressCells <= FDT_MAX_NCELLS);
+
+  ElemCells = ChildAddressCells;
+  Cells     = (Prop->End - Prop->Iter) / sizeof (EFI_DT_CELL);
+  Buf       = Prop->Iter;
+
+  if ((Cells / ElemCells) <= Index) {
+    return EFI_NOT_FOUND;
+  }
+
+  Buf += ElemCells * Index;
+
+  *BusAddress = 0;
+  for (Iter = 0; Iter < ElemCells; Iter++, Buf++) {
+    *BusAddress |= ((EFI_DT_BUS_ADDRESS)fdt32_to_cpu (*Buf)) <<
+                   (32 * (ElemCells - (Iter + 1)));
+  }
+
+  Prop->Iter = Buf;
+  return EFI_SUCCESS;
+}
+
+/**
   Parses out a size property value, advancing Prop->Iter on success.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
@@ -250,6 +310,66 @@ DtIoParsePropSize (
   ASSERT (SizeCells <= FDT_MAX_NCELLS);
 
   ElemCells = SizeCells;
+  Cells     = (Prop->End - Prop->Iter) / sizeof (EFI_DT_CELL);
+  Buf       = Prop->Iter;
+
+  if ((Cells / ElemCells) <= Index) {
+    return EFI_NOT_FOUND;
+  }
+
+  Buf += ElemCells * Index;
+
+  *Size = 0;
+  for (Iter = 0; Iter < ElemCells; Iter++, Buf++) {
+    *Size |= ((EFI_DT_SIZE)fdt32_to_cpu (*Buf)) <<
+             (32 * (ElemCells - (Iter + 1)));
+  }
+
+  Prop->Iter = Buf;
+  return EFI_SUCCESS;
+}
+
+/**
+  Parses out a child size property value, advancing Prop->Iter on success.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
+                                current position.
+  @param  Type                  Type of the field to parse out.
+  @param  Index                 Index of the field to return, starting from the
+                                current buffer position within the EFI_DT_PROPERTY.
+  @param  Size                  Pointer to EFI_DT_SIZE.
+  @retval EFI_SUCCESS           Parsing successful.
+  @retval EFI_NOT_FOUND         Not enough remaining property buffer to contain
+                                the field of specified type.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+DtIoParsePropChildSize (
+  IN  DT_DEVICE            *DtDevice,
+  IN  OUT EFI_DT_PROPERTY  *Prop,
+  IN  UINTN                Index,
+  OUT EFI_DT_SIZE          *Size
+  )
+{
+  UINTN              ElemCells;
+  UINT8              Iter;
+  UINTN              Cells;
+  CONST EFI_DT_CELL  *Buf;
+  UINT8              ChildSizeCells;
+
+  ChildSizeCells = DtDevice->DtIo.ChildSizeCells;
+
+  //
+  // Enforced in FdtGetSizeCells.
+  //
+
+  ASSERT (ChildSizeCells <= FDT_MAX_NCELLS);
+
+  ElemCells = ChildSizeCells;
   Cells     = (Prop->End - Prop->Iter) / sizeof (EFI_DT_CELL);
   Buf       = Prop->Iter;
 
@@ -354,6 +474,85 @@ DtIoParsePropReg (
 
   if (BusDevice != NULL) {
     Reg->BusDtIo = &BusDevice->DtIo;
+  }
+
+Out:
+  if (EFI_ERROR (Status)) {
+    Prop->Iter = OriginalIter;
+  }
+
+  return Status;
+}
+
+/**
+  Parses out a ranges property value, advancing Prop->Iter on success.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
+                                current position.
+  @param  Type                  Type of the field to parse out.
+  @param  Index                 Index of the field to return, starting from the
+                                current buffer position within the EFI_DT_PROPERTY.
+  @param  Range                 Pointer to EFI_DT_RANGE.
+  @retval EFI_SUCCESS           Parsing successful.
+  @retval EFI_NOT_FOUND         Not enough remaining property buffer to contain
+                                the field of specified type.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+DtIoParsePropRange (
+  IN  DT_DEVICE            *DtDevice,
+  IN  OUT EFI_DT_PROPERTY  *Prop,
+  IN  UINTN                Index,
+  OUT EFI_DT_RANGE         *Range
+  )
+{
+  UINTN       ElemCells;
+  UINTN       Cells;
+  EFI_STATUS  Status;
+  UINT8       AddressCells;
+  UINT8       ChildAddressCells;
+  UINT8       ChildSizeCells;
+  CONST VOID  *OriginalIter;
+
+  AddressCells      = DtDevice->DtIo.AddressCells;
+  ChildAddressCells = DtDevice->DtIo.ChildAddressCells;
+  ChildSizeCells    = DtDevice->DtIo.ChildSizeCells;
+
+  //
+  // Enforced in FdtGetAddressCells/FdtGetSizeCells.
+  //
+
+  ASSERT (AddressCells <= FDT_MAX_NCELLS);
+  ASSERT (ChildAddressCells <= FDT_MAX_NCELLS);
+  ASSERT (ChildSizeCells <= FDT_MAX_NCELLS);
+
+  ElemCells    = ChildAddressCells + AddressCells + ChildSizeCells;
+  Cells        = (Prop->End - Prop->Iter) / sizeof (EFI_DT_CELL);
+  OriginalIter = Prop->Iter;
+
+  if ((Cells / ElemCells) <= Index) {
+    return EFI_NOT_FOUND;
+  }
+
+  Prop->Iter = (EFI_DT_CELL *)Prop->Iter + ElemCells * Index;
+
+  Status = DtIoParsePropChildBusAddress (DtDevice, Prop, 0, &Range->ChildBase);
+  if (EFI_ERROR (Status)) {
+    goto Out;
+  }
+
+  Status = DtIoParsePropBusAddress (DtDevice, Prop, 0, &Range->ParentBase);
+  if (EFI_ERROR (Status)) {
+    goto Out;
+  }
+
+  Status = DtIoParsePropChildSize (DtDevice, Prop, 0, &Range->Size);
+  if (EFI_ERROR (Status)) {
+    goto Out;
   }
 
 Out:
@@ -470,12 +669,16 @@ DtIoParseProp (
       break;
     case EFI_DT_VALUE_BUS_ADDRESS:
       return DtIoParsePropBusAddress (DtDevice, Prop, Index, Buffer);
+    case EFI_DT_VALUE_CHILD_BUS_ADDRESS:
+      return DtIoParsePropChildBusAddress (DtDevice, Prop, Index, Buffer);
     case EFI_DT_VALUE_SIZE:
       return DtIoParsePropSize (DtDevice, Prop, Index, Buffer);
+    case EFI_DT_VALUE_CHILD_SIZE:
+      return DtIoParsePropChildSize (DtDevice, Prop, Index, Buffer);
     case EFI_DT_VALUE_REG:
       return DtIoParsePropReg (DtDevice, Prop, Index, Buffer);
     case EFI_DT_VALUE_RANGE:
-      break;
+      return DtIoParsePropRange (DtDevice, Prop, Index, Buffer);
     case EFI_DT_VALUE_STRING:
       return DtIoParsePropString (DtDevice, Prop, Index, Buffer);
     case EFI_DT_VALUE_DEVICE:

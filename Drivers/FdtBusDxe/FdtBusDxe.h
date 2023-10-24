@@ -258,24 +258,6 @@ DtIoGetU128 (
 
 EFI_STATUS
 EFIAPI
-DtIoGetBusAddress (
-  IN  EFI_DT_IO_PROTOCOL  *This,
-  IN  CONST CHAR8         *Name,
-  IN  UINTN               Index,
-  OUT EFI_DT_BUS_ADDRESS  *BusAddress
-  );
-
-EFI_STATUS
-EFIAPI
-DtIoGetSize (
-  IN  EFI_DT_IO_PROTOCOL  *This,
-  IN  CONST CHAR8         *Name,
-  IN  UINTN               Index,
-  OUT EFI_DT_SIZE         *Size
-  );
-
-EFI_STATUS
-EFIAPI
 DtIoGetReg (
   IN  EFI_DT_IO_PROTOCOL  *This,
   IN  UINTN               Index,
@@ -294,6 +276,7 @@ EFI_STATUS
 EFIAPI
 DtIoGetRange (
   IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  CHAR8               *Name,
   IN  UINTN               Index,
   OUT EFI_DT_RANGE        *Range
   );

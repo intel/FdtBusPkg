@@ -166,8 +166,6 @@ DtDeviceCreate (
   DtDevice->DtIo.GetU32         = DtIoGetU32;
   DtDevice->DtIo.GetU64         = DtIoGetU64;
   DtDevice->DtIo.GetU128        = DtIoGetU128;
-  DtDevice->DtIo.GetBusAddress  = DtIoGetBusAddress;
-  DtDevice->DtIo.GetSize        = DtIoGetSize;
   DtDevice->DtIo.GetReg         = DtIoGetReg;
   DtDevice->DtIo.GetRegByName   = DtIoGetRegByName;
   DtDevice->DtIo.GetRange       = DtIoGetRange;

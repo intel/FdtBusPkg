@@ -218,38 +218,38 @@ TEST_DEF (G2P0) {
   ASSERT (!EFI_ERROR (DtIo->GetReg (DtIo, 0, &Reg)));
   ASSERT (Reg.BusDtIo == &(DtDevice->Parent->DtIo));
   ASSERT (
-    (Reg.Base & (UINTN)-1UL) ==
+    (Reg.Base & (UINT64)-1UL) ==
     0x0000000300000004
     );
   ASSERT (
-    ((Reg.Base >> 64) & (UINTN)-1UL) ==
+    ((Reg.Base >> 64) & (UINT64)-1UL) ==
     0x0000000100000002
     );
   ASSERT (
-    (Reg.Length & (UINTN)-1UL) ==
+    (Reg.Length & (UINT64)-1UL) ==
     0x0000000600000007
     );
   ASSERT (
-    ((Reg.Length >> 64) & (UINTN)-1UL) ==
+    ((Reg.Length >> 64) & (UINT64)-1UL) ==
     0x0000000000000005
     );
 
   ASSERT (!EFI_ERROR (DtIo->GetReg (DtIo, 1, &Reg)));
   ASSERT (Reg.BusDtIo == &(DtDevice->Parent->DtIo));
   ASSERT (
-    (Reg.Base & (UINTN)-1UL) ==
+    (Reg.Base & (UINT64)-1UL) ==
     0x000000030000000b
     );
   ASSERT (
-    ((Reg.Base >> 64) & (UINTN)-1UL) ==
+    ((Reg.Base >> 64) & (UINT64)-1UL) ==
     0x000000010000000a
     );
   ASSERT (
-    (Reg.Length & (UINTN)-1UL) ==
+    (Reg.Length & (UINT64)-1UL) ==
     0x0000000c00000007
     );
   ASSERT (
-    ((Reg.Length >> 64) & (UINTN)-1UL) ==
+    ((Reg.Length >> 64) & (UINT64)-1UL) ==
     0x0000000000000005
     );
 
@@ -372,6 +372,35 @@ TEST_DEF (G3P5) {
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_BROKEN);
+  return TRUE;
+}
+
+//
+// Tests GetRange.
+//
+TEST_DEF (G4) {
+  EFI_DT_RANGE        Range;
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
+  ASSERT (DtIo->ChildAddressCells == 3);
+  ASSERT (DtIo->AddressCells == 2);
+  ASSERT (DtIo->ChildSizeCells == 2);
+
+  ASSERT (DtIo->GetRange (NULL, "ranges", 0, &Range) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetRange (DtIo, NULL, 0, &Range) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetRange (DtIo, "ranges", 0, NULL) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->GetRange (DtIo, "ranges", 0, &Range) == EFI_SUCCESS);
+  ASSERT ((Range.ChildBase & (UINT64)-1UL) == 0x200000003);
+  ASSERT (((Range.ChildBase >> 32) & (UINT64)-1UL) == 0x100000002);
+  ASSERT (Range.ParentBase == 0x500000006);
+  ASSERT (Range.Size == 0x700000008);
+
+  ASSERT (DtIo->GetRange (DtIo, "ranges", 1, &Range) == EFI_SUCCESS);
+  ASSERT ((Range.ChildBase & (UINT64)-1UL) == 0xb0000000c);
+  ASSERT (((Range.ChildBase >> 32) & (UINT64)-1UL) == 0xa0000000b);
+  ASSERT (Range.ParentBase == 0xd0000000e);
+  ASSERT (Range.Size == 0xf00000001);
+
   return TRUE;
 }
 
@@ -603,12 +632,10 @@ TEST_DEF (G6) {
 }
 
 //
-// GetRegByName, GetBusAddress and GetSize tests.
+// GetRegByName.
 //
 TEST_DEF (G7P0) {
   EFI_DT_REG          Reg;
-  EFI_DT_BUS_ADDRESS  BusAddress;
-  EFI_DT_SIZE         Size;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->GetRegByName (NULL, "apple", &Reg) == EFI_INVALID_PARAMETER);
@@ -625,18 +652,6 @@ TEST_DEF (G7P0) {
 
   ASSERT (DtIo->GetRegByName (DtIo, "gsdfsdfds", &Reg) == EFI_NOT_FOUND);
   ASSERT (DtIo->GetRegByName (DtIo, "", &Reg) == EFI_NOT_FOUND);
-
-  ASSERT (DtIo->GetBusAddress (DtIo, "reg", 1, &BusAddress) == EFI_SUCCESS);
-  ASSERT (BusAddress == 0x300000004);
-  ASSERT (DtIo->GetBusAddress (NULL, "reg", 1, &BusAddress) == EFI_INVALID_PARAMETER);
-  ASSERT (DtIo->GetBusAddress (DtIo, NULL, 1, &BusAddress) == EFI_INVALID_PARAMETER);
-  ASSERT (DtIo->GetBusAddress (DtIo, "reg", 1, NULL) == EFI_INVALID_PARAMETER);
-
-  ASSERT (DtIo->GetSize (DtIo, "reg", 2, &Size) == EFI_SUCCESS);
-  ASSERT (Size == 0x500000006);
-  ASSERT (DtIo->GetSize (NULL, "reg", 2, &Size) == EFI_INVALID_PARAMETER);
-  ASSERT (DtIo->GetSize (DtIo, NULL, 2, &Size) == EFI_INVALID_PARAMETER);
-  ASSERT (DtIo->GetSize (DtIo, "reg", 2, NULL) == EFI_INVALID_PARAMETER);
 
   return TRUE;
 }
@@ -656,6 +671,7 @@ STATIC TestDesc  TestDescs[] = {
   TEST_DECL (G3P3),
   TEST_DECL (G3P4),
   TEST_DECL (G3P5),
+  TEST_DECL (G4),
   TEST_DECL (G5),
   TEST_DECL (G5P0),
   TEST_DECL (G5P1),

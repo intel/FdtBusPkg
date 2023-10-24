@@ -136,9 +136,17 @@ typedef enum {
   ///
   EFI_DT_VALUE_BUS_ADDRESS,
   ///
+  /// An address encoded by #address-cells for a child node.
+  ///
+  EFI_DT_VALUE_CHILD_BUS_ADDRESS,
+  ///
   /// A size encoded by #size-cells.
   ///
   EFI_DT_VALUE_SIZE,
+  ///
+  /// A size encoded by #size-cells for a child node.
+  ///
+  EFI_DT_VALUE_CHILD_SIZE,
   ///
   /// A reg property value.
   ///
@@ -311,50 +319,6 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U128)(
   );
 
 /**
-  Looks up an EFI_DT_BUS_ADDRESS property value by index.
-
-  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
-  @param  Name                  Name of the property.
-  @param  Index                 Index of the reg value to return.
-  @param  BusAddress            Pointer to an EFI_DT_BUS_ADDRESS.
-
-  @retval EFI_SUCCESS           Lookup successful.
-  @retval EFI_NOT_FOUND         Could not find property.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
-  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
-
-**/
-typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_BUS_ADDRESS)(
-  IN  EFI_DT_IO_PROTOCOL *This,
-  IN  CONST CHAR8        *Name,
-  IN  UINTN              Index,
-  OUT EFI_DT_BUS_ADDRESS *BusAddress
-  );
-
-/**
-  Looks up an EFI_DT_SIZE property value by index.
-
-  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
-  @param  Name                  Name of the property.
-  @param  Index                 Index of the reg value to return.
-  @param  Size                  Pointer to an EFI_DT_SIZE.
-
-  @retval EFI_SUCCESS           Lookup successful.
-  @retval EFI_NOT_FOUND         Could not find property.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
-  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
-
-**/
-typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_SIZE)(
-  IN  EFI_DT_IO_PROTOCOL *This,
-  IN  CONST CHAR8        *Name,
-  IN  UINTN              Index,
-  OUT EFI_DT_SIZE        *Size
-  );
-
-/**
   Looks up a reg property value by index.
 
   Note: The returned address is in CPU space, not bus space, if these are
@@ -406,7 +370,8 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME)(
   Looks up a ranges property value by index.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
-  @param  Index                 Index of the reg value to return.
+  @param  Name                  Name of the ranges property to examine.
+  @param  Index                 Index of the ranges value to return.
   @param  Range                 Pointer to an EFI_DT_RANGE.
 
   @retval EFI_SUCCESS           Lookup successful.
@@ -418,6 +383,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME)(
 typedef
 EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_RANGE)(
   IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CHAR8              *Name,
   IN  UINTN              Index,
   OUT EFI_DT_RANGE       *Range
   );
@@ -792,8 +758,6 @@ struct _EFI_DT_IO_PROTOCOL {
   EFI_DT_IO_PROTOCOL_GET_U32             GetU32;
   EFI_DT_IO_PROTOCOL_GET_U64             GetU64;
   EFI_DT_IO_PROTOCOL_GET_U128            GetU128;
-  EFI_DT_IO_PROTOCOL_GET_BUS_ADDRESS     GetBusAddress;
-  EFI_DT_IO_PROTOCOL_GET_SIZE            GetSize;
   EFI_DT_IO_PROTOCOL_GET_REG             GetReg;
   EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME     GetRegByName;
   EFI_DT_IO_PROTOCOL_GET_RANGE           GetRange;

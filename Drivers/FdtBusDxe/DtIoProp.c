@@ -227,110 +227,6 @@ DtIoGetU128 (
 }
 
 /**
-  Looks up an EFI_DT_BUS_ADDRESS property value by index.
-
-  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
-  @param  Name                  Name of the property.
-  @param  Index                 Index of the reg value to return.
-  @param  BusAddress            Pointer to an EFI_DT_BUS_ADDRESS.
-
-  @retval EFI_SUCCESS           Lookup successful.
-  @retval EFI_NOT_FOUND         Could not find property.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
-  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
-
-**/
-EFI_STATUS
-EFIAPI
-DtIoGetBusAddress (
-  IN  EFI_DT_IO_PROTOCOL  *This,
-  IN  CONST CHAR8         *Name,
-  IN  UINTN               Index,
-  OUT EFI_DT_BUS_ADDRESS  *BusAddress
-  )
-{
-  EFI_STATUS       Status;
-  EFI_DT_PROPERTY  Property;
-  DT_DEVICE        *DtDevice;
-
-  if ((This == NULL) || (Name == NULL) || (BusAddress == NULL)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  DtDevice = DT_DEV_FROM_THIS (This);
-
-  Status = DtIoGetProp (This, Name, &Property);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  Status = DtIoParseProp (
-             This,
-             &Property,
-             EFI_DT_VALUE_BUS_ADDRESS,
-             Index,
-             BusAddress
-             );
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  return EFI_SUCCESS;
-}
-
-/**
-  Looks up an EFI_DT_SIZE property value by index.
-
-  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
-  @param  Name                  Name of the property.
-  @param  Index                 Index of the reg value to return.
-  @param  Size                  Pointer to an EFI_DT_SIZE.
-
-  @retval EFI_SUCCESS           Lookup successful.
-  @retval EFI_NOT_FOUND         Could not find property.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
-  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
-
-**/
-EFI_STATUS
-EFIAPI
-DtIoGetSize (
-  IN  EFI_DT_IO_PROTOCOL  *This,
-  IN  CONST CHAR8         *Name,
-  IN  UINTN               Index,
-  OUT EFI_DT_SIZE         *Size
-  )
-{
-  EFI_STATUS       Status;
-  EFI_DT_PROPERTY  Property;
-  DT_DEVICE        *DtDevice;
-
-  if ((This == NULL) || (Name == NULL) || (Size == NULL)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  DtDevice = DT_DEV_FROM_THIS (This);
-
-  Status = DtIoGetProp (This, Name, &Property);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  Status = DtIoParseProp (
-             This,
-             &Property,
-             EFI_DT_VALUE_SIZE,
-             Index,
-             Size
-             );
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  return EFI_SUCCESS;
-}
-
-/**
   Looks up a reg property value by index for a EFI_DT_IO_PROTOCOL instance.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
@@ -425,7 +321,8 @@ DtIoGetRegByName (
   Looks up a ranges property value by index.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
-  @param  Index                 Index of the reg value to return.
+  @param  Name                  Name of the ranges property to examine.
+  @param  Index                 Index of the ranges value to return.
   @param  Range                 Pointer to an EFI_DT_RANGE.
 
   @retval EFI_SUCCESS           Lookup successful.
@@ -438,6 +335,7 @@ EFI_STATUS
 EFIAPI
 DtIoGetRange (
   IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  CHAR8               *Name,
   IN  UINTN               Index,
   OUT EFI_DT_RANGE        *Range
   )
@@ -446,13 +344,13 @@ DtIoGetRange (
   EFI_DT_PROPERTY  Property;
   DT_DEVICE        *DtDevice;
 
-  if ((This == NULL) || (Range == NULL)) {
+  if ((This == NULL) || (Name == NULL) || (Range == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
   DtDevice = DT_DEV_FROM_THIS (This);
 
-  Status = DtIoGetProp (This, "ranges", &Property);
+  Status = DtIoGetProp (This, Name, &Property);
   if (EFI_ERROR (Status)) {
     return Status;
   }

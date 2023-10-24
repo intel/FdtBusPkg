@@ -328,6 +328,8 @@ InitializeHighMemDxe (
     }
   }
 
+  FreePool (HandleBuffer);
+
  #endif /* DT_NON_DRIVER_BINDING */
 
   return EFI_SUCCESS;

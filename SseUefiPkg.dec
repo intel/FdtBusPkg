@@ -26,10 +26,4 @@
   gUefiRiscVSamplePlatformTokenSpaceGuid  = {0x35f880e3, 0x61a9, 0x4911, {0x99, 0x9f, 0x13, 0xf3, 0xe3, 0x10, 0x94, 0xad}}
 
 [PcdsFixedAtBuild, PcdsPatchableInModule]
-  ## Host Bridge Table
-  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdSegmentNumber|0x0|UINT32|0x00000100
-  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdSupportedAttributes|0x0|UINT64|0x00000101
-  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdInitialAttributes|0x0|UINT64|0x00000102
-  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdDmaAbove4G|FALSE|BOOLEAN|0x00000103
-  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdNoExtendedConfigSpace|FALSE|BOOLEAN|0x00000104
-  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdResourceAssigned|FALSE|BOOLEAN|0x00000105
+

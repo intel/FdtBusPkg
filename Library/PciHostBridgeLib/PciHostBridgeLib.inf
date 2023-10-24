@@ -1,6 +1,6 @@
 ## @file
-#
-#  PCI Host Bridge Library instance for a sample SOC
+#  PCI Host Bridge Library instance for pci-host-ecam-generic
+#  compatible RC implementations.
 #
 #  Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
 #
@@ -39,12 +39,6 @@
   UefiBootServicesTableLib
 
 [Pcd]
-  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdSegmentNumber
-  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdSupportedAttributes
-  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdInitialAttributes
-  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdDmaAbove4G
-  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdNoExtendedConfigSpace
-  gUefiRiscVSamplePlatformTokenSpaceGuid.PcdResourceAssigned
 
 [Protocols]
   gEfiDtIoProtocolGuid                    ## CONSUMES

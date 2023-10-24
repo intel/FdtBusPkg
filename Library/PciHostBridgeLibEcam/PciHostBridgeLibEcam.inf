@@ -10,8 +10,8 @@
 
 [Defines]
   INF_VERSION                    = 0x00010019
-  BASE_NAME                      = PciHostBridgeLib
-  FILE_GUID                      = 5E1895A8-A246-4B15-BC4B-0D373CDFACFA
+  BASE_NAME                      = PciHostBridgeLibEcam
+  FILE_GUID                      = 5E1895A8-A246-4B15-BC4B-0D373CDFBBBB
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = PciHostBridgeLib|DXE_DRIVER
@@ -24,7 +24,7 @@
 #
 
 [Sources]
-  PciHostBridgeLib.c
+  PciHostBridgeLibEcam.c
 
 [Packages]
   MdePkg/MdePkg.dec

@@ -70,15 +70,17 @@ CHAR16  *mPciHostBridgeLibAcpiAddressSpaceTypeStr[] = {
 #define EFI_DT_PCI_HOST_RANGE_IO            BIT24
 
 /**
-  Get the Bus range of the Pcie Bridge
+  Get the range attribute portion of the child base address.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
-  @param  ChildBase             The ChildBase of the 'bus-range' property
+  @param  ChildBase             The ChildBase portion of 'ranges' element.
 
+  @return EFI_DT_CELL           phys.hi from 2.2.1 IEEE Std 1275-1994.
 **/
+STATIC
 EFI_DT_CELL
 EFIAPI
-DtIoGetSpaceCode (
+GetRangeAttribute (
   IN  EFI_DT_IO_PROTOCOL  *This,
   IN  EFI_DT_BUS_ADDRESS  ChildBase
   )
@@ -90,6 +92,15 @@ DtIoGetSpaceCode (
   return (EFI_DT_CELL)(ChildBase >> ((This->ChildAddressCells - 1) * sizeof (EFI_DT_CELL) * 8));
 }
 
+/**
+  Apply EFI_MEMORY_UC attributees to the range [Base, Base + Size).
+
+  @param  Base                  Range base.
+  @param  Size                  Range size.
+
+  @return EFI_STATUS            EFI_SUCCESS or others.
+**/
+STATIC
 EFI_STATUS
 EFIAPI
 MapGcdMmioSpace (
@@ -130,6 +141,14 @@ MapGcdMmioSpace (
   return Status;
 }
 
+/**
+  Process a compatible DtIo into a PCI_ROOT_BRIDGE.
+
+  @param  DtIo                  For a pci-host-ecam-generic node.
+  @param  Bridge                PCI_ROOT_BRIDGE to fill.
+
+  @return EFI_STATUS            EFI_SUCCESS or others.
+**/
 STATIC
 EFI_STATUS
 EFIAPI
@@ -191,7 +210,7 @@ ProcessPciHost (
        !EFI_ERROR (Status);
        Status = DtIo->GetRange (DtIo, "ranges", ++Index, &Range))
   {
-    SpaceCode = DtIoGetSpaceCode (DtIo, Range.ChildBase);
+    SpaceCode = GetRangeAttribute (DtIo, Range.ChildBase);
     switch (SpaceCode) {
       case EFI_DT_PCI_HOST_RANGE_IO:
         Io.Base        = Range.ChildBase;
@@ -400,13 +419,11 @@ ProcessPciHost (
 }
 
 /**
-  Return all the root bridge instances in an array.
+  Populate and return all the root bridge instances in an array.
 
-  @param Count  Return the count of root bridge instances.
+  @param  Count  Where to store the number of returned PCI_ROOT_BRIDGE structs.
 
-  @return All the root bridge instances in an array.
-          The array should be passed into PciHostBridgeFreeRootBridges()
-          when it's not used.
+  @return A Count-sized array of PCI_ROOT_BRIDGE on success. NULL otherwise.
 **/
 PCI_ROOT_BRIDGE *
 EFIAPI
@@ -567,7 +584,7 @@ PciHostBridgeFreeRootBridges (
 }
 
 /**
-  Inform the platform that the resource conflict happens.
+  Inform the platform that a resource conflict happens.
 
   @param HostBridgeHandle Handle of the Host Bridge.
   @param Configuration    Pointer to PCI I/O and PCI memory resource

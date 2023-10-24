@@ -1,0 +1,72 @@
+From 0630399b399261ee4fea4cd0b4dd4ff3024431bd Mon Sep 17 00:00:00 2001
+From: Andrei Warkentin <andrei.warkentin@intel.com>
+Date: Thu, 16 Mar 2023 15:46:04 -0500
+Subject: [PATCH 1/1] RiscVVirt: Patches to enable FdtBusPkg components
+
+- VirtioFdtDxe
+- PciHostBridgeLibEcam
+- HighMemDxe
+
+Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
+---
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc | 10 +++++++---
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf |  8 ++++++--
+ 2 files changed, 13 insertions(+), 5 deletions(-)
+
+diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
+index 414d186179fb..2155455a1482 100644
+--- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
++++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
+@@ -97,7 +97,7 @@ [LibraryClasses.common]
+   FileExplorerLib|MdeModulePkg/Library/FileExplorerLib/FileExplorerLib.inf
+   PciPcdProducerLib|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
+   PciSegmentLib|MdePkg/Library/BasePciSegmentLibPci/BasePciSegmentLibPci.inf
+-  PciHostBridgeLib|OvmfPkg/Fdt/FdtPciHostBridgeLib/FdtPciHostBridgeLib.inf
++  PciHostBridgeLib|SseUefiPkg/Library/PciHostBridgeLibEcam/PciHostBridgeLibEcam.inf
+   PciHostBridgeUtilityLib|OvmfPkg/Library/PciHostBridgeUtilityLib/PciHostBridgeUtilityLib.inf
+   PeiHardwareInfoLib|OvmfPkg/Library/HardwareInfoLib/PeiHardwareInfoLib.inf
+   PlatformHookLib|MdeModulePkg/Library/BasePlatformHookLibNull/BasePlatformHookLibNull.inf
+@@ -349,14 +349,18 @@ [Components]
+   #
+   # Platform Driver
+   #
+-  OvmfPkg/Fdt/VirtioFdtDxe/VirtioFdtDxe.inf
++  # OvmfPkg/Fdt/VirtioFdtDxe/VirtioFdtDxe.inf
++  SseUefiPkg/Drivers/VirtioFdtDxe/VirtioFdtDxe.inf
++  SseUefiPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
+   EmbeddedPkg/Drivers/FdtClientDxe/FdtClientDxe.inf {
+     <LibraryClasses>
+       DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
+       PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
+       DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
+   }
+-  OvmfPkg/Fdt/HighMemDxe/HighMemDxe.inf
++  #OvmfPkg/Fdt/HighMemDxe/HighMemDxe.inf
++  #SseUefiPkg/Drivers/HighMemDxe/HighMemDxe.inf
++  SseUefiPkg/Drivers/HighMemDxe/HighMemDxeNoBinding.inf
+   OvmfPkg/VirtioBlkDxe/VirtioBlk.inf
+   OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
+   OvmfPkg/VirtioNetDxe/VirtioNet.inf
+diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
+index 354c9271d10c..b167a82d4210 100644
+--- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
++++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
+@@ -51,9 +51,13 @@ [FV.DXEFV]
+ INF  MdeModulePkg/Core/Dxe/DxeMain.inf
+ INF  MdeModulePkg/Universal/PCD/Dxe/Pcd.inf
+ INF  MdeModulePkg/Universal/DevicePathDxe/DevicePathDxe.inf
+-INF  OvmfPkg/Fdt/VirtioFdtDxe/VirtioFdtDxe.inf
++# INF  OvmfPkg/Fdt/VirtioFdtDxe/VirtioFdtDxe.inf
++INF  SseUefiPkg/Drivers/VirtioFdtDxe/VirtioFdtDxe.inf
++INF  SseUefiPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
+ INF  EmbeddedPkg/Drivers/FdtClientDxe/FdtClientDxe.inf
+-INF  OvmfPkg/Fdt/HighMemDxe/HighMemDxe.inf
++# INF  OvmfPkg/Fdt/HighMemDxe/HighMemDxe.inf
++# INF  SseUefiPkg/Drivers/HighMemDxe/HighMemDxe.inf
++INF  SseUefiPkg/Drivers/HighMemDxe/HighMemDxeNoBinding.inf
+ 
+ #
+ # PI DXE Drivers producing Architectural Protocols (EFI Services)
+-- 
+2.25.1
+

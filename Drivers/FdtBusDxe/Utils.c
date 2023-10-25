@@ -113,7 +113,13 @@ HandleHasBoundDriver (
   }
 
   for (Index = 0; Index < EntryCount; Index++) {
-    if ((OpenInfoBuffer[Index].Attributes & EFI_OPEN_PROTOCOL_BY_DRIVER) != 0) {
+    EFI_OPEN_PROTOCOL_INFORMATION_ENTRY *Entry = &OpenInfoBuffer[Index];
+    //
+    // This should be sufficient, but we could also validate AgentHandle
+    // to have a DriverBinding.
+    //
+    if ((Entry->Attributes & EFI_OPEN_PROTOCOL_BY_DRIVER) != 0 &&
+        Entry->ControllerHandle == Handle) {
       break;
     }
   }

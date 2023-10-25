@@ -157,6 +157,7 @@ DtDeviceCreate (
   DtDevice->DtIo.GetProp      = DtIoGetProp;
   DtDevice->DtIo.ScanChildren = DtIoScanChildren;
   DtDevice->DtIo.RemoveChild  = DtIoRemoveChild;
+  DtDevice->DtIo.SetCallbacks = DtIoSetCallbacks;
 
   //
   // Convenience calls.

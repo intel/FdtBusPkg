@@ -79,17 +79,24 @@ GetDtRootFromDeviceFlags (
 
 /**
   Given a EFI_HANDLE, return if the handle has a driver started
-  on it.
+  on it, which means the handle was opened on behalf of itself
+  BY_DRIVER.
 
-  @param[in]    Handle         EFI_HANDLE.
+  @param[in]    Handle                EFI_HANDLE.
+  @param[in]    ExtraAttributeChecks  Extra attributes to validate against
+                                      the Attribute field in a
+                                      EFI_OPEN_PROTOCOL_INFORMATION_ENTRY.
+  @oaram[out]   MatchingEntry         EFI_OPEN_PROTOCOL_INFORMATION_ENTRY *
 
-  @retval TRUE                 Has driver bound/started.
-  @retval FALSE                Does not have a driver bound/started.
+  @retval TRUE                        Has driver bound/started.
+  @retval FALSE                       Does not have a driver bound/started.
 
 **/
 BOOLEAN
 HandleHasBoundDriver (
-  IN  EFI_HANDLE  Handle
+  IN  EFI_HANDLE                           Handle,
+  IN  UINT32                               ExtraAttributeChecks,
+  OUT EFI_OPEN_PROTOCOL_INFORMATION_ENTRY  *MatchingEntry OPTIONAL
   )
 {
   EFI_STATUS                           Status;
@@ -113,13 +120,19 @@ HandleHasBoundDriver (
   }
 
   for (Index = 0; Index < EntryCount; Index++) {
-    EFI_OPEN_PROTOCOL_INFORMATION_ENTRY *Entry = &OpenInfoBuffer[Index];
+    EFI_OPEN_PROTOCOL_INFORMATION_ENTRY  *Entry = &OpenInfoBuffer[Index];
     //
     // This should be sufficient, but we could also validate AgentHandle
     // to have a DriverBinding.
     //
-    if ((Entry->Attributes & EFI_OPEN_PROTOCOL_BY_DRIVER) != 0 &&
-        Entry->ControllerHandle == Handle) {
+    if (((Entry->Attributes & (EFI_OPEN_PROTOCOL_BY_DRIVER | ExtraAttributeChecks)) ==
+         (EFI_OPEN_PROTOCOL_BY_DRIVER | ExtraAttributeChecks)) &&
+        (Entry->ControllerHandle == Handle))
+    {
+      if (MatchingEntry != NULL) {
+        *MatchingEntry = *Entry;
+      }
+
       break;
     }
   }

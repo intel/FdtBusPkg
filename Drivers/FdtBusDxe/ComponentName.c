@@ -234,7 +234,7 @@ ComponentNameGetControllerName (
     return Status;
   }
 
-  if (HandleHasBoundDriver (ChildHandle)) {
+  if (HandleHasBoundDriver (ChildHandle, 0, NULL)) {
     //
     // If there isn't - display our component info.
     // Otherwise - punt since the binding driver should

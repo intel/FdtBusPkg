@@ -170,6 +170,10 @@ TestG2P0ReadChildReg (
   return EFI_SUCCESS;
 }
 
+EFI_DT_IO_PROTOCOL_CB  TestG2P0Callbacks = {
+  .ReadChildReg = TestG2P0ReadChildReg,
+};
+
 TEST_DEF (G2P0) {
   UINT8               Buffer;
   EFI_DT_REG          Reg;
@@ -285,7 +289,7 @@ TEST_DEF (G2P0) {
   ASSERT (DtIo->GetReg (DtIo, 2, &Reg) == EFI_NOT_FOUND);
 
   // For TestG2P0C1Fn.
-  DtIo->DeviceCallbacks.ReadChildReg = TestG2P0ReadChildReg;
+  ASSERT (DtIo->SetCallbacks (DtIo, gDriverBinding.DriverBindingHandle, &TestG2P0Callbacks) == EFI_SUCCESS);
 
   return TRUE;
 }

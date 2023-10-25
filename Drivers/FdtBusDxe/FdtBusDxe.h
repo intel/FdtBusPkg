@@ -69,6 +69,10 @@ struct _DT_DEVICE {
   // is set.
   //
   LIST_ENTRY                 Link;
+  //
+  // Set via DtIoSetCallbacks.
+  //
+  EFI_DT_IO_PROTOCOL_CB      *Callbacks;
 };
 
 VOID *
@@ -88,7 +92,9 @@ GetDtRootFromDeviceFlags (
 
 BOOLEAN
 HandleHasBoundDriver (
-  IN  EFI_HANDLE  Handle
+  IN  EFI_HANDLE                           Handle,
+  IN  UINT32                               ExtraAttributeChecks,
+  OUT EFI_OPEN_PROTOCOL_INFORMATION_ENTRY  *MatchingEntry OPTIONAL
   );
 
 CHAR16 *
@@ -405,6 +411,14 @@ DtIoFreeBuffer (
   IN  EFI_DT_IO_PROTOCOL  *This,
   IN  UINTN               Pages,
   IN  VOID                *HostAddress
+  );
+
+EFI_STATUS
+EFIAPI
+DtIoSetCallbacks (
+  IN  EFI_DT_IO_PROTOCOL     *This,
+  IN  EFI_HANDLE             AgentHandle,
+  IN  EFI_DT_IO_PROTOCOL_CB  *Callbacks
   );
 
 UINT64

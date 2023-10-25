@@ -704,6 +704,34 @@ EFI_STATUS
   IN  VOID                         *HostAddress
   );
 
+/**
+  Sets device driver callbacks to be used by the bus driver.
+
+  It is the responsibility of the device driver to set NULL callbacks
+  when stopping on a handle, as the bus driver cannot detect when a driver
+  disconnects. The function signature here thus both encourages appropriate
+  use and helps detect bugs. The bus driver will validate AgentHandle
+  and Callbacks. The operation will fail if AgentHandle doen't match the
+  current driver managing the handle. The operation will also fail when
+  trying to set callbacks when these are already set.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  AgentHandle           EFI_HANDLE.
+  @param  Callbacks             EFI_DT_IO_PROTOCOL_CB.
+
+  @retval EFI_SUCCESS           Success.
+  @retval EFI_INVALID_PARAMETER Invalid parameter.
+  @retval EFI_ACCESS_DENIED     AgentHandle/Callbacks validation.
+
+**/
+typedef
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_SET_CALLBACKS)(
+  IN  EFI_DT_IO_PROTOCOL           *This,
+  IN  EFI_HANDLE                   AgentHandle,
+  IN  EFI_DT_IO_PROTOCOL_CB        *Callbacks
+  );
+
 ///
 /// EFI_DT_IO_PROTOCOL_CB allows a device driver to provide some
 /// callbacks for use by the bus driver.
@@ -741,7 +769,6 @@ struct _EFI_DT_IO_PROTOCOL {
   UINT8                                  SizeCells;
   UINT8                                  ChildAddressCells;
   UINT8                                  ChildSizeCells;
-
   BOOLEAN                                IsDmaCoherent;
   //
   // Core.
@@ -750,6 +777,7 @@ struct _EFI_DT_IO_PROTOCOL {
   EFI_DT_IO_PROTOCOL_GET_PROP            GetProp;
   EFI_DT_IO_PROTOCOL_SCAN_CHILDREN       ScanChildren;
   EFI_DT_IO_PROTOCOL_REMOVE_CHILD        RemoveChild;
+  EFI_DT_IO_PROTOCOL_SET_CALLBACKS       SetCallbacks;
   //
   // Convenience calls to use with or instead of GetProp.
   //
@@ -778,17 +806,6 @@ struct _EFI_DT_IO_PROTOCOL {
   EFI_DT_IO_PROTOCOL_UNMAP               Unmap;
   EFI_DT_IO_PROTOCOL_ALLOCATE_BUFFER     AllocateBuffer;
   EFI_DT_IO_PROTOCOL_FREE_BUFFER         FreeBuffer;
-  //
-  // These are device-driver specific callbacks that can
-  // be set by a device driver starting on the handle.
-  //
-  // Danger zone!
-  // ------------
-  // It is the responsibility of the device driver to
-  // clear these out when stopping on a handle, as the
-  // bus driver cannot detect when a driver disconnects.
-  //
-  EFI_DT_IO_PROTOCOL_CB    DeviceCallbacks;
 };
 
 extern EFI_GUID  gEfiDtIoProtocolGuid;

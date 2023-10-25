@@ -388,13 +388,16 @@ DtIoWriteReg (
   IN OUT VOID                      *Buffer
   )
 {
-  UINTN  AddressIncrement = Count;
+  DT_DEVICE  *DtDevice;
+  UINTN      AddressIncrement = Count;
 
   if ((This == NULL) || (Reg == NULL) || (Buffer == NULL) ||
       (Width >= EfiDtIoWidthMaximum))
   {
     return EFI_INVALID_PARAMETER;
   }
+
+  DtDevice = DT_DEV_FROM_THIS (This);
 
   if ((Width >= EfiDtIoWidthFifoUint8) && (Width <= EfiDtIoWidthFifoUint64)) {
     AddressIncrement = 1;
@@ -408,7 +411,9 @@ DtIoWriteReg (
 
   if (Reg->BusDtIo != NULL) {
     if (This == Reg->BusDtIo) {
-      if (Reg->BusDtIo->DeviceCallbacks.WriteChildReg == NULL) {
+      if ((DtDevice->Callbacks == NULL) ||
+          (DtDevice->Callbacks->WriteChildReg == NULL))
+      {
         //
         // The driver didn't expect to be asked to write registers
         // on behalf of a child device.
@@ -416,14 +421,14 @@ DtIoWriteReg (
         return EFI_UNSUPPORTED;
       }
 
-      return Reg->BusDtIo->DeviceCallbacks.WriteChildReg (
-                                             Reg->BusDtIo,
-                                             Width,
-                                             Reg,
-                                             Offset,
-                                             Count,
-                                             Buffer
-                                             );
+      return DtDevice->Callbacks->WriteChildReg (
+                                    Reg->BusDtIo,
+                                    Width,
+                                    Reg,
+                                    Offset,
+                                    Count,
+                                    Buffer
+                                    );
     }
 
     //
@@ -481,13 +486,16 @@ DtIoReadReg (
   IN OUT VOID                      *Buffer
   )
 {
-  UINTN  AddressIncrement = Count;
+  DT_DEVICE  *DtDevice;
+  UINTN      AddressIncrement = Count;
 
   if ((This == NULL) || (Reg == NULL) || (Buffer == NULL) ||
       (Width >= EfiDtIoWidthMaximum))
   {
     return EFI_INVALID_PARAMETER;
   }
+
+  DtDevice = DT_DEV_FROM_THIS (This);
 
   if ((Width >= EfiDtIoWidthFifoUint8) && (Width <= EfiDtIoWidthFifoUint64)) {
     AddressIncrement = 1;
@@ -501,7 +509,9 @@ DtIoReadReg (
 
   if (Reg->BusDtIo != NULL) {
     if (This == Reg->BusDtIo) {
-      if (Reg->BusDtIo->DeviceCallbacks.ReadChildReg == NULL) {
+      if ((DtDevice->Callbacks == NULL) ||
+          (DtDevice->Callbacks->ReadChildReg == NULL))
+      {
         //
         // The driver didn't expect to be asked to read registers
         // on behalf of a child device.
@@ -509,14 +519,14 @@ DtIoReadReg (
         return EFI_UNSUPPORTED;
       }
 
-      return Reg->BusDtIo->DeviceCallbacks.ReadChildReg (
-                                             Reg->BusDtIo,
-                                             Width,
-                                             Reg,
-                                             Offset,
-                                             Count,
-                                             Buffer
-                                             );
+      return DtDevice->Callbacks->ReadChildReg (
+                                    Reg->BusDtIo,
+                                    Width,
+                                    Reg,
+                                    Offset,
+                                    Count,
+                                    Buffer
+                                    );
     }
 
     //
@@ -743,4 +753,63 @@ DtIoFreeBuffer (
   )
 {
   return EFI_UNSUPPORTED;
+}
+
+/**
+  Sets device driver callbacks to be used by the bus driver.
+
+  It is the responsibility of the device driver to set NULL callbacks
+  when stopping on a handle, as the bus driver cannot detect when a driver
+  disconnects. The function signature here thus both encourages appropriate
+  use and helps detect bugs. The bus driver will validate AgentHandle
+  and Callbacks. The operation will fail if AgentHandle doen't match the
+  current driver managing the handle. The operation will also fail when
+  trying to set callbacks when these are already set.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  AgentHandle           EFI_HANDLE.
+  @param  Callbacks             EFI_DT_IO_PROTOCOL_CB.
+
+  @retval EFI_SUCCESS           Success.
+  @retval EFI_INVALID_PARAMETER Invalid parameter.
+  @retval EFI_ACCESS_DENIED     AgentHandle/Callbacks validation.
+
+**/
+EFI_STATUS
+EFIAPI
+DtIoSetCallbacks (
+  IN  EFI_DT_IO_PROTOCOL     *This,
+  IN  EFI_HANDLE             AgentHandle,
+  IN  EFI_DT_IO_PROTOCOL_CB  *Callbacks
+  )
+{
+  BOOLEAN                              Found;
+  DT_DEVICE                            *DtDevice;
+  EFI_OPEN_PROTOCOL_INFORMATION_ENTRY  Entry;
+
+  if ((This == NULL) || (AgentHandle == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DtDevice = DT_DEV_FROM_THIS (This);
+  Found    = HandleHasBoundDriver (DtDevice->Handle, 0, &Entry);
+  ASSERT (Found);
+  if (!Found) {
+    return EFI_ACCESS_DENIED;
+  }
+
+  ASSERT (Entry.AgentHandle == AgentHandle);
+  if (Entry.AgentHandle != AgentHandle) {
+    return EFI_ACCESS_DENIED;
+  }
+
+  if (Callbacks != NULL) {
+    ASSERT (DtDevice->Callbacks == NULL);
+    if (DtDevice->Callbacks != NULL) {
+      return EFI_ACCESS_DENIED;
+    }
+  }
+
+  DtDevice->Callbacks = Callbacks;
+  return EFI_SUCCESS;
 }

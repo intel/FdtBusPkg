@@ -182,6 +182,7 @@ TEST_DEF (G2P0) {
   UINT64              U64;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
+  ZeroMem (&Property, sizeof (EFI_DT_PROPERTY));
   //
   // These should be inherited from g2.
   //
@@ -571,6 +572,7 @@ TEST_DEF (G6) {
   CONST CHAR8         *String2;
   UINTN               Index;
 
+  ZeroMem (&Property, sizeof (EFI_DT_PROPERTY));
   ASSERT (DtIo->GetProp (DtIo, "string", &Property) == EFI_SUCCESS);
   ASSERT (DtIo->ParseProp (DtIo, &Property, EFI_DT_VALUE_STRING, 0, &String) == EFI_SUCCESS);
   ASSERT (AsciiStrCmp (String, "a string") == 0);

@@ -44,7 +44,7 @@ To build RISC-V OVMF firmware:
         $ cd edk2
         $ git submodule add https://github.com/intel/FdtBusPkg
         $ git submodule update --init
-	$ git am FdtBusPkg/Docs/0001-RiscVVirt-Patches-to-enable-FdtBusPkg-components.patch
+        $ git am FdtBusPkg/Docs/0001-RiscVVirt-Patches-to-enable-FdtBusPkg-components.patch
         $ export GCC_RISCV64_PREFIX=... (if you are on a non-RISCV64 system)
 	$ build -a RISCV64  -p OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc -t GCC -b DEBUG
 

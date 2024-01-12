@@ -1,10 +1,10 @@
-##@file
-#Build the DTB for FdtBusDxe unit tests, and process it into a form
-#that can be consumed by the C compiler.
+## @file
+#  Build the DTB for FdtBusDxe unit tests, and process it into a form
+#  that can be consumed by the C compiler.
 #
-#Copyright (C) 2023, Intel Corporation. All rights reserved.<BR>
+#  Copyright (C) 2023, Intel Corporation. All rights reserved.<BR>
 #
-#SPDX -License-Identifier: BSD-2-Clause-Patent
+#  SPDX -License-Identifier: BSD-2-Clause-Patent
 #
 ##
 

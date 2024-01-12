@@ -3,7 +3,7 @@
 This repo implements support for developing Tiano platform device drivers
 compliant to the UEFI Driver Model, by performing driver binding and
 configuration using a Device Tree. Such a device tree is typically
-either passed to UEFI by higher-priveleged firmware.
+either passed to UEFI by higher-privileged firmware.
 
 This is a staging branch created as part of the ongoing [RISE](https://riseproject.dev/) collaboration. The net goal is to upstream this code to Tiano.
 

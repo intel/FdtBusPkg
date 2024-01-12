@@ -1,0 +1,64 @@
+## @file
+#
+#  Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010019
+  BASE_NAME                      = FdtBusDxe
+  FILE_GUID                      = E6727A5E-CBCD-44C8-B37F-78BC3A0C1234
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = EntryPoint
+
+#
+#  VALID_ARCHITECTURES           = AARCH64 RISCV64
+#
+
+[Sources]
+  ComponentName.c
+  DriverBinding.c
+  DtDevice.c
+  DtIoProp.c
+  DtIoPropParse.c
+  DtIo.c
+  Entry.c
+  Fdt.c
+  Utils.c
+  Tests.c
+
+[Packages]
+  MdeModulePkg/MdeModulePkg.dec
+  FdtBusPkg/FdtBusPkg.dec
+  EmbeddedPkg/EmbeddedPkg.dec
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  HobLib
+  FdtLib
+  DevicePathLib
+  TimerLib
+
+[Protocols]
+  gEfiDtIoProtocolGuid
+  gEfiDevicePathProtocolGuid
+  gEfiCpuIo2ProtocolGuid
+
+[Guids]
+  gFdtHobGuid
+  gFdtTableGuid
+  gEdkiiPlatformHasDeviceTreeGuid
+  gEfiEndOfDxeEventGroupGuid
+
+[Depex]
+  gEfiCpuIo2ProtocolGuid
+
+[BuildOptions]

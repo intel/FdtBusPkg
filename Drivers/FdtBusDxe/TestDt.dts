@@ -1,0 +1,90 @@
+/dts-v1/;
+
+/ {
+  aliases {
+    alias-G2P0 = &l1;
+  };
+
+  G0 {
+    compatible = "test1_compatible";
+  };
+  G1 {
+    dma-coherent;
+    device_type = "bar";
+  };
+  G2 {
+    #address-cells = <4>;
+    #size-cells = <3>;
+l1: G2P0 {
+      reg = < 0x1 0x2 0x3 0x4 0x5 0x6 0x7
+              0x1 0xa 0x3 0xb 0x5 0xc 0x7>;
+      G2P0C1 {
+        reg = < 0 0 0x4 >;
+      };
+    };
+    G2P1 {
+      #address-cells = <5>;
+      #size-cells = <2>;
+    };
+    G2P2 {
+      #address-cells = <2>;
+      #size-cells = <5>;
+    };
+  };
+  G3 {
+    G3P0 {
+      status = "disabled";
+    };
+    G3P1 {
+      status = "reserved";
+    };
+    G3P2 {
+      status = "fail";
+    };
+    G3P3 {
+      status = "fail-foo";
+    };
+    G3P4 {
+      status = "okay";
+    };
+    G3P5 {
+      status = "lkalksjdlkajsd";
+    };
+  };
+  G4 {
+    #address-cells = <3>;
+    #size-cells = <2>;
+    ranges = <0x1 0x2 0x3 0x5 0x6 0x7 0x8
+              0xa 0xb 0xc 0xd 0xe 0xf 0x1>;
+  };
+  G5 {
+    #address-cells = <3>;
+    #size-cells = <2>;
+    G5P0 {
+    };
+    G5P1 {
+    };
+    G5P2 {
+    };
+    G5P3 {
+    };
+  };
+  G6 {
+    string = "a string";
+    svals1 = "string1", "string2";
+    empty;
+    svals2 = "", "", "1", "";
+  };
+  G7 {
+    #address-cells = <2>;
+    #size-cells = <2>;
+    G7P0 {
+      reg = <0x1 0x00000002 0x3 0x00000004>,
+            <0x5 0x00000006 0x7 0x00000008>,
+            <0x9 0x0000000A 0xB 0x0000000C>,
+            <0xD 0x0000000E 0xF 0x00000011>,
+            <0x12 0x00000013 0x14 0x00000015>;
+      reg-names = "apple", "banana", "orange", "grape", "peach";
+    };
+  };
+};

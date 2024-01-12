@@ -71,10 +71,10 @@ typedef enum {
   EfiDtIoDmaOperationMaximum
 } EFI_DT_IO_PROTOCOL_DMA_OPERATION;
 
-typedef __int128  EFI_DT_BUS_ADDRESS;
-typedef __int128  EFI_DT_SIZE;
+typedef unsigned __int128  EFI_DT_BUS_ADDRESS;
+typedef unsigned __int128  EFI_DT_SIZE;
 typedef UINT32    EFI_DT_CELL;
-typedef __int128  EFI_DT_U128;
+typedef unsigned __int128  EFI_DT_U128;
 
 typedef struct {
   EFI_DT_BUS_ADDRESS    Base;

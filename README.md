@@ -1,4 +1,4 @@
-# FdtBusPkg - Device Tree-based Platform Device Driver Development
+# FdtBusPkg - Device Tree-based Platform Device Driver Development for Tiano UEFI.
 
 This repo implements support for developing Tiano platform device drivers
 compliant to the UEFI Driver Model, by performing driver binding and

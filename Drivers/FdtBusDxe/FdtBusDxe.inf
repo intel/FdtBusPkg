@@ -32,7 +32,7 @@
 
 [Packages]
   MdeModulePkg/MdeModulePkg.dec
-  SseUefiPkg/SseUefiPkg.dec
+  FdtBusPkg/FdtBusPkg.dec
   EmbeddedPkg/EmbeddedPkg.dec
   MdePkg/MdePkg.dec
 

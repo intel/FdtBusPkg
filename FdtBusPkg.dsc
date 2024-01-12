@@ -10,15 +10,15 @@
 ##
 
 [Defines]
-  PLATFORM_NAME                  = SseUefiPkg
+  PLATFORM_NAME                  = FdtBusPkg
   PLATFORM_GUID                  = 62ad1d2c-3333-4021-b32d-268d0e71c032
   PLATFORM_VERSION               = 0.98
   DSC_SPECIFICATION              = 0x00010005
-  OUTPUT_DIRECTORY               = Build/SseUefiPkg
+  OUTPUT_DIRECTORY               = Build/FdtBusPkg
   SUPPORTED_ARCHITECTURES        = AARCH64|RISCV64
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
-  PREBUILD                       = sh SseUefiPkg/Drivers/FdtBusDxe/TestDt.sh
+  PREBUILD                       = sh FdtBusPkg/Drivers/FdtBusDxe/TestDt.sh
 
 !include MdePkg/MdeLibs.dsc.inc
 
@@ -92,18 +92,18 @@
   TimerLib|UefiCpuPkg/Library/BaseRiscV64CpuTimerLib/BaseRiscV64CpuTimerLib.inf
 
 [Components]
-  SseUefiPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
-  SseUefiPkg/Drivers/VirtioFdtDxe/VirtioFdtDxe.inf {
+  FdtBusPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
+  FdtBusPkg/Drivers/VirtioFdtDxe/VirtioFdtDxe.inf {
     <LibraryClasses>
        IoLib|MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
        VirtioLib|OvmfPkg/Library/VirtioLib/VirtioLib.inf
        VirtioMmioDeviceLib|OvmfPkg/Library/VirtioMmioDeviceLib/VirtioMmioDeviceLib.inf
   }
-  SseUefiPkg/Drivers/HighMemDxe/HighMemDxe.inf {
+  FdtBusPkg/Drivers/HighMemDxe/HighMemDxe.inf {
     <LibraryClasses>
        DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
   }
-  SseUefiPkg/Drivers/HighMemDxe/HighMemDxeNoBinding.inf {
+  FdtBusPkg/Drivers/HighMemDxe/HighMemDxeNoBinding.inf {
     <LibraryClasses>
        DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
   }

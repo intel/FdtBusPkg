@@ -13,10 +13,21 @@ Advantages:
 - Enables a single firmware binary to work across SoC revisions and
   board designs.
 
-FdtBusPkg consists of FdtBusDxe, the DT-based bus driver that
-implements EFI_DT_IO_PROTOCOL for enumerated devices, and a number
+FdtBusPkg consists of FdtBusDxe, a bus driver, and a number
 of examples drivers and libraries for demoing with the RISC-V
-OVMF firmware.
+OVMF firmware. FdtBusDxe is reponsible for enumerating
+DT controllers based on Device Tree nodes, and implementing
+EFI_DT_IO_PROTOCOL for basic operations on such controllers, such as
+device property access, register I/O, DMA buffer handling and child
+device enumeration. A DT controller directly corresponds to a Device Tree
+node, which is a software abstraction over a device. In a computer
+system, Device Tree nodes are commonly used to describe platform
+devices (also known as non-discoverable device, referring to a
+lack of a standardized hardware or software mechanism for
+enumeration and configuration of such device, unlike say PCIe or USB).
+
+See further documentation on [DT controller device
+drivers](Docs/DeviceDrivers.md) and [EFI_DT_IO_PROTOCOL](Docs/DtIoProtocol.md).
 
 FdtBusPkg components can be used on any architecture, but have been
 developed and tested with RISC-V. They should be reusable out of the box
@@ -32,7 +43,7 @@ See the [presentation slides](Docs/Uefi2023/slides.pdf) from the UEFI Fall 2023 
 
 | When | What |
 | :-: | ------------ |
-| January 2024 | Open sourced. |
+| January 2024 | Open sourced. Work on documentation. |
 | October 2023 | Presented at the UEFI Fall 2023 Developers Conference and Plugfest. See the [presentation slides](Docs/Uefi2023/slides.pdf). |
 | 2023 | Reported to RISE as a 2024 priority. |
 

@@ -5,7 +5,10 @@ compliant to the UEFI Driver Model, by performing driver binding and
 configuration using a Device Tree. Such a device tree is typically
 either passed to UEFI by higher-privileged firmware.
 
-This is a staging branch created as part of the ongoing [RISE](https://riseproject.dev/) collaboration. The net goal is to upstream this code to Tiano.
+> [!NOTE]
+> This is a staging branch created as part of the ongoing
+> [RISE](https://riseproject.dev/) collaboration. The net goal is to
+> upstream to TianoCore edk2 and the UEFI Specification.
 
 Advantages:
 - Allows UEFI developers to fully embrace modularity and code reuse.
@@ -17,17 +20,14 @@ FdtBusPkg consists of FdtBusDxe, a bus driver, and a number
 of examples drivers and libraries for demoing with the RISC-V
 OVMF firmware. FdtBusDxe is reponsible for enumerating
 DT controllers based on Device Tree nodes, and implementing
-EFI_DT_IO_PROTOCOL for basic operations on such controllers, such as
+`EFI_DT_IO_PROTOCOL` for basic operations on such controllers, such as
 device property access, register I/O, DMA buffer handling and child
-device enumeration. A DT controller directly corresponds to a Device Tree
-node, which is a software abstraction over a device. In a computer
-system, Device Tree nodes are commonly used to describe platform
-devices (also known as non-discoverable device, referring to a
-lack of a standardized hardware or software mechanism for
-enumeration and configuration of such device, unlike say PCIe or USB).
+device enumeration.
 
-See further documentation on [DT controller device
-drivers](Docs/DeviceDrivers.md) and [EFI_DT_IO_PROTOCOL](Docs/DtIoProtocol.md).
+See further documentation:
+- [FdtBusPkg Documentation Style and Terms Definitions](Docs/StyleAndTerms.md)
+- [Device Tree Device Drivers](Docs/DeviceDrivers.md)
+- [EFI Device Tree I/O Protocol](Docs/DtIoProtocol.md).
 
 FdtBusPkg components can be used on any architecture, but have been
 developed and tested with RISC-V. They should be reusable out of the box

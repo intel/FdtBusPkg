@@ -233,8 +233,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_SCAN_CHILDREN)(
 
 /**
   For a Device Tree node associated with the EFI_DT_IO_PROTOCOL instance,
-  tear down child handles with EFI_DT_IO_PROTOCOL on them. If NumberOfChildren
-  is not 0, only tear down the handles specified in ChildHandleBuffer.
+  tear down the specified child handle.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  ChildHandle           Child handle to tear down.
@@ -746,8 +745,8 @@ struct _EFI_DT_IO_PROTOCOL_CB {
 /// interfaces used to abstract access to devices exposed using a Device
 /// Tree node.
 ///
-/// There is one EFI_DT_IO_PROTOCOL instance for each device node in a
-/// Device Tree.
+/// There is one EFI_DT_IO_PROTOCOL instance for each supported device
+/// node in a Device Tree.
 ///
 /// A device driver that wishes to manage a device described by a Device
 /// Tree node will have to retrieve the EFI_DT_IO_PROTOCOL instance that

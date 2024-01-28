@@ -27,7 +27,8 @@ device enumeration.
 See further documentation:
 - [FdtBusPkg Documentation Style and Terms Definitions](Docs/StyleAndTerms.md)
 - [Device Tree Device Drivers](Docs/DeviceDrivers.md)
-- [EFI Device Tree I/O Protocol](Docs/DtIoProtocol.md).
+- [EFI Device Tree I/O Protocol](Docs/DtIoProtocol.md)
+- [EFI-Specific Device Tree Bindings](Docs/UefiDtBindings.md)
 
 FdtBusPkg components can be used on any architecture, but have been
 developed and tested with RISC-V. They should be reusable out of the box

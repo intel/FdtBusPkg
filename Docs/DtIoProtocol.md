@@ -307,6 +307,87 @@ DT controller. A device handle for a DT controller will minimally
 contain an `EFI_DEVICE_PATH_PROTOCOL` instance and an
 `EFI_DT_IO_PROTOCOL` instance.
 
-### Property parsing
+### Register Access
+
+TBD.
+
+### Property Parsing
+
+TBD.
 
 ### DMA
+
+Bus mastering DT controllers can use the DMA services for DMA
+operations. There are three basic types of bus mastering DMA that is
+supported by this protocol. These are DMA reads by a bus master, DMA
+writes by a bus master, and common buffer DMA. The DMA read and write
+operations may need to be broken into smaller chunks. The caller of
+Map() must pay attention to the number of bytes that were mapped, and
+if required, loop until the entire buffer has been transferred. This
+section lists the different bus mastering DMA operations that
+are supported, and the sequence of `EFI_DT_IO_PROTOCOL` interfaces that
+are used for each DMA operation type.
+
+#### DMA Bus Master Read Operation
+
+- Fill buffer with data for the DMA Bus Master to read.
+- Call `Map()` with `EfiDtIoDmaOperationBusMasterRead`.
+- Program the DMA Bus Master with the `*DeviceAddress` returned by `Map()`.
+- Start the DMA.
+- Wait for DMA to complete.
+- Call `Unmap()`.
+
+> [!WARNING]
+> Don't make assumptions on the behavior of `Map()` and expect that
+> any further CPU changes to buffer made after the `Map()` or
+> `Unmap()` calls are visible to the device. `Map()` could be performing
+> bounce buffering, cache flushes, CPU barriers/fences, IOMMU/SMMU
+> configuration, etc.
+
+#### DMA Bus Master Write Operation
+
+- Call `Map()` with `EfiDtIoDmaOperationBusMasterWrite`
+- Program the DMA Bus Master with the `*DeviceAddress` returned by `Map()`.
+- Start the DMA.
+- Wait for DMA to complete.
+- Call `Unmap()`.
+- Read data written by the DMA Bus Master.
+
+> [!WARNING]
+> Don't make assumptions on the behavior of `Map()` and `Unmap()`, and
+> expect the CPU to see any modified data prior to the `Unmap()` call
+> or expect any further device changes to buffer after the `Unmap()`
+> to be visible. There could be bounce buffering involved, cache
+> flushes, CPU barriers/fences, IOMMU/SMMU configuration, etc.
+
+#### DMA Bus Master Common Buffer Operation
+
+Provides access to a memory region coherent from both the processor's
+and the bus master's point of view. How this is accomplished depends
+on the capabilities of the device, as divined by the DT bus driver
+(e.g. via _dma-coherent_).
+
+- Call `AllocateBuffer()` to allocate the common buffer.
+- Call `Map()` with `EfiDtIoDmaOperationBusMasterCommonBuffer`.
+- Program the DMA Bus Master with the `*DeviceAddress` returned by `Map()`.
+- The common buffer can now be accessed equally by the processor and the DMA bus master.
+- Call `Unmap()`.
+- Call `FreeBuffer()`.
+
+> [!NOTE]
+> Common buffer operations provide some guarantees, e.g. not
+> involving bounce buffering or cache flushes. Generally
+> common buffer DMA operations are easier to retrofit into existing
+> driver code that assumes cache-coherent DMA with equivalent CPU
+> and bus addresses.
+
+> [!TIP]
+> In some situations (e.g. limited shared memory requiring bounce buffering)
+> `AllocateBuffer()` may fail. It is highly encouraged to rewrite legacy
+> code to avoid common buffer operations.
+
+> [!CAUTION]
+> Using common buffer operations doesn't absolve the code from performing
+> CPU barrier operations if required by the CPU architecture, that
+> are otherwise done by `Map()` and `Unmap()`. See https://github.com/intel/FdtBusPkg/issues/19 for work on adding
+> a `CommonBufferDmaBarrier()` operation to simplify this.

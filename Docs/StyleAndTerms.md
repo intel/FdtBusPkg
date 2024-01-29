@@ -5,7 +5,7 @@
 | Format | Meaning |
 | ------ | ------- |
 | `Fixed width quoted` | Code identifiers, including types, structure and function names. |
-| _italicized_ | Devicetree property names. |
+| _italicized_ | Devicetree property names or values. |
 
 ## Terms
 

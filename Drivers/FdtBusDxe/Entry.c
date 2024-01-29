@@ -52,7 +52,7 @@ OnEndOfDxe (
 
 /**
   Install the managed DT table as an EFI configuration table if the
-  "platform has device tree exposed to the OS" protocol is installed.
+  "platform has Devicetree exposed to the OS" protocol is installed.
 
   @param[in] Event          EFI_EVENT.
   @param[in] Context        Unused.
@@ -97,7 +97,7 @@ OnPlatformHasDeviceTree (
 
 /**
   Unregister the protocol notification callback for the "platform has
-  device tree exposed to the OS" protocol.
+  Devicetree exposed to the OS" protocol.
 
   @retval None
 
@@ -113,9 +113,9 @@ UnregisterDtNotification (
 }
 
 /**
-  Register a protocol notification callback for the "platform has device
-  tree exposed to the OS" protocol. The callback will install the managed
-  DT table as an EFI configuration table.
+  Register a protocol notification callback for the "platform has
+  Devicetree exposed to the OS" protocol. The callback will install
+  the managed DT table as an EFI configuration table.
 
   @retval EFI_SUCCESS       Callback registered.
   @retval other             Some error occured.

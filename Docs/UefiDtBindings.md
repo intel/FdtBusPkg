@@ -1,9 +1,9 @@
-# EFI-Specific Device Tree Bindings
+# EFI-Specific Devicetree Bindings
 
 > [!NOTE]
 > See [FdtBusPkg Documentation Style and Terms Definitions](StyleAndTerms.md) first.
 
-These apply on top of [Device Tree Specification, Chapter 4](https://devicetree-specification.readthedocs.io/en/stable/device-bindings.html).
+These apply on top of [Devicetree Specification, Chapter 4](https://devicetree-specification.readthedocs.io/en/stable/device-bindings.html).
 
 ## Miscellaneous Properties
 

@@ -1,4 +1,4 @@
-# EFI Device Tree I/O Protocol
+# EFI Devicetree I/O Protocol
 
 > [!NOTE]
 > See [FdtBusPkg Documentation Style and Terms Definitions](StyleAndTerms.md) first.
@@ -7,7 +7,7 @@ This section provides a detailed description of the `EFI_DT_IO_PROTOCOL`.
 This protocol is used by code, typically platform device drivers,
 running in the EFI boot services environment to access device I/O on a
 DT controller. In particular, functions for managing platform devices
-exposed via Device Tree as DT controllers are defined here.
+exposed via Devicetree as DT controllers are defined here.
 
 The interfaces provided in the `EFI_DT_IO_PROTOCOL` are for performing
 basic operations for device property access, register I/O, DMA buffer
@@ -23,7 +23,7 @@ location of the device to manage or have the capability to be notified
 when a DT controller is discovered.
 - A device driver model that abstracts device register access. A
 driver does not have to manually parse _reg_ properties or traverse
-parent Device Tree nodes to map back to a valid CPU address. Instead,
+parent Devicetree nodes to map back to a valid CPU address. Instead,
 relative addressing is used for all register accesses, and the API
 fully hides the complexity of performing such accesses. It even
 supports register accesses via a parent DT controller device driver.
@@ -300,7 +300,7 @@ typedef struct _EFI_DT_IO_PROTOCOL_CB {
 The `EFI_DT_IO_PROTOCOL` provides the basic device properrty, register
 I/O, DMA buffer and device enumeration interfaces that are used to
 abstract accesses to DT controllers.There is one `EFI_DT_IO_PROTOCOL`
-instance for each  supported device node in a Device Tree. A device
+instance for each  supported device node in a Devicetree. A device
 driver that wishes to manage a DT controller in a system will have to
 retrieve the `EFI_DT_IO_PROTOCOL` instance that is associated with the
 DT controller. A device handle for a DT controller will minimally

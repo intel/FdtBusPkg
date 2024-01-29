@@ -1,7 +1,7 @@
 /** @file
-  EFI Device Tree I/O Protocol provides the basic Property, Register and
+  EFI Devicetree I/O Protocol provides the basic Property, Register and
   DMA interfaces that a driver uses to access a device exposed using a
-  Device Tree node.
+  Devicetree node.
 
   Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -176,7 +176,7 @@ typedef enum {
 
   @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Not found.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -197,7 +197,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_LOOKUP)(
 
   @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not find property.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -209,7 +209,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_PROP)(
   );
 
 /**
-  For a Device Tree node associated with the EFI_DT_IO_PROTOCOL instance,
+  For a Devicetree node associated with the EFI_DT_IO_PROTOCOL instance,
   create child handles with EFI_DT_IO_PROTOCOL for children nodes.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
@@ -220,7 +220,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_PROP)(
   @retval EFI_SUCCESS           Child handles created (all or 1 if RemainingDevicePath
                                 was not NULL).
   @retval EFI_NOT_FOUND         No child handles created.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -232,7 +232,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_SCAN_CHILDREN)(
   );
 
 /**
-  For a Device Tree node associated with the EFI_DT_IO_PROTOCOL instance,
+  For a Devicetree node associated with the EFI_DT_IO_PROTOCOL instance,
   tear down the specified child handle.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
@@ -261,7 +261,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILD)(
 
   @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not find property.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -283,7 +283,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U32)(
 
   @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not find property.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -305,7 +305,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U64)(
 
   @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not find property.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -329,7 +329,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U128)(
 
   @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not find property.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -354,7 +354,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG)(
 
   @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not find property.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -375,7 +375,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME)(
 
   @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not find property.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -397,7 +397,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_RANGE)(
 
   @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not find property.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -419,7 +419,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING)(
 
   @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not find property.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -443,7 +443,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_DEVICE)(
                                 property array.
   @retval EFI_NOT_FOUND         CompatibleString is not present in the compatible
                                 property array.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -492,7 +492,7 @@ typedef EFI_STATUS (EFIAPI *EFI_DT_IO_PROTOCOL_PARSE_PROP)(
 
   @retval EFI_SUCCESS           String found.
   @retval EFI_NOT_FOUND         Could not find property or string.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -746,7 +746,7 @@ struct _EFI_DT_IO_PROTOCOL_CB {
 /// Tree node.
 ///
 /// There is one EFI_DT_IO_PROTOCOL instance for each supported device
-/// node in a Device Tree.
+/// node in a Devicetree.
 ///
 /// A device driver that wishes to manage a device described by a Device
 /// Tree node will have to retrieve the EFI_DT_IO_PROTOCOL instance that

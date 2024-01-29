@@ -1,8 +1,8 @@
-# FdtBusPkg - Device Tree-based Platform Device Driver Development for Tiano UEFI.
+# FdtBusPkg - Devicetree-based Platform Device Driver Development for Tiano UEFI.
 
 This repo implements support for developing Tiano platform device drivers
 compliant to the UEFI Driver Model, by performing driver binding and
-configuration using a Device Tree. Such a device tree is typically
+configuration using a Devicetree. Such a Devicetree is typically
 either passed to UEFI by higher-privileged firmware.
 
 > [!NOTE]
@@ -19,23 +19,23 @@ Advantages:
 FdtBusPkg consists of FdtBusDxe, a bus driver, and a number
 of examples drivers and libraries for demoing with the RISC-V
 OVMF firmware. FdtBusDxe is reponsible for enumerating
-DT controllers based on Device Tree nodes, and implementing
+DT controllers based on Devicetree nodes, and implementing
 `EFI_DT_IO_PROTOCOL` for basic operations on such controllers, such as
 device property access, register I/O, DMA buffer handling and child
 device enumeration.
 
 See further documentation:
 - [FdtBusPkg Documentation Style and Terms Definitions](Docs/StyleAndTerms.md)
-- [Device Tree Device Drivers](Docs/DeviceDrivers.md)
-- [EFI Device Tree I/O Protocol](Docs/DtIoProtocol.md)
-- [EFI-Specific Device Tree Bindings](Docs/UefiDtBindings.md)
+- [Devicetree Device Drivers](Docs/DeviceDrivers.md)
+- [EFI Devicetree I/O Protocol](Docs/DtIoProtocol.md)
+- [EFI-Specific Devicetree Bindings](Docs/UefiDtBindings.md)
 
 FdtBusPkg components can be used on any architecture, but have been
 developed and tested with RISC-V. They should be reusable out of the box
 on AArch64 platforms as well, barring any missing dependencies.
 
-Note: this is Device Tree being used internally by UEFI. There is no
-relation to using Device Tree as possible mechanism of describing
+Note: this is Devicetree being used internally by UEFI. There is no
+relation to using Devicetree as possible mechanism of describing
 hardware configuration to an OS.
 
 See the [presentation slides](Docs/Uefi2023/slides.pdf) from the UEFI Fall 2023 Developers Conference and Plugfest.

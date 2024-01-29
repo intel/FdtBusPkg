@@ -721,7 +721,7 @@ TestsInvoke (
 }
 
 /**
-  Initialize the unit tests (which use their own device tree).
+  Initialize the unit tests (which use their own Devicetree).
 
   @retval EFI_SUCCESS       Success.
   @retval other             Some error occured.
@@ -748,7 +748,7 @@ TestsInit (
 }
 
 /**
-  Cleanup the unit tests (which use their own device tree).
+  Cleanup the unit tests (which use their own Devicetree).
 
   @retval None.
 

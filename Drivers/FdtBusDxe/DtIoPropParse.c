@@ -17,7 +17,7 @@
 
   @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Could not find property.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/

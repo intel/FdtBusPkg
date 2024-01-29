@@ -9,7 +9,7 @@
 #include "FdtBusDxe.h"
 
 /**
-  Given DeviceFlags, return the right Fdt tree base.
+  Given DeviceFlags, return the right Devicetree base.
 
   In practice, on non-debug builds, this always returns gDeviceTreeBase,
   because DT_DEVICE_TEST is defined as 0.

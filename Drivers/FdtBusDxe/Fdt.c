@@ -11,7 +11,7 @@
 /**
   Given an FdtNode, return the device_type property or the empty string.
 
-  @param[in]    TreeBase         Device Tree blob base
+  @param[in]    TreeBase         Devicetree blob base
   @param[in]    FdtNode          INTN
 
   @retval CHAR8 *                Device type or empty string.
@@ -36,7 +36,7 @@ FdtGetDeviceType (
 /**
   Given an FdtNode, return the device status.
 
-  @param[in]    TreeBase         Device Tree blob base
+  @param[in]    TreeBase         Devicetree blob base
   @param[in]    FdtNode          INTN
 
   @retval EFI_DT_STATUS          Enum.
@@ -73,7 +73,7 @@ FdtGetStatus (
 /**
   Given an FdtNode, return the size cells in *Cells.
 
-  @param[in]    TreeBase         Device Tree blob base
+  @param[in]    TreeBase         Devicetree blob base
   @param[in]    FdtNode          INTN
   @param[out]   Cells            UINTN
 
@@ -114,7 +114,7 @@ FdtGetSizeCells (
 /**
   Given an FdtNode, return the address cells in *Cells.
 
-  @param[in]    TreeBase         Device Tree blob base
+  @param[in]    TreeBase         Devicetree blob base
   @param[in]    FdtNode          INTN
   @param[out]   Cells            UINTN
 
@@ -155,7 +155,7 @@ FdtGetAddressCells (
 /**
   Given an FdtNode, return whether DMA is coherent.
 
-  @param[in]    TreeBase         Device Tree blob base
+  @param[in]    TreeBase         Devicetree blob base
   @param[in]    FdtNode          INTN
 
   @retval TRUE                   DMA is coherent.
@@ -175,7 +175,7 @@ FdtGetDmaCoherency (
   Given an FdtNode, return whether this device is critical to platform
   operation (e.g. it must be connected before or during EndOfDxe event).
 
-  @param[in]    TreeBase         Device Tree blob base
+  @param[in]    TreeBase         Devicetree blob base
   @param[in]    FdtNode          INTN
 
   @retval TRUE                   Device is critical.

@@ -39,7 +39,7 @@ STATIC_ASSERT (_ (Maximum));
 
   @retval EFI_SUCCESS           Lookup successful.
   @retval EFI_NOT_FOUND         Not found.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -159,7 +159,7 @@ Out:
 }
 
 /**
-  For a Device Tree node associated with the EFI_DT_IO_PROTOCOL instance,
+  For a Devicetree node associated with the EFI_DT_IO_PROTOCOL instance,
   create child handles with EFI_DT_IO_PROTOCOL for children nodes.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
@@ -170,7 +170,7 @@ Out:
   @retval EFI_SUCCESS           Child handles created (all or 1 if RemainingDevicePath
                                 was not NULL).
   @retval EFI_NOT_FOUND         No child handles created.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -198,7 +198,7 @@ DtIoScanChildren (
 }
 
 /**
-  For a Device Tree node associated with the EFI_DT_IO_PROTOCOL instance,
+  For a Devicetree node associated with the EFI_DT_IO_PROTOCOL instance,
   tear down the specified child handle.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
@@ -207,7 +207,7 @@ DtIoScanChildren (
 
   @retval EFI_SUCCESS           Child handle destroyed.
   @retval EFI_UNSUPPORTED       Child handle doesn't support EFI_DT_IO_PROTOCOL.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
@@ -237,7 +237,7 @@ DtIoRemoveChild (
                                 property array.
   @retval EFI_NOT_FOUND         CompatibleString is not present in the compatible
                                 property array.
-  @retval EFI_DEVICE_ERROR      Device Tree error.
+  @retval EFI_DEVICE_ERROR      Devicetree error.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/

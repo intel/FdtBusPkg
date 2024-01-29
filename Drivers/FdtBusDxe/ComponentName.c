@@ -49,7 +49,7 @@ GLOBAL_REMOVE_IF_UNREFERENCED EFI_COMPONENT_NAME2_PROTOCOL  gComponentName2 = {
 STATIC EFI_UNICODE_STRING_TABLE  mDriverName[] = {
   {
     "eng;en",
-    (CHAR16 *)L"Device Tree Bus Driver"
+    (CHAR16 *)L"Devicetree Bus Driver"
   },
   {
     NULL,

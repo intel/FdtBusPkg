@@ -486,7 +486,7 @@ are used for each DMA operation type.
 Provides access to a memory region coherent from both the processor's
 and the bus master's point of view. How this is accomplished depends
 on the capabilities of the device, as divined by the DT bus driver
-(e.g. via _dma-coherent_).
+(e.g. via _dma-coherent_, _dma-ranges_).
 
 - Call `AllocateBuffer()` to allocate the common buffer.
 - Call `Map()` with `EfiDtIoDmaOperationBusMasterCommonBuffer`.

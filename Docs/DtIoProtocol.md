@@ -127,7 +127,7 @@ typedef struct _EFI_DT_IO_PROTOCOL {
 | [`GetProp`](#efi_dt_io_protocolgetprop) | Looks up a property by name, populating an `EFI_DT_PROPERTY` iterator. |
 | [`ScanChildren`](#efi_dt_io_protocolscanchildren) | Create device chandles for child DT devices. |
 | [`RemoveChild`](#efi_dt_io_protocolremovechild) | Tears down a child DT controller created via `ScanChildren`. |
-| `SetCallbacks` | Sets device driver callbacks to be used by the DT bus driver. |
+| [`SetCallbacks`](#efi_dt_io_protocolsetcallbacks) | Sets device driver callbacks to be used by the DT bus driver. |
 | `ParseProp` | Parses out a property field, advancing the `EFI_DT_PROPERTY` iterator. |
 | `GetStringIndex` | Looks up an index for a string in a string list property. |
 | `GetU32` | Looks up an `EFI_DT_U32` property value by index. |
@@ -655,9 +655,52 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILD)(
 | EFI_UNSUPPORTED | Child handle doesn't support `EFI_DT_IO_PROTOCOL`. |
 | EFI_INVALID_PARAMETER | One or more parameters are invalid. |
 
+### `EFI_DT_IO_PROTOCOL.SetCallbacks()`
+#### Description
+
+Sets device driver callbacks to be used by the DT bus driver.
+
+It is the responsibility of the device driver to set `NULL` callbacks
+when stopping on a handle, as the bus driver cannot detect when a
+driver disconnects. The function signature here thus both encourages
+appropriate use and helps detect bugs. The bus driver will validate
+`AgentHandle` and `Callbacks`. The operation will fail if `AgentHandle`
+doen't match the current driver managing the handle. The operation
+will also fail when trying to set callbacks when these are already set.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_SET_CALLBACKS)(
+  IN  EFI_DT_IO_PROTOCOL           *This,
+  IN  EFI_HANDLE                   AgentHandle,
+  IN  EFI_DT_IO_PROTOCOL_CB        *Callbacks
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| AgentHandle | Driver managing the DT controller referenced by `This`.|
+| Callbacks | Pointer to structure with callback functions. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| EFI_SUCCESS | Success. |
+| EFI_INVALID_PARAMETER | Invalid parameter. |
+| EFI_ACCESS_DENIED | AgentHandle/Callbacks validation failed. |
+
 ### `EFI_DT_IO_PROTOCOL.()`
 #### Description
+
 #### Prototype
+
 #### Parameters
 
 | Parameter | Description |

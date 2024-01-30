@@ -57,7 +57,7 @@ DtIoGetProp (
 }
 
 /**
-  Parses out a U32 property value, advancing Prop->Iter on success.
+  Parses out a UINT32 property value, advancing Prop->Iter on success.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
@@ -99,7 +99,7 @@ DtIoParsePropU32 (
 }
 
 /**
-  Parses out a U64 property value, advancing Prop->Iter on success.
+  Parses out a UINT64 property value, advancing Prop->Iter on success.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Prop                  EFI_DT_PROPERTY describing the property buffer and

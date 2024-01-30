@@ -130,15 +130,15 @@ typedef struct _EFI_DT_IO_PROTOCOL {
 | [`SetCallbacks`](#efi_dt_io_protocolsetcallbacks) | Sets device driver callbacks to be used by the DT bus driver. |
 | [`ParseProp`](#efi_dt_io_protocolparseprop) | Parses out a property field, advancing the `EFI_DT_PROPERTY` iterator. |
 | [`GetStringIndex`](#efi_dt_io_protocolgetstringindex) | Looks up an index for a string in a string list property. |
-| `GetU32` | Looks up an `EFI_DT_U32` property value by index. |
-| `GetU64` | Looks up an `EFI_DT_U64` property value by index. |
-| `GetU128` | Looks up an `EFI_DT_U128` property value by index. |
-| `GetReg` | Looks up a _reg_ property by index. |
-| `GetRegByName` | Looks up a _reg_ property by name. |
-| `GetRange` | Looks up a _ranges_ property value by index. |
-| `GetString` | Looks up a string property value by index. |
-| `GetDevice` | Looks up a device `EFI_HANDLE` from a property valie by index. |
-| `IsCompatible` | Validates against the device _compatible_ property |
+| [`GetU32`](#efi_dt_io_protocolgetu32) | Looks up an `UINT32` property value by index. |
+| [`GetU64`](#efi_dt_io_protocolgetu64) | Looks up an `UINT64` property value by index. |
+| [`GetU128`](#efi_dt_io_protocolgetu128) | Looks up an `EFI_DT_U128` property value by index. |
+| [`GetReg`](#efi_dt_io_protocolgetreg) | Looks up a _reg_ property by index. |
+| [`GetRegByName`](#efi_dt_io_protocolgetregbyname) | Looks up a _reg_ property by name. |
+| [`GetRange`](#efi_dt_io_protocolgetrange) | Looks up a _ranges_ property value by index. |
+| [`GetString`](#efi_dt_io_protocolgetstring) | Looks up a string property value by index. |
+| [`GetDevice`](#efi_dt_io_protocolgetdevice) | Looks up a device `EFI_HANDLE` from a property value by index. |
+| [`IsCompatible`](#efi_dt_io_protocoliscompatible) | Validates against the device _compatible_ property. |
 | `PollReg` | Polls a device register until an exit condition is met, or a timeout occurs. |
 | `ReadReg` | Reads a device register. |
 | `WriteReg` | Writes a device register. |
@@ -769,6 +769,114 @@ typedef EFI_STATUS (EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING_INDEX)(
 | ----------- | ----------- |
 | EFI_SUCCESS | String found. |
 | EFI_NOT_FOUND | Could not find property or string. |
+| EFI_DEVICE_ERROR | Devicetree error. |
+| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+
+### `EFI_DT_IO_PROTOCOL.GetU32()`
+#### Description
+
+Looks up a `UINT32` property value by index.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U32)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CONST CHAR8        *Name,
+  IN  UINTN              Index,
+  OUT UINT32             *U32
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| Name | Name of the property.|
+| Index | Index of the value to return. |
+| U32 | Where to return the value. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| EFI_SUCCESS | Lookup successful. |
+| EFI_NOT_FOUND | Could not find property. |
+| EFI_DEVICE_ERROR | Devicetree error. |
+| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+
+### `EFI_DT_IO_PROTOCOL.GetU64()`
+#### Description
+
+Looks up a `UINT64` property value by index.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U64)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CONST CHAR8        *Name,
+  IN  UINTN              Index,
+  OUT UINT64             *U64
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| Name | Name of the property.|
+| Index | Index of the value to return. |
+| U64 | Where to return the value. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| EFI_SUCCESS | Lookup successful. |
+| EFI_NOT_FOUND | Could not find property. |
+| EFI_DEVICE_ERROR | Devicetree error. |
+| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+
+### `EFI_DT_IO_PROTOCOL.GetU128()`
+#### Description
+
+Looks up an `EFI_DT_U128` property value by index.
+
+> [!CAUTION]
+> Not implemented at the moment.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U128)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CONST CHAR8        *Name,
+  IN  UINTN              Index,
+  OUT EFI_DT_U128        *U128
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| Name | Name of the property.|
+| Index | Index of the value to return. |
+| U128 | Where to return the value. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| EFI_SUCCESS | Lookup successful. |
+| EFI_NOT_FOUND | Could not find property. |
 | EFI_DEVICE_ERROR | Devicetree error. |
 | EFI_INVALID_PARAMETER | One or more parameters are invalid. |
 

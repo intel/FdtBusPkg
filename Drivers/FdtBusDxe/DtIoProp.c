@@ -13,12 +13,13 @@
   returns the strings index.
 
   This is useful to look up other properties indexed by name, e.g.
-  foo = < value1 value2 value3 >
-  foo-names = "index1", "index2", "index3"
+  foo = <value1>, <value2>, <value3>;
+  foo-names = "index1", "index2", "index3";
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Name                  Property to examine.
   @param  Value                 String to search for.
+  @param  Index                 Pointer for returning found index.
 
   @retval EFI_SUCCESS           String found.
   @retval EFI_NOT_FOUND         Could not find property or string.

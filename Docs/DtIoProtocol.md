@@ -128,7 +128,7 @@ typedef struct _EFI_DT_IO_PROTOCOL {
 | [`ScanChildren`](#efi_dt_io_protocolscanchildren) | Create device chandles for child DT devices. |
 | [`RemoveChild`](#efi_dt_io_protocolremovechild) | Tears down a child DT controller created via `ScanChildren`. |
 | [`SetCallbacks`](#efi_dt_io_protocolsetcallbacks) | Sets device driver callbacks to be used by the DT bus driver. |
-| `ParseProp` | Parses out a property field, advancing the `EFI_DT_PROPERTY` iterator. |
+| [`ParseProp`](#efi_dt_io_protocolparseprop) | Parses out a property field, advancing the `EFI_DT_PROPERTY` iterator. |
 | `GetStringIndex` | Looks up an index for a string in a string list property. |
 | `GetU32` | Looks up an `EFI_DT_U32` property value by index. |
 | `GetU64` | Looks up an `EFI_DT_U64` property value by index. |
@@ -695,6 +695,41 @@ EFI_STATUS
 | EFI_SUCCESS | Success. |
 | EFI_INVALID_PARAMETER | Invalid parameter. |
 | EFI_ACCESS_DENIED | AgentHandle/Callbacks validation failed. |
+
+### `EFI_DT_IO_PROTOCOL.ParseProp()`
+#### Description
+
+Parses out a property field, advancing the `EFI_DT_PROPERTY` iterator.
+
+#### Prototype
+
+```
+typedef EFI_STATUS (EFIAPI *EFI_DT_IO_PROTOCOL_PARSE_PROP)(
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  OUT EFI_DT_PROPERTY *Prop,
+  IN  EFI_DT_VALUE_TYPE   Type,
+  IN  UINTN               Index,
+  OUT VOID                *Buffer
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| Prop | `EFI_DT_PROPERTY` describing the property buffer and current position.|
+| Type | Type of the field to parse out.|
+| Index | Index of the field to return, starting from the current buffer position within the `EFI_DT_PROPERTY`.|
+| Buffer | Pointer to a buffer large enough to contain the parsed out field.|
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| EFI_SUCCESS | Parsing successful. |
+| EFI_NOT_FOUND | Not enough remaining property buffer to contain the field of specified type. |
+| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.()`
 #### Description

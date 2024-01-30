@@ -297,7 +297,7 @@ typedef struct _EFI_DT_IO_PROTOCOL_CB {
 
 ### Description
 
-The `EFI_DT_IO_PROTOCOL` provides the basic device properrty, register
+The `EFI_DT_IO_PROTOCOL` provides the basic device property, register
 I/O, DMA buffer and device enumeration interfaces that are used to
 abstract accesses to DT controllers.There is one `EFI_DT_IO_PROTOCOL`
 instance for each  supported device node in a Devicetree. A device
@@ -376,6 +376,15 @@ ASSERT (ChildDtIo->GetString (ChildDtIo, "reg-names", 2, &String) == EFI_SUCCESS
 ASSERT (AsciiStrCmp (String, "peach") == 0);
 ```
 
+Any driver will need to check compatiblity with a DT controller by
+querying the _compatible_ property string list and comparing against
+known-good identifiers. This is greatly simplified via the
+`IsCompatible()` convenience wrapper:
+
+```
+ASSERT (DtIo->IsCompatible (DtIo, "pci-host-ecam-generic") == EFI_SUCCESS);
+```
+
 A common pattern seen in Devicetree is associating string names with
 array indexes. In the Devicetree snippet above, a _reg-names_ property
 is a string list with as many strings as there are values in the _reg_
@@ -404,9 +413,28 @@ EFI_DT_REG Reg;
 ASSERT (ChildDtIo->GetRegByName (ChildDtIo, "banana", &Reg) == EFI_SUCCESS);
 ```
 
+> [!NOTE]
+> Looking up an `EFI_DT_REG` does a bit more than parsing out
+> an `EFI_DT_BUS_ADDRESS` and an `EFI_DT_SIZE`. `GetReg()` and related
+> calls perform translation of bus addresses to CPU addresses.
+
 ### Register Access
 
-TBD.
+The facilities provided mirror those available in
+`EFI_PCI_IO_PROTOCOL`: `PollReg()`, `ReadReg()`, `WriteReg()` and
+`CopyReg()`. These operate on the `EFI_DT_REG` values returned by
+`GetReg())` and related calls. `EFI_DT_IO_PROTOCOL_WIDTH` exactly
+follows the `EFI_CPU_IO_PROTOCOL_WIDTH` definitions, and allows for
+advanced operations, such as filling a range with the same value,
+or writing out a buffer into a single register. Ultimately
+the accesses are performed via `EFI_CPU_IO2_PROTOCOL`.
+
+It's possible there is no direct translation between bus
+and CPU addresses. For example, PHY register accesses might involve
+a custom mechanism only known to a NIC driver. Unless the parent DT
+controller device driver set child register read and write callbacks
+via `SetCallbacks()`, calls to read, write, poll and copy registers
+will fail with `EFI_UNSUPPORTED`.
 
 ### DMA
 
@@ -458,7 +486,7 @@ are used for each DMA operation type.
 Provides access to a memory region coherent from both the processor's
 and the bus master's point of view. How this is accomplished depends
 on the capabilities of the device, as divined by the DT bus driver
-(e.g. via _dma-coherent_).
+(e.g. via _dma-coherent_, _dma-ranges_).
 
 - Call `AllocateBuffer()` to allocate the common buffer.
 - Call `Map()` with `EfiDtIoDmaOperationBusMasterCommonBuffer`.

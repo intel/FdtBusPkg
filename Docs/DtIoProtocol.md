@@ -139,7 +139,7 @@ typedef struct _EFI_DT_IO_PROTOCOL {
 | [`GetString`](#efi_dt_io_protocolgetstring) | Looks up a string property value by index. |
 | [`GetDevice`](#efi_dt_io_protocolgetdevice) | Looks up a device `EFI_HANDLE` from a property value by index. |
 | [`IsCompatible`](#efi_dt_io_protocoliscompatible) | Validates against the device _compatible_ property. |
-| `PollReg` | Polls a device register until an exit condition is met, or a timeout occurs. |
+| [`PollReg`](#efi_dt_io_protocolpollreg) | Polls a device register until an exit condition is met, or a timeout occurs. |
 | `ReadReg` | Reads a device register. |
 | `WriteReg` | Writes a device register. |
 | `CopyReg` | Copies a region of device register space to another region of device register space. |
@@ -1103,6 +1103,71 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_IS_COMPATIBLE)(
 | `EFI_NOT_FOUND` | String is not present in the _compatible_ property. |
 | `EFI_DEVICE_ERROR` | Devicetree error. |
 | `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
+
+### `EFI_DT_IO_PROTOCOL.PollReg()`
+#### Description
+
+Polls a device register until an exit condition is met, or a timeout occurs.
+
+This function provides a standard way to poll a DT controller register
+location. The result of this register read operation is stored in
+`Result`. The read operation is repeated until either a timeout of
+`Delay` 100 ns units has expired, or `(Result & Mask)` is equal to
+`Value`.
+
+This function will always perform at least one register access no
+matter how small `Delay` may be. If `Delay` is 0, then `Result` will
+be returned with a status of `EFI_SUCCESS` even if `Result` does not
+match the exit criteria. If `Delay` expires, then `EFI_TIMEOUT` is
+returned.
+
+If `Width` is not `EfiDtIoWidthUint8`, `EfiDtIoWidthUint16`,
+`EfiDtIoWidthUint32` or `EfiDtIoWidthUint64`, then
+`EFI_INVALID_PARAMETER` is returned.
+
+The memory operations are carried out exactly as requested. The caller
+is responsible for satisfying any alignment and memory width
+restrictions that a DT controller on a platform might require.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_POLL_REG)(
+  IN  EFI_DT_IO_PROTOCOL           *This,
+  IN  EFI_DT_IO_PROTOCOL_WIDTH     Width,
+  IN  EFI_DT_REG                   *Reg,
+  IN  EFI_DT_SIZE                  Offset,
+  IN  UINT64                       Mask,
+  IN  UINT64                       Value,
+  IN  UINT64                       Delay,
+  OUT UINT64                       *Result
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `Width `| Encodes the width and stride of the I/O operation. |
+| `Reg` | Pointer to a register space descriptor. |
+| `Offset` | The offset within the selected register space to start the I/O operation. |
+| `Mask` | Mask used for the polling criteria. Bytes above `Width` in `Mask` are ignored. The bits in the bytes below `Width` which are zero in `Mask` are ignored when polling the register. |
+| `Value` | The comparison value used for the polling exit criteria. |
+| `Delay` | The number of 100 ns units to poll. |
+| `Result` | Pointer to the last value read from the I/O location. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| `EFI_SUCCESS` | The last data returned from the access matched the poll exit criteria. |
+| `EFI_UNSUPPORTED` | Offset is not valid for the register space specified. |
+| `EFI_TIMEOUT` | Delay expired before a match occurred. |
+| `EFI_OUT_OF_RESOURCES` | The request could not be completed due to a lack of resources. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalud. |
 
 ### `EFI_DT_IO_PROTOCOL.()`
 #### Description

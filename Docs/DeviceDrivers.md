@@ -114,8 +114,8 @@ genet: ethernet@7d580000 {
                    ...
 
                    phy1: ethernet-phy@1 {
-                         compatible = "phy-driver-compat-string"
-                         reg = <0x1>
+                         compatible = "phy-driver-compat-string";
+                         reg = <0x1>;
                    }
        };
 };

@@ -406,7 +406,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   IN  UINTN              Index,
-  OUT CONST CHAR8 **String
+  OUT CONST CHAR8        **String
   );
 
 /**

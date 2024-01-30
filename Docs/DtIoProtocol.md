@@ -135,7 +135,7 @@ typedef struct _EFI_DT_IO_PROTOCOL {
 | [`GetU128`](#efi_dt_io_protocolgetu128) | Looks up an `EFI_DT_U128` property value by index. |
 | [`GetReg`](#efi_dt_io_protocolgetreg) | Looks up a _reg_ property value by index. |
 | [`GetRegByName`](#efi_dt_io_protocolgetregbyname) | Looks up a _reg_ property value by name. |
-| [`GetRange`](#efi_dt_io_protocolgetrange) | Looks up a _ranges_ property value by index. |
+| [`GetRange`](#efi_dt_io_protocolgetrange) | Looks up a ranges property value by index. |
 | [`GetString`](#efi_dt_io_protocolgetstring) | Looks up a string property value by index. |
 | [`GetDevice`](#efi_dt_io_protocolgetdevice) | Looks up a device `EFI_HANDLE` from a property value by index. |
 | [`IsCompatible`](#efi_dt_io_protocoliscompatible) | Validates against the device _compatible_ property. |
@@ -962,6 +962,147 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME)(
 | ----------- | ----------- |
 | EFI_SUCCESS | Lookup successful. |
 | EFI_NOT_FOUND | Could not find property. |
+| EFI_DEVICE_ERROR | Devicetree error. |
+| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+
+### `EFI_DT_IO_PROTOCOL.GetRange()`
+#### Description
+
+Looks up a ranges property value by index.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_RANGE)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CHAR8              *Name,
+  IN  UINTN              Index,
+  OUT EFI_DT_RANGE       *Range
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| Name | Name of the ranges property to examine. |
+| Index | Index of the ranges value to return. |
+| Range | Pointer to an `EFI_DT_RANGE`. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| EFI_SUCCESS | Lookup successful. |
+| EFI_NOT_FOUND | Could not find property. |
+| EFI_DEVICE_ERROR | Devicetree error. |
+| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+
+### `EFI_DT_IO_PROTOCOL.GetString()`
+#### Description
+
+Looks up a string property value by index.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CONST CHAR8        *Name,
+  IN  UINTN              Index,
+  OUT CONST CHAR8        **String
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| Name | Name of the property. |
+| Index | Index of the string to return. |
+| String | Pointer to a CHAR8* to fill. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| EFI_SUCCESS | Lookup successful. |
+| EFI_NOT_FOUND | Could not find property. |
+| EFI_DEVICE_ERROR | Devicetree error. |
+| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+
+### `EFI_DT_IO_PROTOCOL.GetDevice()`
+#### Description
+
+Looks up a DT controller `EFI_HANDLE` from property value by
+index.
+
+> [!CAUTION]
+> Not implemented at the moment.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_DEVICE)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CONST CHAR8        *Name,
+  IN  UINTN              Index,
+  OUT EFI_HANDLE         *Handle
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| Name | Name of the property. |
+| Index | INdex of the device to return. |
+| Handle | Pointer to an `EFI_HANDLE` to fill. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| EFI_SUCCESS | Lookup successful. |
+| EFI_NOT_FOUND | Could not find property. |
+| EFI_DEVICE_ERROR | Devicetree error. |
+| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+
+### `EFI_DT_IO_PROTOCOL.IsCompatible()`
+
+#### Description
+
+Validates a string against the device _compatible_ property.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_IS_COMPATIBLE)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CONST CHAR8        *CompatibleString
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| CompatibleString | String to validate. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| EFI_SUCCESS | CompatibleString is present in the _compatible_ property. |
+| EFI_NOT_FOUND | String is not present in the _compatible_ property. |
 | EFI_DEVICE_ERROR | Devicetree error. |
 | EFI_INVALID_PARAMETER | One or more parameters are invalid. |
 

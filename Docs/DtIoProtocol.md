@@ -542,19 +542,19 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_LOOKUP)(
 
 | Parameter | Description |
 | --------- | ----------- |
-| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
-| PathOrAlias | DT path or alias looked up. |
-| Connect | Connect missing drivers during lookup. |
-| FoundHandle | Matching `EFI_HANDLE`. |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `PathOrAlias` | DT path or alias looked up. |
+| `Connect` | Connect missing drivers during lookup. |
+| `FoundHandle` | Matching `EFI_HANDLE`. |
 
 #### Status Codes Returned
 
 | Status Code | Description |
 | ----------- | ----------- |
-| EFI_SUCCESS | Lookup successful. |
-| EFI_NOT_FOUND | Not found. |
-| EFI_DEVICE_ERROR | Devicetree error. |
-| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+| `EFI_SUCCESS` | Lookup successful. |
+| `EFI_NOT_FOUND` | Not found. |
+| `EFI_DEVICE_ERROR` | Devicetree error. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.GetProp()`
 #### Description
@@ -577,18 +577,18 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_PROP)(
 
 | Parameter | Description |
 | --------- | ----------- |
-| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
-| Name | Property to look up. |
-| Property | Pointer to the `EFI_DT_PROPERTY` to fill. |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `Name` | Property to look up. |
+| `Property` | Pointer to the `EFI_DT_PROPERTY` to fill. |
 
 #### Status Codes Returned
 
 | Status Code | Description |
 | ----------- | ----------- |
-| EFI_SUCCESS | Lookup successful. |
-| EFI_NOT_FOUND | Could not find property. |
-| EFI_DEVICE_ERROR | Devicetree error. |
-| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+| `EFI_SUCCESS` | Lookup successful. |
+| `EFI_NOT_FOUND` | Could not find property. |
+| `EFI_DEVICE_ERROR` | Devicetree error. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.ScanChildren()`
 #### Description
@@ -610,18 +610,18 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_SCAN_CHILDREN)(
 
 | Parameter | Description |
 | --------- | ----------- |
-| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
-| DriverBindingHandle | Driver binding handle. |
-| RemainingDevicePath | If present, describes the child handle that needs to be created |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `DriverBindingHandle` | Driver binding handle. |
+| `RemainingDevicePath` | If present, describes the child handle that needs to be created |
 
 #### Status Codes Returned
 
 | Status Code | Description |
 | ----------- | ----------- |
-| EFI_SUCCESS | Child handles created (all or 1 if `RemainingDevicePath` was not `NULL`) |
-| EFI_NOT_FOUND | No child handles created. |
-| EFI_DEVICE_ERROR | Devicetree error. |
-| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+| `EFI_SUCCESS` | Child handles created (all or 1 if `RemainingDevicePath` was not `NULL`) |
+| `EFI_NOT_FOUND` | No child handles created. |
+| `EFI_DEVICE_ERROR` | Devicetree error. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.RemoveChild()`
 #### Description
@@ -643,17 +643,17 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILD)(
 
 | Parameter | Description |
 | --------- | ----------- |
-| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
-| ChildHandle | Child handel to tear down. |
-| DriverBindingHandle | Driver binding handle. |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `ChildHandle` | Child handle to tear down. |
+| `DriverBindingHandle` | Driver binding handle. |
 
 #### Status Codes Returned
 
 | Status Code | Description |
 | ----------- | ----------- |
-| EFI_SUCCESS | Child handle destroyed. |
-| EFI_UNSUPPORTED | Child handle doesn't support `EFI_DT_IO_PROTOCOL`. |
-| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+| `EFI_SUCCESS` | Child handle destroyed. |
+| `EFI_UNSUPPORTED` | Child handle doesn't support `EFI_DT_IO_PROTOCOL`. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.SetCallbacks()`
 #### Description
@@ -684,17 +684,17 @@ EFI_STATUS
 
 | Parameter | Description |
 | --------- | ----------- |
-| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
-| AgentHandle | Driver managing the DT controller referenced by `This`.|
-| Callbacks | Pointer to structure with callback functions. |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `AgentHandle` | Driver managing the DT controller referenced by `This`.|
+| `Callbacks` | Pointer to structure with callback functions. |
 
 #### Status Codes Returned
 
 | Status Code | Description |
 | ----------- | ----------- |
-| EFI_SUCCESS | Success. |
-| EFI_INVALID_PARAMETER | Invalid parameter. |
-| EFI_ACCESS_DENIED | AgentHandle/Callbacks validation failed. |
+| `EFI_SUCCESS` | Success. |
+| `EFI_INVALID_PARAMETER` | Invalid parameter. |
+| `EFI_ACCESS_DENIED` | AgentHandle/Callbacks validation failed. |
 
 ### `EFI_DT_IO_PROTOCOL.ParseProp()`
 #### Description
@@ -717,19 +717,19 @@ typedef EFI_STATUS (EFIAPI *EFI_DT_IO_PROTOCOL_PARSE_PROP)(
 
 | Parameter | Description |
 | --------- | ----------- |
-| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
-| Prop | `EFI_DT_PROPERTY` describing the property buffer and current position.|
-| Type | Type of the field to parse out.|
-| Index | Index of the field to return, starting from the current buffer position within the `EFI_DT_PROPERTY`.|
-| Buffer | Pointer to a buffer large enough to contain the parsed out field.|
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `Prop` | `EFI_DT_PROPERTY` describing the property buffer and current position.|
+| `Type` | Type of the field to parse out.|
+| `Index` | Index of the field to return, starting from the current buffer position within the `EFI_DT_PROPERTY`.|
+| `Buffer` | Pointer to a buffer large enough to contain the parsed out field.|
 
 #### Status Codes Returned
 
 | Status Code | Description |
 | ----------- | ----------- |
-| EFI_SUCCESS | Parsing successful. |
-| EFI_NOT_FOUND | Not enough remaining property buffer to contain the field of specified type. |
-| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+| `EFI_SUCCESS` | Parsing successful. |
+| `EFI_NOT_FOUND` | Not enough remaining property buffer to contain the field of specified type. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.GetStringIndex()`
 #### Description
@@ -758,19 +758,19 @@ typedef EFI_STATUS (EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING_INDEX)(
 
 | Parameter | Description |
 | --------- | ----------- |
-| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
-| Name | Property to examine. |
-| Value | String to search for. |
-| Index | Pointer for returning found index. |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `Name` | Property to examine. |
+| `Value` | String to search for. |
+| `Index` | Pointer for returning found index. |
 
 #### Status Codes Returned
 
 | Status Code | Description |
 | ----------- | ----------- |
-| EFI_SUCCESS | String found. |
-| EFI_NOT_FOUND | Could not find property or string. |
-| EFI_DEVICE_ERROR | Devicetree error. |
-| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+| `EFI_SUCCESS` | String found. |
+| `EFI_NOT_FOUND` | Could not find property or string. |
+| `EFI_DEVICE_ERROR` | Devicetree error. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.GetU32()`
 #### Description
@@ -793,19 +793,19 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U32)(
 
 | Parameter | Description |
 | --------- | ----------- |
-| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
-| Name | Name of the property.|
-| Index | Index of the value to return. |
-| U32 | Where to return the value. |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `Name` | Name of the property.|
+| `Index` | Index of the value to return. |
+| `U32` | Where to return the value. |
 
 #### Status Codes Returned
 
 | Status Code | Description |
 | ----------- | ----------- |
-| EFI_SUCCESS | Lookup successful. |
-| EFI_NOT_FOUND | Could not find property. |
-| EFI_DEVICE_ERROR | Devicetree error. |
-| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+| `EFI_SUCCESS` | Lookup successful. |
+| `EFI_NOT_FOUND` | Could not find property. |
+| `EFI_DEVICE_ERROR` | Devicetree error. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.GetU64()`
 #### Description
@@ -828,19 +828,19 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U64)(
 
 | Parameter | Description |
 | --------- | ----------- |
-| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
-| Name | Name of the property.|
-| Index | Index of the value to return. |
-| U64 | Where to return the value. |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `Name` | Name of the property.|
+| `Index` | Index of the value to return. |
+| `U64` | Where to return the value. |
 
 #### Status Codes Returned
 
 | Status Code | Description |
 | ----------- | ----------- |
-| EFI_SUCCESS | Lookup successful. |
-| EFI_NOT_FOUND | Could not find property. |
-| EFI_DEVICE_ERROR | Devicetree error. |
-| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+| `EFI_SUCCESS` | Lookup successful. |
+| `EFI_NOT_FOUND` | Could not find property. |
+| `EFI_DEVICE_ERROR` | Devicetree error. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.GetU128()`
 #### Description
@@ -866,19 +866,19 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U128)(
 
 | Parameter | Description |
 | --------- | ----------- |
-| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
-| Name | Name of the property.|
-| Index | Index of the value to return. |
-| U128 | Where to return the value. |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `Name` | Name of the property.|
+| `Index` | Index of the value to return. |
+| `U128` | Where to return the value. |
 
 #### Status Codes Returned
 
 | Status Code | Description |
 | ----------- | ----------- |
-| EFI_SUCCESS | Lookup successful. |
-| EFI_NOT_FOUND | Could not find property. |
-| EFI_DEVICE_ERROR | Devicetree error. |
-| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+| `EFI_SUCCESS` | Lookup successful. |
+| `EFI_NOT_FOUND` | Could not find property. |
+| `EFI_DEVICE_ERROR` | Devicetree error. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.GetReg()`
 #### Description
@@ -907,22 +907,20 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG)(
 
 | Parameter | Description |
 | --------- | ----------- |
-| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
-| Index | Index of the _reg_ value to return. |
-| Reg | Pointer to the `EFI_DT_REG` to fill. |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `Index` | Index of the _reg_ value to return. |
+| `Reg` | Pointer to the `EFI_DT_REG` to fill. |
 
 #### Status Codes Returned
 
 | Status Code | Description |
 | ----------- | ----------- |
-| EFI_SUCCESS | Lookup successful. |
-| EFI_NOT_FOUND | Could not find property. |
-| EFI_DEVICE_ERROR | Devicetree error. |
-| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+| `EFI_SUCCESS` | Lookup successful. |
+| `EFI_NOT_FOUND` | Could not find property. |
+| `EFI_DEVICE_ERROR` | Devicetree error. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.GetRegByName()`
-#### Description
-
 #### Description
 
 Looks up a _reg_ property value by name, returning an
@@ -952,18 +950,18 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME)(
 
 | Parameter | Description |
 | --------- | ----------- |
-| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
-| Name | Name of the _reg_ value to return. |
-| Reg | Pointer to the `EFI_DT_REG` to fill. |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `Name` | Name of the _reg_ value to return. |
+| `Reg` | Pointer to the `EFI_DT_REG` to fill. |
 
 #### Status Codes Returned
 
 | Status Code | Description |
 | ----------- | ----------- |
-| EFI_SUCCESS | Lookup successful. |
-| EFI_NOT_FOUND | Could not find property. |
-| EFI_DEVICE_ERROR | Devicetree error. |
-| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+| `EFI_SUCCESS` | Lookup successful. |
+| `EFI_NOT_FOUND` | Could not find property. |
+| `EFI_DEVICE_ERROR` | Devicetree error. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.GetRange()`
 #### Description
@@ -986,19 +984,19 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_RANGE)(
 
 | Parameter | Description |
 | --------- | ----------- |
-| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
-| Name | Name of the ranges property to examine. |
-| Index | Index of the ranges value to return. |
-| Range | Pointer to an `EFI_DT_RANGE`. |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `Name` | Name of the ranges property to examine. |
+| `Index` | Index of the ranges value to return. |
+| `Range` | Pointer to an `EFI_DT_RANGE`. |
 
 #### Status Codes Returned
 
 | Status Code | Description |
 | ----------- | ----------- |
-| EFI_SUCCESS | Lookup successful. |
-| EFI_NOT_FOUND | Could not find property. |
-| EFI_DEVICE_ERROR | Devicetree error. |
-| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+| `EFI_SUCCESS` | Lookup successful. |
+| `EFI_NOT_FOUND` | Could not find property. |
+| `EFI_DEVICE_ERROR` | Devicetree error. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.GetString()`
 #### Description
@@ -1021,19 +1019,19 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING)(
 
 | Parameter | Description |
 | --------- | ----------- |
-| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
-| Name | Name of the property. |
-| Index | Index of the string to return. |
-| String | Pointer to a CHAR8* to fill. |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `Name` | Name of the property. |
+| `Index` | Index of the string to return. |
+| `String` | Pointer to a CHAR8* to fill. |
 
 #### Status Codes Returned
 
 | Status Code | Description |
 | ----------- | ----------- |
-| EFI_SUCCESS | Lookup successful. |
-| EFI_NOT_FOUND | Could not find property. |
-| EFI_DEVICE_ERROR | Devicetree error. |
-| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+| `EFI_SUCCESS` | Lookup successful. |
+| `EFI_NOT_FOUND` | Could not find property. |
+| `EFI_DEVICE_ERROR` | Devicetree error. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.GetDevice()`
 #### Description
@@ -1060,19 +1058,19 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_DEVICE)(
 
 | Parameter | Description |
 | --------- | ----------- |
-| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
-| Name | Name of the property. |
-| Index | INdex of the device to return. |
-| Handle | Pointer to an `EFI_HANDLE` to fill. |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `Name` | Name of the property. |
+| `Index` | INdex of the device to return. |
+| `Handle` | Pointer to an `EFI_HANDLE` to fill. |
 
 #### Status Codes Returned
 
 | Status Code | Description |
 | ----------- | ----------- |
-| EFI_SUCCESS | Lookup successful. |
-| EFI_NOT_FOUND | Could not find property. |
-| EFI_DEVICE_ERROR | Devicetree error. |
-| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+| `EFI_SUCCESS` | Lookup successful. |
+| `EFI_NOT_FOUND` | Could not find property. |
+| `EFI_DEVICE_ERROR` | Devicetree error. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.IsCompatible()`
 
@@ -1094,17 +1092,17 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_IS_COMPATIBLE)(
 
 | Parameter | Description |
 | --------- | ----------- |
-| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
-| CompatibleString | String to validate. |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `CompatibleString` | String to validate. |
 
 #### Status Codes Returned
 
 | Status Code | Description |
 | ----------- | ----------- |
-| EFI_SUCCESS | CompatibleString is present in the _compatible_ property. |
-| EFI_NOT_FOUND | String is not present in the _compatible_ property. |
-| EFI_DEVICE_ERROR | Devicetree error. |
-| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+| `EFI_SUCCESS` | CompatibleString is present in the _compatible_ property. |
+| `EFI_NOT_FOUND` | String is not present in the _compatible_ property. |
+| `EFI_DEVICE_ERROR` | Devicetree error. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.()`
 #### Description

@@ -614,6 +614,12 @@ DtIoCopyReg (
     BufferSize++;
   }
 
+  /*
+   * Consider an implementation that doesn't use a temporary buffer.
+   * Of course, it will have to deal with potentially overlapping
+   * source/destination regions if DestReg == SrcReg.
+   */
+
   Buffer = AllocateZeroPool (BufferSize);
   if (Buffer == NULL) {
     return EFI_OUT_OF_RESOURCES;

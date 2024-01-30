@@ -252,11 +252,11 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILD)(
   );
 
 /**
-  Looks up a U32 property value by index.
+  Looks up a UINT32 property value by index.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Name                  Name of the property.
-  @param  Index                 Index of the reg value to return.
+  @param  Index                 Index of the value to return.
   @param  U32                   Pointer to a UINT32.
 
   @retval EFI_SUCCESS           Lookup successful.
@@ -274,11 +274,11 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U32)(
   );
 
 /**
-  Looks up a U64 property value by index.
+  Looks up a UINT64 property value by index.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Name                  Name of the property.
-  @param  Index                 Index of the reg value to return.
+  @param  Index                 Index of the value to return.
   @param  U64                   Pointer to a UINT64.
 
   @retval EFI_SUCCESS           Lookup successful.
@@ -300,7 +300,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U64)(
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Name                  Name of the property.
-  @param  Index                 Index of the reg value to return.
+  @param  Index                 Index of the value to return.
   @param  U128                  Pointer to an EFI_DT_U128.
 
   @retval EFI_SUCCESS           Lookup successful.
@@ -392,7 +392,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_RANGE)(
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Name                  Name of the property.
-  @param  Index                 Index of the reg value to return.
+  @param  Index                 Index of the string to return.
   @param  String                Pointer to a CHAR8*.
 
   @retval EFI_SUCCESS           Lookup successful.
@@ -414,7 +414,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING)(
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Name                  Name of the property.
-  @param  Index                 Index of the reg value to return.
+  @param  Index                 Index of the device to return.
   @param  Handle                Pointer to an EFI_HANDLE.
 
   @retval EFI_SUCCESS           Lookup successful.

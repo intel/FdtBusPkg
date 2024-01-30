@@ -9,7 +9,7 @@
 #include "FdtBusDxe.h"
 
 /**
-  Looks up property by name for a EFI_DT_IO_PROTOCOL instance.
+  Looks up a property by name.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Name                  Property to look up.

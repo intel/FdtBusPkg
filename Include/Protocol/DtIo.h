@@ -189,7 +189,7 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_LOOKUP)(
   );
 
 /**
-  Looks up property by name.
+  Looks up a property by name.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Name                  Property to look up.

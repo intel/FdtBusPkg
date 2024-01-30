@@ -133,8 +133,8 @@ typedef struct _EFI_DT_IO_PROTOCOL {
 | [`GetU32`](#efi_dt_io_protocolgetu32) | Looks up an `UINT32` property value by index. |
 | [`GetU64`](#efi_dt_io_protocolgetu64) | Looks up an `UINT64` property value by index. |
 | [`GetU128`](#efi_dt_io_protocolgetu128) | Looks up an `EFI_DT_U128` property value by index. |
-| [`GetReg`](#efi_dt_io_protocolgetreg) | Looks up a _reg_ property by index. |
-| [`GetRegByName`](#efi_dt_io_protocolgetregbyname) | Looks up a _reg_ property by name. |
+| [`GetReg`](#efi_dt_io_protocolgetreg) | Looks up a _reg_ property value by index. |
+| [`GetRegByName`](#efi_dt_io_protocolgetregbyname) | Looks up a _reg_ property value by name. |
 | [`GetRange`](#efi_dt_io_protocolgetrange) | Looks up a _ranges_ property value by index. |
 | [`GetString`](#efi_dt_io_protocolgetstring) | Looks up a string property value by index. |
 | [`GetDevice`](#efi_dt_io_protocolgetdevice) | Looks up a device `EFI_HANDLE` from a property value by index. |
@@ -870,6 +870,91 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U128)(
 | Name | Name of the property.|
 | Index | Index of the value to return. |
 | U128 | Where to return the value. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| EFI_SUCCESS | Lookup successful. |
+| EFI_NOT_FOUND | Could not find property. |
+| EFI_DEVICE_ERROR | Devicetree error. |
+| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+
+### `EFI_DT_IO_PROTOCOL.GetReg()`
+#### Description
+
+Looks up a _reg_ property value by index, returning an
+`EFI_DT_REG`. The latter can be passed to the [register access API](#register-access).
+
+> [!NOTE]
+> The returned address is in CPU space, not bus space,
+> if these are different. That is, `GetReg()` performs
+> automatic address translation, and does not return
+> the raw values encoded in the Devicetree property.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  UINTN              Index,
+  OUT EFI_DT_REG         *Reg
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| Index | Index of the _reg_ value to return. |
+| Reg | Pointer to the `EFI_DT_REG` to fill. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| EFI_SUCCESS | Lookup successful. |
+| EFI_NOT_FOUND | Could not find property. |
+| EFI_DEVICE_ERROR | Devicetree error. |
+| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+
+### `EFI_DT_IO_PROTOCOL.GetRegByName()`
+#### Description
+
+#### Description
+
+Looks up a _reg_ property value by name, returning an
+`EFI_DT_REG`. The latter can be passed to the [register access API](#register-access).
+
+> [!NOTE]
+> Lookup by name involves examining the _reg-names_ property.
+
+> [!NOTE]
+> The returned address is in CPU space, not bus space,
+> if these are different. That is, `GetRegByName()` performs
+> automatic address translation, and does not return
+> the raw values encoded in the Devicetree property.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CHAR8              *Name,
+  OUT EFI_DT_REG         *Reg
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| Name | Name of the _reg_ value to return. |
+| Reg | Pointer to the `EFI_DT_REG` to fill. |
 
 #### Status Codes Returned
 

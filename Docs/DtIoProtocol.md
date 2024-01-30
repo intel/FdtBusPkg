@@ -123,7 +123,7 @@ typedef struct _EFI_DT_IO_PROTOCOL {
 | `ChildAddressCells` | _#address-cells_ for child DT controllers. |
 | `ChildSizeCells` | _#size-cells_ for child DT controllers. |
 | `IsDmaCoherent` | TRUE if DMA is cache coherent. |
-| `Lookup` | Looks up a DT controller handle by DT path or alias. |
+| [`Lookup`](#efi_dt_io_protocollookup) | Looks up a DT controller handle by DT path or alias. |
 | `GetProp` | Looks up a property by name, populating an `EFI_DT_PROPERTY` iterator. |
 | `ScanChildren` | Create device chandles for child DT devices. |
 | `RemoveChild` | Tears down a child DT controller created via `ScanChildren`. |
@@ -512,3 +512,62 @@ on the capabilities of the device, as divined by the DT bus driver
 > CPU barrier operations if required by the CPU architecture, that
 > are otherwise done by `Map()` and `Unmap()`. See https://github.com/intel/FdtBusPkg/issues/19 for work on adding
 > a `CommonBufferDmaBarrier()` operation to simplify this.
+
+### `EFI_DT_IO_PROTOCOL.Lookup()`
+#### Summary
+  Looks up an EFI_DT_IO_PROTOCOL handle given a DT path or alias,
+optionally connecting any missing drivers along the way.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_LOOKUP)(
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  CONST CHAR8         *PathOrAlias,
+  IN  BOOLEAN             Connect,
+  OUT EFI_HANDLE          *FoundHandle
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the EFI_DT_IO_PROTOCOL instance. |
+| PathOrAlias | DT path or alias looked up. |
+| Connect | Connect missing drivers during lookup. |
+| FoundHandle | Matching EFI_HANDLE. |
+
+#### Description
+
+`PathOrAlias` could be an:
+- alias (i.e. via DT /aliases)
+- relative DT path (foo/bar), relative to the device described by `This`.
+- absolute DT path (/foo/bar).
+
+> [!CAUTION]
+> `Connect` == TRUE is not supported at the moment.
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| EFI_SUCCESS | Lookup successful. |
+| EFI_NOT_FOUND | Not found. |
+| EFI_DEVICE_ERROR | Devicetree error. |
+| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+
+### `EFI_DT_IO_PROTOCOL.()`
+#### Summary
+#### Prototype
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+
+#### Description
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |

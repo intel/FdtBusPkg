@@ -590,7 +590,7 @@ EFI_STATUS
                                 is not valid for the register space specified by DestReg.
   @retval EFI_UNSUPPORTED       The address range specified by SrcOffset, Width, and Count is
                                 is not valid for the register space specified by SrcReg.
-  @retval EFI_INVALID_PARAMETER Width is invalid.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
   @retval EFI_OUT_OF_RESOURCES  The request could not be completed due to a lack of resources.
 
 **/

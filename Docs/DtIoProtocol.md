@@ -123,10 +123,10 @@ typedef struct _EFI_DT_IO_PROTOCOL {
 | `ChildAddressCells` | _#address-cells_ for child DT controllers. |
 | `ChildSizeCells` | _#size-cells_ for child DT controllers. |
 | `IsDmaCoherent` | TRUE if DMA is cache coherent. |
-| `Lookup` | Looks up a DT controller handle by DT path or alias. |
-| `GetProp` | Looks up a property by name, populating an `EFI_DT_PROPERTY` iterator. |
-| `ScanChildren` | Create device chandles for child DT devices. |
-| `RemoveChild` | Tears down a child DT controller created via `ScanChildren`. |
+| [`Lookup`](#efi_dt_io_protocollookup) | Looks up a DT controller handle by DT path or alias. |
+| [`GetProp`](#efi_dt_io_protocolgetprop) | Looks up a property by name, populating an `EFI_DT_PROPERTY` iterator. |
+| [`ScanChildren`](#efi_dt_io_protocolscanchildren) | Create device chandles for child DT devices. |
+| [`RemoveChild`](#efi_dt_io_protocolremovechild) | Tears down a child DT controller created via `ScanChildren`. |
 | `SetCallbacks` | Sets device driver callbacks to be used by the DT bus driver. |
 | `ParseProp` | Parses out a property field, advancing the `EFI_DT_PROPERTY` iterator. |
 | `GetStringIndex` | Looks up an index for a string in a string list property. |
@@ -512,3 +512,160 @@ on the capabilities of the device, as divined by the DT bus driver
 > CPU barrier operations if required by the CPU architecture, that
 > are otherwise done by `Map()` and `Unmap()`. See https://github.com/intel/FdtBusPkg/issues/19 for work on adding
 > a `CommonBufferDmaBarrier()` operation to simplify this.
+
+### `EFI_DT_IO_PROTOCOL.Lookup()`
+#### Description
+  Looks up an EFI_DT_IO_PROTOCOL handle given a DT path or alias,
+optionally connecting any missing drivers along the way.
+
+`PathOrAlias` could be an:
+- alias (i.e. via DT /aliases)
+- relative DT path (foo/bar), relative to the device described by `This`.
+- absolute DT path (/foo/bar).
+
+> [!CAUTION]
+> `Connect` == TRUE is not supported at the moment.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_LOOKUP)(
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  CONST CHAR8         *PathOrAlias,
+  IN  BOOLEAN             Connect,
+  OUT EFI_HANDLE          *FoundHandle
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| PathOrAlias | DT path or alias looked up. |
+| Connect | Connect missing drivers during lookup. |
+| FoundHandle | Matching `EFI_HANDLE`. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| EFI_SUCCESS | Lookup successful. |
+| EFI_NOT_FOUND | Not found. |
+| EFI_DEVICE_ERROR | Devicetree error. |
+| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+
+### `EFI_DT_IO_PROTOCOL.GetProp()`
+#### Description
+
+Looks up a property by name. Returns the `EFI_DT_PROPERTY` iterator
+that can be subsequently passed to `ParseProp()` calls.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_PROP)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  CONST CHAR8        *Name,
+  OUT EFI_DT_PROPERTY    *Property
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| Name | Property to look up. |
+| Property | Pointer to the `EFI_DT_PROPERTY` to fill. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| EFI_SUCCESS | Lookup successful. |
+| EFI_NOT_FOUND | Could not find property. |
+| EFI_DEVICE_ERROR | Devicetree error. |
+| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+
+### `EFI_DT_IO_PROTOCOL.ScanChildren()`
+#### Description
+
+Create child handles with EFI_DT_IO_PROTOCOL for children nodes.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_SCAN_CHILDREN)(
+  IN  EFI_DT_IO_PROTOCOL       *This,
+  IN  EFI_HANDLE                DriverBindingHandle,
+  IN  EFI_DEVICE_PATH_PROTOCOL *RemainingDevicePath OPTIONAL
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| DriverBindingHandle | Driver binding handle. |
+| RemainingDevicePath | If present, describes the child handle that needs to be created |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| EFI_SUCCESS | Child handles created (all or 1 if `RemainingDevicePath` was not `NULL`) |
+| EFI_NOT_FOUND | No child handles created. |
+| EFI_DEVICE_ERROR | Devicetree error. |
+| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+
+### `EFI_DT_IO_PROTOCOL.RemoveChild()`
+#### Description
+
+Tears down a child DT controller created via `ScanChildren`.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILD)(
+  IN  EFI_DT_IO_PROTOCOL *This,
+  IN  EFI_HANDLE          ChildHandle,
+  IN  EFI_HANDLE          DriverBindingHandle
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| ChildHandle | Child handel to tear down. |
+| DriverBindingHandle | Driver binding handle. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| EFI_SUCCESS | Child handle destroyed. |
+| EFI_UNSUPPORTED | Child handle doesn't support `EFI_DT_IO_PROTOCOL`. |
+| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+
+### `EFI_DT_IO_PROTOCOL.()`
+#### Description
+#### Prototype
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+

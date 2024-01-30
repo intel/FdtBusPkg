@@ -129,7 +129,7 @@ typedef struct _EFI_DT_IO_PROTOCOL {
 | [`RemoveChild`](#efi_dt_io_protocolremovechild) | Tears down a child DT controller created via `ScanChildren`. |
 | [`SetCallbacks`](#efi_dt_io_protocolsetcallbacks) | Sets device driver callbacks to be used by the DT bus driver. |
 | [`ParseProp`](#efi_dt_io_protocolparseprop) | Parses out a property field, advancing the `EFI_DT_PROPERTY` iterator. |
-| `GetStringIndex` | Looks up an index for a string in a string list property. |
+| [`GetStringIndex`](#efi_dt_io_protocolgetstringindex) | Looks up an index for a string in a string list property. |
 | `GetU32` | Looks up an `EFI_DT_U32` property value by index. |
 | `GetU64` | Looks up an `EFI_DT_U64` property value by index. |
 | `GetU128` | Looks up an `EFI_DT_U128` property value by index. |
@@ -729,6 +729,47 @@ typedef EFI_STATUS (EFIAPI *EFI_DT_IO_PROTOCOL_PARSE_PROP)(
 | ----------- | ----------- |
 | EFI_SUCCESS | Parsing successful. |
 | EFI_NOT_FOUND | Not enough remaining property buffer to contain the field of specified type. |
+| EFI_INVALID_PARAMETER | One or more parameters are invalid. |
+
+### `EFI_DT_IO_PROTOCOL.GetStringIndex()`
+#### Description
+
+Looks up an index for a string in a string list property.
+
+This is useful to look up other properties indexed by name,
+e.g. consider:
+```
+foo = <value1>, <value2>, <value3>;
+foo-names = "index1", "index2", "index3";
+```
+
+#### Prototype
+
+```
+typedef EFI_STATUS (EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING_INDEX)(
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  CONST CHAR8         *Name,
+  IN  CONST CHAR8         *Value,
+  OUT UINTN               *Index
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| This | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| Name | Property to examine. |
+| Value | String to search for. |
+| Index | Pointer for returning found index. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| EFI_SUCCESS | String found. |
+| EFI_NOT_FOUND | Could not find property or string. |
+| EFI_DEVICE_ERROR | Devicetree error. |
 | EFI_INVALID_PARAMETER | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.()`

@@ -705,6 +705,9 @@ EFI_STATUS
 
 Parses out a property field, advancing the `EFI_DT_PROPERTY` iterator.
 
+> [!CAUTION]
+> Parsing `EFI_DT_VALUE_U128` and `EFI_DT_VALUE_DEVICE` types is not implemented today.
+
 #### Prototype
 
 ```
@@ -899,6 +902,9 @@ Looks up a _reg_ property value by index, returning an
 > automatic address translation, and does not return
 > the raw values encoded in the Devicetree property.
 
+> [!CAUTION]
+> Only support for direct translation is implemented today (CPU == bus addresses).
+
 #### Prototype
 
 ```
@@ -942,6 +948,9 @@ Looks up a _reg_ property value by name, returning an
 > if these are different. That is, `GetRegByName()` performs
 > automatic address translation, and does not return
 > the raw values encoded in the Devicetree property.
+
+> [!CAUTION]
+> Only support for direct translation is implemented today (CPU == bus addresses).
 
 #### Prototype
 
@@ -1322,6 +1331,9 @@ Provides a DT controller-specific address needed to access system
 memory for DMA. This function is used to map system memory for DT
 controller DMA accesses.
 
+> [!CAUTION]
+> Not implemented at the moment.
+
 All DT controller bus master accesses must be performed through their
 mapped addresses and such mappings must be freed with
 `Unmap()` when complete. If the bus master access is
@@ -1391,6 +1403,9 @@ resources. If the operation was an
 `EfiDtIoDmaOperationBusMasterWrite`, the data is committed to the
 target system memory.
 
+> [!CAUTION]
+> Not implemented at the moment.
+
 #### Prototype
 
 ```
@@ -1420,6 +1435,9 @@ EFI_STATUS
 #### Description
 
 Allocates pages that are suitable for a common buffer mapping.
+
+> [!CAUTION]
+> Not implemented at the moment.
 
 The `AllocateBuffer()` function allocates pages that are suitable for an
 `EfiDtIoDmaOperationBusMasterCommonBuffer` mapping. This means that the
@@ -1465,6 +1483,9 @@ EFI_STATUS
 #### Description
 
 Frees memory allocated with `AllocateBuffer()`.
+
+> [!CAUTION]
+> Not implemented at the moment.
 
 #### Prototype
 

@@ -28,13 +28,13 @@ Here are some simple steps to build and install Uncrustify:
 
 Here's a useful command:
 
-        $ git ls-files *.h *.c | uncrustify -c $OWRKSPACE/.pytool/Plugin/UncrustifyCheck/uncrustify.cfg -F - --replace --no-backup --if-changed
+        $ git ls-files *.h *.c | uncrustify -c $WORKSPACE/.pytool/Plugin/UncrustifyCheck/uncrustify.cfg -F - --replace --no-backup --if-changed
 
 Also see https://github.com/tianocore/tianocore.github.io/wiki/EDK-II-Code-Formatting.
 
 ## Environment
 
-Configuring a development environment is easy.
+Configuring a development environment is easy:
 
         $ git clone https://github.com/tianocore/edk2.git
         $ cd edk2

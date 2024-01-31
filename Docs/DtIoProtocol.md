@@ -143,10 +143,10 @@ typedef struct _EFI_DT_IO_PROTOCOL {
 | [`ReadReg`](#efi_dt_io_protocolreadreg) | Reads a device register. |
 | [`WriteReg`](#efi_dt_io_protocolwritereg) | Writes a device register. |
 | [`CopyReg`](#efi_dt_io_protocolcopyreg) | Copies a region of device register space to another region of device register space. |
-| `Map` | Provides a DT controller-specific address needed to access system memory for DMA. |
-| `Unmap` | Completes the `Map()` operation and releases any corresponding resources. |
-| `AllocateBuffer` | Allocates pages that are suitable for a common buffer mapping. |
-| `FreeBuffer` | Frees memory allocated with `AllocateBuffer()`. |
+| [`Map`](#efi_dt_io_protocolmap) | Provides a DT controller-specific address needed to access system memory for DMA. |
+| [`Unmap`](#efi_dt_io_protocolunmap) | Completes the `Map()` operation and releases any corresponding resources. |
+| [`AllocateBuffer`](#efi_dt_io_protocolallocatebuffer) | Allocates pages that are suitable for a common buffer mapping. |
+| [`FreeBuffer`](#efi_dt_io_protocolfreebuffer) | Frees memory allocated with `AllocateBuffer()`. |
 
 ### Related Definitions
 
@@ -1170,7 +1170,7 @@ EFI_STATUS
 | `EFI_UNSUPPORTED` | Offset is not valid for the register space specified. |
 | `EFI_TIMEOUT` | Delay expired before a match occurred. |
 | `EFI_OUT_OF_RESOURCES` | The request could not be completed due to a lack of resources. |
-| `EFI_INVALID_PARAMETER` | One or more parameters are invalud. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 
 ### `EFI_DT_IO_PROTOCOL.ReadReg()`
 
@@ -1302,19 +1302,180 @@ EFI_STATUS
 | `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 | `EFI_OUT_OF_RESOURCES` | The request could not be completed due to a lack of resources. |
 
-### `EFI_DT_IO_PROTOCOL.()`
+### `EFI_DT_IO_PROTOCOL.Map()`
 #### Description
 
+Provides a DT controller-specific address needed to access system
+memory for DMA. This function is used to map system memory for DT
+controller DMA accesses.
+
+All DT controller bus master accesses must be performed through their
+mapped addresses and such mappings must be freed with
+`Unmap()` when complete. If the bus master access is
+a single read or write data transfer, then
+`EfiDtIoDmaOperationBusMasterRead` or `EfiDtIoDmaOperationBusMasterWrite` is
+used and the range is unmapped to complete the operation. If
+performing an `EfiDtIoDmaOperationBusMasterRead`, all the data
+must be present in system memory before the `Map()` is
+performed. Similarly, if performing an
+`EfiDtIoDmaOperationBusMasterWrite`, the data cannot be properly accessed
+in system memory until `Unmap()` is performed.
+
+Bus master operations that require both read and write access or
+require multiple host device interactions within the same mapped
+region must use `EfiDtIoDmaOperationBusMasterCommonBuffer`. However, only
+memory allocated via the `AllocateBuffer()` interface can be mapped
+for this operation type.
+
+In all mapping requests the resulting `NumberOfBytes` actually mapped
+may be less than the requested amount. In this case, the DMA operation
+will have to be broken up into smaller chunks. The `Map()` function will
+map as much of the DMA operation as it can at one time. The caller may
+have to loop on `Map()` and `Unmap()` in order to complete a large DMA
+transfer.
+
 #### Prototype
+
+```
+typedef
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_MAP)(
+  IN      EFI_DT_IO_PROTOCOL                *This,
+  IN      EFI_DT_IO_PROTOCOL_DMA_OPERATION  Operation,
+  IN      VOID                              *HostAddress,
+  IN  OUT UINTN                             *NumberOfBytes,
+  OUT     EFI_PHYSICAL_ADDRESS              *DeviceAddress,
+  OUT     VOID                              **Mapping
+  );
+```
 
 #### Parameters
 
 | Parameter | Description |
 | --------- | ----------- |
 | `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `Operation` | Indicates if the bus master is going to read or write to system memory. |
+| `HostAddress` | The system memory address to map to the device. |
+| `NumberOfBytes` | On input the number of bytes to map. On output the number of bytes that were mapped.|
+| `DeviceAddress` | The resulting map address for the bus master device to use to access the host's HostAddress.|
+| `Mapping` | A resulting value to pass to `Unmap()`.|
 
 #### Status Codes Returned
 
 | Status Code | Description |
 | ----------- | ----------- |
+| `EFI_SUCCESS` | The range was mapped for the returned `NumberOfBytes`. |
+| `EFI_UNSUPPORTED` | The `HostAddress` cannot be mapped as a common buffer. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
+| `EFI_OUT_OF_RESOURCES` | The request could not be completed due to a lack of resources. |
+| `EFI_DEVICE_ERROR` | The system hardware could not map the requested address. |
 
+### `EFI_DT_IO_PROTOCOL.Unmap()`
+#### Description
+
+Completes the `Map()` operation and releases any corresponding
+resources. If the operation was an
+`EfiDtIoDmaOperationBusMasterWrite`, the data is committed to the
+target system memory.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_UNMAP)(
+  IN  EFI_DT_IO_PROTOCOL          *This,
+  IN  VOID                        *Mapping
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `Mapping` | The mapping value returned from `Map()`. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| `EFI_SUCCESS` | The range was unmapped. |
+| `EFI_DEVICE_ERROR` | The data was not committed to the target system memory. |
+
+### `EFI_DT_IO_PROTOCOL.AllocateBuffer()`
+#### Description
+
+Allocates pages that are suitable for a common buffer mapping.
+
+The `AllocateBuffer()` function allocates pages that are suitable for an
+`EfiDtIoDmaOperationBusMasterCommonBuffer` mapping. This means that the
+buffer allocated by this function must support simultaneous access by
+both the processor and the DT controller. The device address that the
+DT controller uses to access the buffer can be retrieved with a call
+to `Map()`.
+
+If the memory allocation specified by `MemoryType` and `Pages` cannot be
+satisfied, then `EFI_OUT_OF_RESOURCES` is returned.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_ALLOCATE_BUFFER)(
+  IN  EFI_DT_IO_PROTOCOL           *This,
+  IN  EFI_MEMORY_TYPE              MemoryType,
+  IN  UINTN                        Pages,
+  OUT VOID                         **HostAddress
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `MemoryType` | The type of memory to allocate, `EfiBootServicesData` or `EfiRuntimeServicesData.` |
+| `Pages` | The number of pages to allocate. |
+| `HostAddress` | A pointer to store the base system memory address of the allocated range. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| `EFI_SUCCESS` | The requested memory pages were allocated. The requested memory pages were allocated. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
+| `EFI_OUT_OF_RESOURCES` | The memory pages could not be allocated. |
+
+### `EFI_DT_IO_PROTOCOL.FreeBuffer()`
+#### Description
+
+Frees memory allocated with `AllocateBuffer()`.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_FREE_BUFFER)(
+  IN  EFI_DT_IO_PROTOCOL           *This,
+  IN  UINTN                        Pages,
+  IN  VOID                         *HostAddress
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `Pages` | The number of pages to free. |
+| `HostAddress` | The base system memory address of the allocated range. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| `EFI_SUCCESS` | The requested memory pages were freed. |
+| `EFI_INVALID_PARAMETER` | The memory range specified by `HostAddress` and `Pages` was not allocated with `AllocateBuffer()`. |

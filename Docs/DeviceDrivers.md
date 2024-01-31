@@ -184,9 +184,8 @@ supported DT controllers:
 - Call the `LocateHandleBuffer` UEFI Boot Service with the
   `gEfiDtIoProtocolGuid`.
 - For every handle:
- - Fetch the Devicetree I/O Protocol pointer for the handle.
- - Use the `IsCompatible()` Devicetree I/O Protocol call to identify
-  supported controllers.
+  - Fetch the Devicetree I/O Protocol pointer for the handle.
+  - Use the `IsCompatible()` Devicetree I/O Protocol call to identify supported controllers.
 
 See [PciHostBridgeLibEcam](../Library/PciHostBridgeLibEcam) for a
 "library driver" example.

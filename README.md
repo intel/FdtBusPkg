@@ -18,7 +18,7 @@ Advantages:
 
 FdtBusPkg consists of FdtBusDxe, a bus driver, and a number
 of examples drivers and libraries for demoing with the RISC-V
-OVMF firmware. FdtBusDxe is reponsible for enumerating
+OVMF firmware. FdtBusDxe is responsible for enumerating
 DT controllers based on Devicetree nodes, and implementing
 `EFI_DT_IO_PROTOCOL` for basic operations on such controllers, such as
 device property access, register I/O, DMA buffer handling and child
@@ -29,6 +29,7 @@ See further documentation:
 - [Devicetree Device Drivers](Docs/DeviceDrivers.md)
 - [EFI Devicetree I/O Protocol](Docs/DtIoProtocol.md)
 - [EFI-Specific Devicetree Bindings](Docs/UefiDtBindings.md)
+- [FdtBusDxe Overview](Docs/FdtBusDxe.md)
 - [Another README for Developers](Docs/Developers.md)
 
 FdtBusPkg components can be used on any architecture, but have been

@@ -666,7 +666,7 @@ Exit:
   @param  NumberOfBytes         On input the number of bytes to map. On output the number of bytes
                                 that were mapped.
   @param  DeviceAddress         The resulting map address for the bus master device to use to access
-                                the hosts HostAddress.
+                                the host's HostAddress.
   @param  Mapping               A resulting value to pass to Unmap().
 
   @retval EFI_SUCCESS           The range was mapped for the returned NumberOfBytes.

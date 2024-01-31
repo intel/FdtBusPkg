@@ -29,10 +29,10 @@ abstractions that allow the DT controller to be used in the preboot
 environment. The most common I/O abstractions are used to boot an EFI
 compliant OS.
 
-The following figure shows the device handle for a DT Controller
+The following figure shows the device handle for a DT controller
 before and after `Start()` Driver Binding Protocol function is
 called. In this example, a DT device driver is adding the Block I/O
-Protocol to the device handle for the DT Controller.
+Protocol to the device handle for the DT controller.
 
 ```mermaid
 stateDiagram-v2

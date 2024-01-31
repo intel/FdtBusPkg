@@ -51,12 +51,13 @@ See the [presentation slides](Docs/Uefi2023/slides.pdf) from the UEFI Fall 2023 
 
 ## Quick Start
 
-To build RISC-V OVMF firmware:
+To build RISC-V OVMF firmware enabled with FdtBusPkg components:
 
         $ git clone https://github.com/tianocore/edk2.git
         $ cd edk2
         $ git submodule add https://github.com/intel/FdtBusPkg
-        $ git submodule update --init
+        $ git submodule update --init --recursive
+        $ . edksetup.sh
         $ git am FdtBusPkg/Docs/0001-RiscVVirt-Patches-to-enable-FdtBusPkg-components.patch
         $ export GCC_RISCV64_PREFIX=... (if you are on a non-RISCV64 system)
         $ build -a RISCV64  -p OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc -t GCC -b DEBUG

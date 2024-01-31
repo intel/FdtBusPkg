@@ -530,7 +530,8 @@ optionally connecting any missing drivers along the way.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_LOOKUP)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_LOOKUP)(
   IN  EFI_DT_IO_PROTOCOL  *This,
   IN  CONST CHAR8         *PathOrAlias,
   IN  BOOLEAN             Connect,
@@ -566,7 +567,8 @@ that can be subsequently passed to `ParseProp()` calls.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_PROP)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_PROP)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   OUT EFI_DT_PROPERTY    *Property
@@ -599,7 +601,8 @@ Create child handles with EFI_DT_IO_PROTOCOL for children nodes.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_SCAN_CHILDREN)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_SCAN_CHILDREN)(
   IN  EFI_DT_IO_PROTOCOL       *This,
   IN  EFI_HANDLE                DriverBindingHandle,
   IN  EFI_DEVICE_PATH_PROTOCOL *RemainingDevicePath OPTIONAL
@@ -632,7 +635,8 @@ Tears down a child DT controller created via `ScanChildren`.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILD)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILD)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  EFI_HANDLE          ChildHandle,
   IN  EFI_HANDLE          DriverBindingHandle
@@ -781,7 +785,8 @@ Looks up a `UINT32` property value by index.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U32)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U32)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   IN  UINTN              Index,
@@ -816,7 +821,8 @@ Looks up a `UINT64` property value by index.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U64)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U64)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   IN  UINTN              Index,
@@ -854,7 +860,8 @@ Looks up an `EFI_DT_U128` property value by index.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U128)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U128)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   IN  UINTN              Index,
@@ -896,7 +903,8 @@ Looks up a _reg_ property value by index, returning an
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  UINTN              Index,
   OUT EFI_DT_REG         *Reg
@@ -939,7 +947,8 @@ Looks up a _reg_ property value by name, returning an
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CHAR8              *Name,
   OUT EFI_DT_REG         *Reg
@@ -972,7 +981,8 @@ Looks up a ranges property value by index.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_RANGE)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_RANGE)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CHAR8              *Name,
   IN  UINTN              Index,
@@ -1007,7 +1017,8 @@ Looks up a string property value by index.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   IN  UINTN              Index,
@@ -1046,7 +1057,8 @@ index.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_DEVICE)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_DEVICE)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   IN  UINTN              Index,
@@ -1082,7 +1094,8 @@ Validates a string against the device _compatible_ property.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_IS_COMPATIBLE)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_IS_COMPATIBLE)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *CompatibleString
   );

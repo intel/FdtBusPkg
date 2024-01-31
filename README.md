@@ -29,6 +29,7 @@ See further documentation:
 - [Devicetree Device Drivers](Docs/DeviceDrivers.md)
 - [EFI Devicetree I/O Protocol](Docs/DtIoProtocol.md)
 - [EFI-Specific Devicetree Bindings](Docs/UefiDtBindings.md)
+- [Another README for Developers](Docs/Developers.md)
 
 FdtBusPkg components can be used on any architecture, but have been
 developed and tested with RISC-V. They should be reusable out of the box

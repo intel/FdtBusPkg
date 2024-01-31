@@ -181,7 +181,8 @@ typedef enum {
 
 **/
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_LOOKUP)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_LOOKUP)(
   IN  EFI_DT_IO_PROTOCOL  *This,
   IN  CONST CHAR8         *PathOrAlias,
   IN  BOOLEAN             Connect,
@@ -202,7 +203,8 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_LOOKUP)(
 
 **/
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_PROP)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_PROP)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   OUT EFI_DT_PROPERTY    *Property
@@ -225,7 +227,8 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_PROP)(
 
 **/
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_SCAN_CHILDREN)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_SCAN_CHILDREN)(
   IN  EFI_DT_IO_PROTOCOL       *This,
   IN  EFI_HANDLE                DriverBindingHandle,
   IN  EFI_DEVICE_PATH_PROTOCOL *RemainingDevicePath OPTIONAL
@@ -245,7 +248,8 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_SCAN_CHILDREN)(
 
 **/
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILD)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILD)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  EFI_HANDLE          ChildHandle,
   IN  EFI_HANDLE          DriverBindingHandle
@@ -266,7 +270,8 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILD)(
 
 **/
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U32)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U32)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   IN  UINTN              Index,
@@ -288,7 +293,8 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U32)(
 
 **/
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U64)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U64)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   IN  UINTN              Index,
@@ -310,7 +316,8 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U64)(
 
 **/
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U128)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U128)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   IN  UINTN              Index,
@@ -334,7 +341,8 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U128)(
 
 **/
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  UINTN              Index,
   OUT EFI_DT_REG         *Reg
@@ -359,7 +367,8 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG)(
 
 **/
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CHAR8              *Name,
   OUT EFI_DT_REG         *Reg
@@ -380,7 +389,8 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME)(
 
 **/
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_RANGE)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_RANGE)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CHAR8              *Name,
   IN  UINTN              Index,
@@ -402,7 +412,8 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_RANGE)(
 
 **/
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   IN  UINTN              Index,
@@ -424,7 +435,8 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING)(
 
 **/
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_DEVICE)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_DEVICE)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   IN  UINTN              Index,
@@ -448,7 +460,8 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_DEVICE)(
 
 **/
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_IS_COMPATIBLE)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_IS_COMPATIBLE)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *CompatibleString
   );
@@ -470,7 +483,9 @@ EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_IS_COMPATIBLE)(
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
-typedef EFI_STATUS (EFIAPI *EFI_DT_IO_PROTOCOL_PARSE_PROP)(
+typedef
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_PARSE_PROP)(
   IN  EFI_DT_IO_PROTOCOL  *This,
   IN  OUT EFI_DT_PROPERTY *Prop,
   IN  EFI_DT_VALUE_TYPE   Type,
@@ -497,7 +512,9 @@ typedef EFI_STATUS (EFIAPI *EFI_DT_IO_PROTOCOL_PARSE_PROP)(
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 
 **/
-typedef EFI_STATUS (EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING_INDEX)(
+typedef
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING_INDEX)(
   IN  EFI_DT_IO_PROTOCOL  *This,
   IN  CONST CHAR8         *Name,
   IN  CONST CHAR8         *Value,
@@ -618,7 +635,7 @@ EFI_STATUS
   @param  NumberOfBytes         On input the number of bytes to map. On output the number of bytes
                                 that were mapped.
   @param  DeviceAddress         The resulting map address for the bus master device to use to access
-                                the hosts HostAddress.
+                                the host's HostAddress.
   @param  Mapping               A resulting value to pass to Unmap().
 
   @retval EFI_SUCCESS           The range was mapped for the returned NumberOfBytes.

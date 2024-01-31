@@ -530,7 +530,8 @@ optionally connecting any missing drivers along the way.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_LOOKUP)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_LOOKUP)(
   IN  EFI_DT_IO_PROTOCOL  *This,
   IN  CONST CHAR8         *PathOrAlias,
   IN  BOOLEAN             Connect,
@@ -566,7 +567,8 @@ that can be subsequently passed to `ParseProp()` calls.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_PROP)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_PROP)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   OUT EFI_DT_PROPERTY    *Property
@@ -599,7 +601,8 @@ Create child handles with EFI_DT_IO_PROTOCOL for children nodes.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_SCAN_CHILDREN)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_SCAN_CHILDREN)(
   IN  EFI_DT_IO_PROTOCOL       *This,
   IN  EFI_HANDLE                DriverBindingHandle,
   IN  EFI_DEVICE_PATH_PROTOCOL *RemainingDevicePath OPTIONAL
@@ -632,7 +635,8 @@ Tears down a child DT controller created via `ScanChildren`.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILD)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_REMOVE_CHILD)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  EFI_HANDLE          ChildHandle,
   IN  EFI_HANDLE          DriverBindingHandle
@@ -700,6 +704,9 @@ EFI_STATUS
 #### Description
 
 Parses out a property field, advancing the `EFI_DT_PROPERTY` iterator.
+
+> [!CAUTION]
+> Parsing `EFI_DT_VALUE_U128` and `EFI_DT_VALUE_DEVICE` types is not implemented today.
 
 #### Prototype
 
@@ -781,7 +788,8 @@ Looks up a `UINT32` property value by index.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U32)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U32)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   IN  UINTN              Index,
@@ -816,7 +824,8 @@ Looks up a `UINT64` property value by index.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U64)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U64)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   IN  UINTN              Index,
@@ -854,7 +863,8 @@ Looks up an `EFI_DT_U128` property value by index.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U128)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_U128)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   IN  UINTN              Index,
@@ -892,11 +902,15 @@ Looks up a _reg_ property value by index, returning an
 > automatic address translation, and does not return
 > the raw values encoded in the Devicetree property.
 
+> [!CAUTION]
+> Only support for direct translation is implemented today (CPU == bus addresses).
+
 #### Prototype
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  UINTN              Index,
   OUT EFI_DT_REG         *Reg
@@ -935,11 +949,15 @@ Looks up a _reg_ property value by name, returning an
 > automatic address translation, and does not return
 > the raw values encoded in the Devicetree property.
 
+> [!CAUTION]
+> Only support for direct translation is implemented today (CPU == bus addresses).
+
 #### Prototype
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_REG_BY_NAME)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CHAR8              *Name,
   OUT EFI_DT_REG         *Reg
@@ -972,7 +990,8 @@ Looks up a ranges property value by index.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_RANGE)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_RANGE)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CHAR8              *Name,
   IN  UINTN              Index,
@@ -1007,7 +1026,8 @@ Looks up a string property value by index.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   IN  UINTN              Index,
@@ -1046,7 +1066,8 @@ index.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_GET_DEVICE)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_GET_DEVICE)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *Name,
   IN  UINTN              Index,
@@ -1082,7 +1103,8 @@ Validates a string against the device _compatible_ property.
 
 ```
 typedef
-EFI_STATUS(EFIAPI *EFI_DT_IO_PROTOCOL_IS_COMPATIBLE)(
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_IS_COMPATIBLE)(
   IN  EFI_DT_IO_PROTOCOL *This,
   IN  CONST CHAR8        *CompatibleString
   );
@@ -1309,6 +1331,9 @@ Provides a DT controller-specific address needed to access system
 memory for DMA. This function is used to map system memory for DT
 controller DMA accesses.
 
+> [!CAUTION]
+> Not implemented at the moment.
+
 All DT controller bus master accesses must be performed through their
 mapped addresses and such mappings must be freed with
 `Unmap()` when complete. If the bus master access is
@@ -1378,6 +1403,9 @@ resources. If the operation was an
 `EfiDtIoDmaOperationBusMasterWrite`, the data is committed to the
 target system memory.
 
+> [!CAUTION]
+> Not implemented at the moment.
+
 #### Prototype
 
 ```
@@ -1407,6 +1435,9 @@ EFI_STATUS
 #### Description
 
 Allocates pages that are suitable for a common buffer mapping.
+
+> [!CAUTION]
+> Not implemented at the moment.
 
 The `AllocateBuffer()` function allocates pages that are suitable for an
 `EfiDtIoDmaOperationBusMasterCommonBuffer` mapping. This means that the
@@ -1452,6 +1483,9 @@ EFI_STATUS
 #### Description
 
 Frees memory allocated with `AllocateBuffer()`.
+
+> [!CAUTION]
+> Not implemented at the moment.
 
 #### Prototype
 

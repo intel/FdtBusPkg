@@ -509,11 +509,26 @@ PciHostBridgeGetRootBridges (
 
   for (Index = 0, BridgeIndex = 0; Index < HandleCount; Index++) {
     MY_PCI_ROOT_BRIDGE_DEVICE_PATH  *DevicePath;
-
-    Status = gBS->HandleProtocol (HandleBuffer[Index], &gEfiDtIoProtocolGuid, (VOID **)&DtIo);
+    //
+    // Use BY_DRIVER instead of HandleProtocol to ensure
+    // another driver can't reserve the device.
+    //
+    // Most of the handles here aren't "ours". Attempting
+    // to open them may fail with EFI_ACCESS_DENIED if
+    // they already have a driver attached.
+    //
+    Status = gBS->OpenProtocol (
+                    HandleBuffer[Index],
+                    &gEfiDtIoProtocolGuid,
+                    (VOID **)&DtIo,
+                    gImageHandle,
+                    HandleBuffer[Index],
+                    EFI_OPEN_PROTOCOL_BY_DRIVER
+                    );
     if (EFI_ERROR (Status)) {
       DEBUG ((
-        DEBUG_ERROR,
+        Status == EFI_ACCESS_DENIED ?
+        DEBUG_VERBOSE : DEBUG_ERROR,
         "%a: HandleProtocol: %r\n",
         __func__,
         Status
@@ -523,8 +538,16 @@ PciHostBridgeGetRootBridges (
 
     if (EFI_ERROR (DtIo->IsCompatible (DtIo, "pci-host-ecam-generic"))) {
       //
-      // Not a supported node.
+      // Don't forget to close unsupported handles, otherwise
+      // other drivers won't be able to start!
       //
+      Status = gBS->CloseProtocol (
+                      HandleBuffer[Index],
+                      &gEfiDtIoProtocolGuid,
+                      gImageHandle,
+                      HandleBuffer[Index]
+                      );
+      ASSERT_EFI_ERROR (Status);
       continue;
     }
 

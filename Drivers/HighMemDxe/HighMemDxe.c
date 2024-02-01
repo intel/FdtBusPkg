@@ -293,17 +293,33 @@ InitializeHighMemDxe (
                   &HandleBuffer
                   );
 
-  /*
-   * The non-binding version has a DEPEX on FdtBusDxe, so this can't
-   * happen (unless there's no DT in the system...).
-   */
+  //
+  // The non-binding version has a DEPEX on FdtBusDxe, so this can't
+  // happen (unless there's no DT in the system...).
+  //
   ASSERT_EFI_ERROR (Status);
 
   for (Index = 0; Index < HandleCount; Index++) {
-    Status = gBS->HandleProtocol (HandleBuffer[Index], &gEfiDtIoProtocolGuid, (VOID **)&DtIo);
+    //
+    // Use BY_DRIVER instead of HandleProtocol to ensure
+    // another driver can't reserve the device.
+    //
+    // Most of the handles here aren't "ours". Attempting
+    // to open them may fail with EFI_ACCESS_DENIED if
+    // they already have a driver attached.
+    //
+    Status = gBS->OpenProtocol (
+                    HandleBuffer[Index],
+                    &gEfiDtIoProtocolGuid,
+                    (VOID **)&DtIo,
+                    ImageHandle,
+                    HandleBuffer[Index],
+                    EFI_OPEN_PROTOCOL_BY_DRIVER
+                    );
     if (EFI_ERROR (Status)) {
       DEBUG ((
-        DEBUG_ERROR,
+        Status == EFI_ACCESS_DENIED ?
+        DEBUG_VERBOSE : DEBUG_ERROR,
         "%a: HandleProtocol: %r\n",
         __func__,
         Status
@@ -313,6 +329,17 @@ InitializeHighMemDxe (
 
     Status = DeviceIsSupported (DtIo);
     if (EFI_ERROR (Status)) {
+      //
+      // Don't forget to close unsupported handles, otherwise
+      // other drivers won't be able to start!
+      //
+      Status = gBS->CloseProtocol (
+                      HandleBuffer[Index],
+                      &gEfiDtIoProtocolGuid,
+                      ImageHandle,
+                      HandleBuffer[Index]
+                      );
+      ASSERT_EFI_ERROR (Status);
       continue;
     }
 

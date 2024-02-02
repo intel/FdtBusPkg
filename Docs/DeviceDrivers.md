@@ -127,6 +127,12 @@ NIC driver). In the context of the MDIO device, it would then
 enumerate the `phy1` device, and continue initialization
 once a PHY driver loads and publishes an interface.
 
+> [!TIP]
+> How could a driver managing a DT controller and its children
+> be able to relate a DT controller `EFI_HANDLE` to another
+> another device being managed? You can use the `ParentDevice`
+> structure field in `EFI_DT_IO_PROTOCOL`.
+
 Such drivers have additional `EFI_DT_IO_PROTOCOL`-specific
 operations they need to perform in their `Start()` and `Stop()` Driver
 Binding Protocol functions.

@@ -1,11 +1,11 @@
 /** @file
-*  High memory node enumeration DXE driver for ARM and RISC-V.
-*
-*  Copyright (c) 2014 - 2016, Linaro Ltd. All rights reserved.<BR>
-*  Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
-*
-*  SPDX-License-Identifier: BSD-2-Clause-Patent
-*
+    High memory node enumeration DXE driver for ARM and RISC-V.
+
+    Copyright (c) 2015-2016, Linaro Ltd. All rights reserved.
+    Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
+
+    SPDX-License-Identifier: BSD-2-Clause-Patent
+
 **/
 
 #ifndef __HIGH_MEM_DXE_H__

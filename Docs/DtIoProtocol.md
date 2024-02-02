@@ -513,7 +513,7 @@ on the capabilities of the device, as divined by the DT bus driver
 > Using common buffer operations doesn't absolve the code from performing
 > CPU barrier operations if required by the CPU architecture, that
 > are otherwise done by `Map()` and `Unmap()`. See https://github.com/intel/FdtBusPkg/issues/19 for work on adding
-> a `CommonBufferDmaBarrier()` operation to simplify this.
+> these.
 
 ### `EFI_DT_IO_PROTOCOL.Lookup()`
 #### Description

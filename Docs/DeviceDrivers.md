@@ -190,27 +190,42 @@ supported DT controllers:
 - Call the `LocateHandleBuffer` UEFI Boot Service with the
   `gEfiDtIoProtocolGuid`.
 - For every handle:
-  - Call `OpenProtocol()` Boot Service with `BY_DRIVER` to get
-    the DT I/O Protocol.
+  - Locate the DT I/O Protocol on the handle.
+    - If the controller is meant to be exclusively used by the driver or library
+      (e.g. talking to hardware),  call `OpenProtocol()` Boot Service with `BY_DRIVER`
+      to get the DT I/O Protocol. This ensures the driver doesn't start using a
+      controller that is already managed by another driver. It also ensures that
+      other (well behaved) drivers won't use the controller until it is released.
+    - If the resource is meant to be shared with other components (e.g. SerialPortLib),
+      or if the driver or library simply wants to query some information about the controller
+      (i.e. not talk to hardware), use `HandleProtocol()`.
   - Use the `IsCompatible()` Devicetree I/O Protocol call to identify supported controllers.
-  - Call `CloseProtocol()` Boot Service on unsupported controllers.
+  - Call `CloseProtocol()` Boot Service on unsupported controllers if `OpenProtocol()` was used.
 
-> [!TIP]
-> Using `OpenProtocol()` instead of `HandleProtocol()` ensures
-> the driver doesn't accidentally bind to handles that are
-> already managed. It also ensures that other (well behaved)
-> drivers won't use the handle. Of course, there may be
-> situations where `HandleProtocol()` is the only viable
-> choice. For example, an implemention of SerialPortLib,
-> which could be linked into multiple drivers and components,
-> implies that exclusive access is not possible.
+If there's a possibility that the DT controller can be enumerated
+after the legacy driver loads:
+
+- Register a protocol notification callback on `gEfiDtIoProtocolGuid`.
+- Identify the DT controller handles inside the notification callback via `LocateHandle` Boot Service using `ByRegisterNotify`.
+- Locate the DT I/O Protocol as appropriate.
+- Close the notification callback event if no more DT controllers are expected.
 
 > [!CAUTION]
 > Failing to close unsupported controllers will result in other
 > drivers not being able to start on their device handles!
 
-See [PciHostBridgeLibEcam](../Library/PciHostBridgeLibEcam) for a
-"library driver" example.
+Yes, legacy drivers are awkward and messy. This is why the UEFI Driver Model exists!
+
+### Simple "library driver" example
+
+See [PciHostBridgeLibEcam](../Library/PciHostBridgeLibEcam).
+
+This library has a dependency on `gEfiDtIoProtocolGuid`,
+as the supported controllers are expected to be enumerated once
+FdtBusDxe loads, so the availability of a DT controller present in the system is sufficient.
+
+PciHostBridgeLibEcam only has a single user - PciHostBridgeLibEcam,
+so the DT I/O protocol is located using `OpenProtocol` with `BY_DRIVER`.
 
 It's easy to identify DT controllers that are managed by a legacy
 driver that uses `OpenProtocol()` as suggested. These are listed as `Legacy-Managed Device`:
@@ -230,3 +245,25 @@ Shell> devtree
    Ctrl[34] DT(cpus)
 ...
 ```
+
+### A more involved "library driver" example
+
+See [FdtPciPcdProducerLib](../Library/FdtPciPcdProducerLib).
+
+This library is linked into a number of drivers,
+including CpuDxe. The latter is a dependency for FdtBusPkg (as it
+publishes `EFI_CPU_IO2_PROTOCOL`), so it is not possible to use a
+`[Depex]` dependency on `gEfiDtIoProtocolGuid`. Instead, if
+`LocateHandleBuffer` fails because the library is used before
+FdtBusDxe is loads, a protocol notification callback
+is set.
+
+Because this library is linked into a number of drivers, and because
+its interaction with the DT controller is limited to querying a few
+properties about it, the DT I/O Protocol is located using `HandleProtocol`
+and not `OpenProtocol`.
+
+> [!CAUTION]
+> If allocating resources in a library, don't forget to clean these
+> up in a destructor function. Failure to close events in a library
+> will cause crashes when a callback is invoked in an unloaded driver!

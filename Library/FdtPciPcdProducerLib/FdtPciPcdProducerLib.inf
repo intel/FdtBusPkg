@@ -1,7 +1,8 @@
 #/** @file
-#  FDT client library for consumers of PCI related dynamic PCDs
+#  DT I/O-based library for consumers of PCI related dynamic PCDs.
 #
 #  Copyright (c) 2016, Linaro Ltd. All rights reserved.
+#  Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -15,14 +16,15 @@
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = PciPcdProducerLib|DXE_DRIVER UEFI_DRIVER
   CONSTRUCTOR                    = FdtPciPcdProducerLibConstructor
+  DESTRUCTOR                     = FdtPciPcdProducerLibDestructor
 
 [Sources]
   FdtPciPcdProducerLib.c
 
 [Packages]
-  EmbeddedPkg/EmbeddedPkg.dec
   MdeModulePkg/MdeModulePkg.dec
   MdePkg/MdePkg.dec
+  FdtBusPkg/FdtBusPkg.dec
 
 [LibraryClasses]
   BaseLib
@@ -31,12 +33,10 @@
   UefiBootServicesTableLib
 
 [Protocols]
-  gFdtClientProtocolGuid                                      ## CONSUMES
+  gEfiDtIoProtocolGuid                                        ## CONSUMES
 
 [Pcd]
   gEfiMdePkgTokenSpaceGuid.PcdPciIoTranslation                ## PRODUCES
   gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress           ## PRODUCES
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDisableBusEnumeration  ## PRODUCES
-
-[Depex]
-  gFdtClientProtocolGuid
+  

@@ -199,7 +199,11 @@ supported DT controllers:
 > Using `OpenProtocol()` instead of `HandleProtocol()` ensures
 > the driver doesn't accidentally bind to handles that are
 > already managed. It also ensures that other (well behaved)
-> drivers won't use the handle.
+> drivers won't use the handle. Of course, there may be
+> situations where `HandleProtocol()` is the only viable
+> choice. For example, an implemention of SerialPortLib,
+> which could be linked into multiple drivers and components,
+> implies that exclusive access is not possible.
 
 > [!CAUTION]
 > Failing to close unsupported controllers will result in other
@@ -209,7 +213,7 @@ See [PciHostBridgeLibEcam](../Library/PciHostBridgeLibEcam) for a
 "library driver" example.
 
 It's easy to identify DT controllers that are managed by a legacy
-driver. These are listed as `Legacy-Managed Device`:
+driver that uses `OpenProtocol()` as suggested. These are listed as `Legacy-Managed Device`:
 
 ```
 Shell> devtree

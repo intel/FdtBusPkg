@@ -1,0 +1,42 @@
+#/** @file
+#  DT I/O-based library for consumers of PCI related dynamic PCDs.
+#
+#  Copyright (c) 2016, Linaro Ltd. All rights reserved.
+#  Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+#**/
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = FdtPciPcdProducerLib
+  FILE_GUID                      = D584275B-BF1E-4DF8-A53D-980F5645C5E7
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = PciPcdProducerLib|DXE_DRIVER UEFI_DRIVER
+  CONSTRUCTOR                    = FdtPciPcdProducerLibConstructor
+  DESTRUCTOR                     = FdtPciPcdProducerLibDestructor
+
+[Sources]
+  FdtPciPcdProducerLib.c
+
+[Packages]
+  MdeModulePkg/MdeModulePkg.dec
+  MdePkg/MdePkg.dec
+  FdtBusPkg/FdtBusPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  PcdLib
+  UefiBootServicesTableLib
+
+[Protocols]
+  gEfiDtIoProtocolGuid                                        ## CONSUMES
+
+[Pcd]
+  gEfiMdePkgTokenSpaceGuid.PcdPciIoTranslation                ## PRODUCES
+  gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress           ## PRODUCES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPciDisableBusEnumeration  ## PRODUCES
+  

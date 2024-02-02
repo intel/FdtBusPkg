@@ -1,32 +1,40 @@
-From 9549db09d7ab590dcfd96428c82b06d1bc1b4bfb Mon Sep 17 00:00:00 2001
+From c4994884cda87c70f0bb3aee31d90461e0db984f Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Thu, 16 Mar 2023 15:46:04 -0500
 Subject: [PATCH 1/1] RiscVVirt: Patches to enable FdtBusPkg components
 
+Ports over the following components to use FdtBusDxe
+and driver binding where possible.
+
 - VirtioFdtDxe
 - PciHostBridgeLibEcam
+- FdtPciPcdProducerLib
 - HighMemDxe
 
 Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
 ---
- OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc | 10 +++++++---
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc | 22 +++++++++++++++-------
  OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf |  8 ++++++--
- 2 files changed, 13 insertions(+), 5 deletions(-)
+ 2 files changed, 21 insertions(+), 9 deletions(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-index f8b9479345d7..963e7b245b81 100644
+index f8b9479345d7..9f883140e4e1 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-@@ -97,7 +97,7 @@ [LibraryClasses.common]
+@@ -95,9 +95,10 @@ [LibraryClasses.common]
+   FrameBufferBltLib|MdeModulePkg/Library/FrameBufferBltLib/FrameBufferBltLib.inf
+   QemuBootOrderLib|OvmfPkg/Library/QemuBootOrderLib/QemuBootOrderLib.inf
    FileExplorerLib|MdeModulePkg/Library/FileExplorerLib/FileExplorerLib.inf
-   PciPcdProducerLib|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
+-  PciPcdProducerLib|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++  # PciPcdProducerLib|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++  PciPcdProducerLib|FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
    PciSegmentLib|MdePkg/Library/BasePciSegmentLibPci/BasePciSegmentLibPci.inf
 -  PciHostBridgeLib|OvmfPkg/Fdt/FdtPciHostBridgeLib/FdtPciHostBridgeLib.inf
 +  PciHostBridgeLib|FdtBusPkg/Library/PciHostBridgeLibEcam/PciHostBridgeLibEcam.inf
    PciHostBridgeUtilityLib|OvmfPkg/Library/PciHostBridgeUtilityLib/PciHostBridgeUtilityLib.inf
    PeiHardwareInfoLib|OvmfPkg/Library/HardwareInfoLib/PeiHardwareInfoLib.inf
    PlatformHookLib|MdeModulePkg/Library/BasePlatformHookLibNull/BasePlatformHookLibNull.inf
-@@ -351,14 +351,18 @@ [Components]
+@@ -351,14 +352,18 @@ [Components]
    #
    # Platform Driver
    #
@@ -47,6 +55,31 @@ index f8b9479345d7..963e7b245b81 100644
    OvmfPkg/VirtioBlkDxe/VirtioBlk.inf
    OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
    OvmfPkg/VirtioNetDxe/VirtioNet.inf
+@@ -448,12 +453,14 @@ [Components]
+   #
+   OvmfPkg/RiscVVirt/PciCpuIo2Dxe/PciCpuIo2Dxe.inf {
+     <LibraryClasses>
+-      NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++      # NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++      NULL|FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
+   }
+   MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe.inf
+   MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe.inf {
+     <LibraryClasses>
+-      NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++      # NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++      NULL|FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
+   }
+   OvmfPkg/PciHotPlugInitDxe/PciHotPlugInit.inf
+   OvmfPkg/VirtioPciDeviceDxe/VirtioPciDeviceDxe.inf
+@@ -503,5 +510,6 @@ [Components]
+   MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
+   OvmfPkg/AcpiPlatformDxe/AcpiPlatformDxe.inf {
+     <LibraryClasses>
+-      NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++      # NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++      NULL|FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
+   }
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
 index 40d12e0f4c46..c7093ca43603 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf

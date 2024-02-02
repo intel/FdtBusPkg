@@ -71,6 +71,7 @@ typedef struct _EFI_DT_IO_PROTOCOL {
   UINT8                                  ChildAddressCells;
   UINT8                                  ChildSizeCells;
   BOOLEAN                                IsDmaCoherent;
+  EFI_HANDLE                             ParentDevice;
   //
   // Core.
   //
@@ -123,6 +124,7 @@ typedef struct _EFI_DT_IO_PROTOCOL {
 | `ChildAddressCells` | _#address-cells_ for child DT controllers. |
 | `ChildSizeCells` | _#size-cells_ for child DT controllers. |
 | `IsDmaCoherent` | TRUE if DMA is cache coherent. |
+| `ParentDevice` | `EFI_HANDLE` of the parent DT controller. |
 | [`Lookup`](#efi_dt_io_protocollookup) | Looks up a DT controller handle by DT path or alias. |
 | [`GetProp`](#efi_dt_io_protocolgetprop) | Looks up a property by name, populating an `EFI_DT_PROPERTY` iterator. |
 | [`ScanChildren`](#efi_dt_io_protocolscanchildren) | Create device chandles for child DT devices. |

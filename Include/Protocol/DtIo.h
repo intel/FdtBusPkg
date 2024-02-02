@@ -787,6 +787,7 @@ struct _EFI_DT_IO_PROTOCOL {
   UINT8                                  ChildAddressCells;
   UINT8                                  ChildSizeCells;
   BOOLEAN                                IsDmaCoherent;
+  EFI_HANDLE                             ParentDevice;
   //
   // Core.
   //

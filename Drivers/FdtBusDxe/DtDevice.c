@@ -133,6 +133,7 @@ DtDeviceCreate (
   }
 
   DtDevice->DtIo.IsDmaCoherent = FdtGetDmaCoherency (TreeBase, FdtNode);
+  DtDevice->DtIo.ParentDevice = Parent == NULL ? NULL : Parent->Handle;
 
   if (Broken) {
     DEBUG ((DEBUG_ERROR, "%a: marking %a as broken\n", __func__, Name));

@@ -184,8 +184,39 @@ supported DT controllers:
 - Call the `LocateHandleBuffer` UEFI Boot Service with the
   `gEfiDtIoProtocolGuid`.
 - For every handle:
-  - Fetch the Devicetree I/O Protocol pointer for the handle.
+  - Call `OpenProtocol()` Boot Service with `BY_DRIVER` to get
+    the DT I/O Protocol.
   - Use the `IsCompatible()` Devicetree I/O Protocol call to identify supported controllers.
+  - Call `CloseProtocol()` Boot Service on unsupported controllers.
+
+> [!TIP]
+> Using `OpenProtocol()` instead of `HandleProtocol()` ensures
+> the driver doesn't accidentally bind to handles that are
+> already managed. It also ensures that other (well behaved)
+> drivers won't use the handle.
+
+> [!CAUTION]
+> Failing to close unsupported controllers will result in other
+> drivers not being able to start on their device handles!
 
 See [PciHostBridgeLibEcam](../Library/PciHostBridgeLibEcam) for a
 "library driver" example.
+
+It's easy to identify DT controllers that are managed by a legacy
+driver. These are listed as `Legacy-Managed Device`:
+
+```
+Shell> devtree
+...
+ Ctrl[2A] DT(DtRoot)
+   Ctrl[2C] DT(reserved-memory)
+   Ctrl[2D] DT(fw-cfg@10100000)
+   Ctrl[2E] DT(flash@20000000)
+   Ctrl[2F] DT(chosen)
+   Ctrl[30] DT(poweroff)
+   Ctrl[31] DT(reboot)
+   Ctrl[32] DT(platform-bus@4000000)
+   Ctrl[33] Legacy-Managed Device
+   Ctrl[34] DT(cpus)
+...
+```

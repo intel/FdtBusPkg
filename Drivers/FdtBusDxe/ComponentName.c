@@ -193,11 +193,12 @@ ComponentNameGetControllerName (
   OUT CHAR16                       **ControllerName
   )
 {
-  EFI_STATUS          Status;
-  EFI_DT_IO_PROTOCOL  *DtIoProtocol;
+  EFI_STATUS                           Status;
+  EFI_DT_IO_PROTOCOL                   *DtIoProtocol;
+  EFI_OPEN_PROTOCOL_INFORMATION_ENTRY  InfoEntry;
 
   //
-  // Make sure this driver is currently managing ControllerHandle
+  // Make sure this driver is currently managing ControllerHandle.
   //
   Status = EfiTestManagedDevice (
              ControllerHandle,
@@ -234,13 +235,25 @@ ComponentNameGetControllerName (
     return Status;
   }
 
-  if (HandleHasBoundDriver (ChildHandle, 0, NULL)) {
-    //
-    // If there isn't - display our component info.
-    // Otherwise - punt since the binding driver should
-    // be providing its own component name protocols.
-    //
-    return EFI_UNSUPPORTED;
+  if (HandleHasBoundDriver (ChildHandle, 0, &InfoEntry)) {
+    VOID  *Scratch;
+
+    ASSERT (InfoEntry.AgentHandle != NULL);
+    if (gBS->HandleProtocol (
+               InfoEntry.AgentHandle,
+               &gEfiDriverBindingProtocolGuid,
+               &Scratch
+               ) == EFI_SUCCESS)
+    {
+      //
+      // There is a UEFI Driver Model-compliant driver bound,
+      // punt to it to display its own component name info.
+      //
+      return EFI_UNSUPPORTED;
+    }
+
+    *ControllerName = L"Legacy-Managed Device";
+    return EFI_SUCCESS;
   }
 
   Status = gBS->HandleProtocol (

@@ -1,10 +1,11 @@
 /** @file
-  EFI Devicetree I/O Protocol provides the basic Property, Register and
-  DMA interfaces that a driver uses to access a device exposed using a
-  Devicetree node.
+    EFI Devicetree I/O Protocol provides the basic Property, Register and
+    DMA interfaces that a driver uses to access a device exposed using a
+    Devicetree node.
 
-  Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
-  SPDX-License-Identifier: BSD-2-Clause-Patent
+    Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
+
+    SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 

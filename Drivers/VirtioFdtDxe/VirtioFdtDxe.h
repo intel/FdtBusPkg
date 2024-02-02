@@ -1,11 +1,10 @@
 /** @file
-*  Virtio FDT client protocol driver for virtio,mmio DT node
-*
-*  Copyright (c) 2014 - 2016, Linaro Ltd. All rights reserved.<BR>
-*  Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
-*
-*  SPDX-License-Identifier: BSD-2-Clause-Patent
-*
+    Virtio FDT client protocol driver for virtio,mmio DT node.
+
+    Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
+
+    SPDX-License-Identifier: BSD-2-Clause-Patent
+
 **/
 
 #ifndef __VIRTIO_FDT_DXE_H__

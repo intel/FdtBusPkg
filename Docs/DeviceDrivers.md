@@ -184,8 +184,30 @@ an environment with DT controllers, they rely on libraries to
 fully encapsulate any discovery and interaction with
 `EFI_DT_IO_PROTOCOL`-bearing device handles.
 
-A legacy driver or library can use the following steps to locate
-supported DT controllers:
+The following figure demonstrates how a legacy driver or library can locate supported DT controllers.
+
+```mermaid
+stateDiagram-v2
+
+C1: HandleBuffer = LocateHandleBuffer(gEfiDtIoProtocolGuid)
+
+state "Foreach EFI_HANDLE in HandleBuffer" as C2 {
+    D1: DtIo = OpenProtocol (Handle, BY_DRIVER)
+    D2: DtIo->IsCompatible ("device-compat-string")
+    D4: CloseProtocol (Handle)
+    D3: ProcessController (Handle)
+}
+
+C1 --> C2
+C2 --> C3
+D1 --> D2: EFI_SUCCESS
+D2 --> D3: Yes
+D2 --> D4: No
+D3 --> D4
+
+C3: FreePool(HandleBuffer)
+```
+The steps are:
 
 - Call the `LocateHandleBuffer` UEFI Boot Service with the
   `gEfiDtIoProtocolGuid`.
@@ -201,22 +223,67 @@ supported DT controllers:
       (i.e. not talk to hardware), use `HandleProtocol()`.
   - Use the `IsCompatible()` Devicetree I/O Protocol call to identify supported controllers.
   - Call `CloseProtocol()` Boot Service on unsupported controllers if `OpenProtocol()` was used.
-
-If there's a possibility that the DT controller can be enumerated
-after the legacy driver loads:
-
-- Register a protocol notification callback on `gEfiDtIoProtocolGuid`.
-- Identify the DT controller handles inside the notification callback via `LocateHandle` Boot Service using `ByRegisterNotify`.
-- Locate the DT I/O Protocol as appropriate.
-- Close the notification callback event if no more DT controllers are expected.
+- Free handle buffer.
 
 > [!CAUTION]
 > Failing to close unsupported controllers will result in other
 > drivers not being able to start on their device handles!
 
+The following figure demonstrates supporting controllers enumerated after the legacy driver loads. Some controllers are handled immediately, while
+other ones are picked up in the future as they are enumerated.
+
+```mermaid
+stateDiagram-v2
+
+C1: HandleBuffer = LocateHandleBuffer(gEfiDtIoProtocolGuid)
+
+state "Process Handle" as C3 {
+    D1: DtIo = OpenProtocol (Handle, BY_DRIVER)
+    D2: DtIo->IsCompatible ("device-compat-string")
+    D4: CloseProtocol (Handle)
+    D3: ProcessController (Handle)
+}
+
+state "Foreach EFI_HANDLE in HandleBuffer" as C2 {
+    C2P0: Process Handle
+}
+
+state "Register DT I/O Notification Callback" as C5 {
+    E1: Event = CreateEvent (DtIoInstallCallback)
+    E2: RegisterProtocolNotify (gEfiDtIoProtocolGuid, Event)
+}
+
+state "DtIoInstallCallback" as C6 {
+    C6P0: Process Handle
+
+}
+
+C1 --> C2: EFI_SUCCESS
+C1 --> C5: EFI_NOT_FOUND
+D1 --> D2: EFI_SUCCESS
+D2 --> D3: Yes
+D2 --> D4: No
+D3 --> D4
+
+C2P0 --> C3
+C6P0 --> C3
+
+
+E1 --> E2: EFI_SUCCESS
+
+C2 --> C4
+C4: FreePool(HandleBuffer)
+```
+
+The steps are:
+- Register a protocol notification callback on `gEfiDtIoProtocolGuid`.
+- Identify the DT controller handles inside the notification callback via `LocateHandle` Boot Service using `ByRegisterNotify`.
+- Locate the DT I/O Protocol as appropriate.
+- Close the notification callback event if no more DT controllers are expected.
+
 Yes, legacy drivers are awkward and messy. This is why the UEFI Driver Model exists!
 
-### Simple "library driver" example
+### Simple Example
 
 See [PciHostBridgeLibEcam](../Library/PciHostBridgeLibEcam).
 
@@ -246,12 +313,12 @@ Shell> devtree
 ...
 ```
 
-### A more involved "library driver" example
+### More Complex Example
 
 See [FdtPciPcdProducerLib](../Library/FdtPciPcdProducerLib).
 
 This library is linked into a number of drivers,
-including CpuDxe. The latter is a dependency for FdtBusPkg (as it
+including CpuDxe. The latter is a dependency for FdtBusDxe (as it
 publishes `EFI_CPU_IO2_PROTOCOL`), so it is not possible to use a
 `[Depex]` dependency on `gEfiDtIoProtocolGuid`. Instead, if
 `LocateHandleBuffer` fails because the library is used before

@@ -204,7 +204,10 @@ an environment with DT controllers, they rely on libraries to
 fully encapsulate any discovery and interaction with
 `EFI_DT_IO_PROTOCOL`-bearing device handles.
 
-The following figure demonstrates how a legacy driver or library can locate supported DT controllers.
+### Simple Example
+
+The following figure demonstrates how a legacy driver or library can locate
+supported DT controllers.
 
 ```mermaid
 stateDiagram-v2
@@ -252,6 +255,36 @@ The steps are:
 > [!CAUTION]
 > Failing to close unsupported controllers will result in other
 > drivers not being able to start on their device handles!
+
+See [PciHostBridgeLibEcam](../Library/PciHostBridgeLibEcam) for an example.
+
+This library has a dependency on `gEfiDtIoProtocolGuid`,
+as the supported controllers are expected to be enumerated once
+FdtBusDxe loads, so the availability of a DT controller present in the system is sufficient.
+
+PciHostBridgeLibEcam only has a single user - PciHostBridgeLibEcam,
+so the DT I/O protocol is located using `OpenProtocol` with `BY_DRIVER`.
+
+It's easy to identify DT controllers that are managed by a legacy
+driver that uses `OpenProtocol()` as suggested. These are listed as `Legacy-Managed Device`:
+
+```
+Shell> devtree
+...
+ Ctrl[2A] DT(DtRoot)
+   Ctrl[2C] DT(reserved-memory)
+   Ctrl[2D] DT(fw-cfg@10100000)
+   Ctrl[2E] DT(flash@20000000)
+   Ctrl[2F] DT(chosen)
+   Ctrl[30] DT(poweroff)
+   Ctrl[31] DT(reboot)
+   Ctrl[32] DT(platform-bus@4000000)
+   Ctrl[33] Legacy-Managed Device
+   Ctrl[34] DT(cpus)
+...
+```
+
+### More Complex Example
 
 The following figure demonstrates supporting controllers enumerated after the legacy driver loads. Some controllers are handled immediately, while
 other ones are picked up in the future as they are enumerated.
@@ -308,41 +341,7 @@ The steps are:
 - Locate the DT I/O Protocol as appropriate.
 - Close the notification callback event if no more DT controllers are expected.
 
-Yes, legacy drivers are awkward and messy. This is why the UEFI Driver Model exists!
-
-### Simple Example
-
-See [PciHostBridgeLibEcam](../Library/PciHostBridgeLibEcam).
-
-This library has a dependency on `gEfiDtIoProtocolGuid`,
-as the supported controllers are expected to be enumerated once
-FdtBusDxe loads, so the availability of a DT controller present in the system is sufficient.
-
-PciHostBridgeLibEcam only has a single user - PciHostBridgeLibEcam,
-so the DT I/O protocol is located using `OpenProtocol` with `BY_DRIVER`.
-
-It's easy to identify DT controllers that are managed by a legacy
-driver that uses `OpenProtocol()` as suggested. These are listed as `Legacy-Managed Device`:
-
-```
-Shell> devtree
-...
- Ctrl[2A] DT(DtRoot)
-   Ctrl[2C] DT(reserved-memory)
-   Ctrl[2D] DT(fw-cfg@10100000)
-   Ctrl[2E] DT(flash@20000000)
-   Ctrl[2F] DT(chosen)
-   Ctrl[30] DT(poweroff)
-   Ctrl[31] DT(reboot)
-   Ctrl[32] DT(platform-bus@4000000)
-   Ctrl[33] Legacy-Managed Device
-   Ctrl[34] DT(cpus)
-...
-```
-
-### More Complex Example
-
-See [FdtPciPcdProducerLib](../Library/FdtPciPcdProducerLib).
+See [FdtPciPcdProducerLib](../Library/FdtPciPcdProducerLib) for an example.
 
 This library is linked into a number of drivers,
 including CpuDxe. The latter is a dependency for FdtBusDxe (as it
@@ -361,3 +360,6 @@ and not `OpenProtocol`.
 > If allocating resources in a library, don't forget to clean these
 > up in a destructor function. Failure to close events in a library
 > will cause crashes when a callback is invoked in an unloaded driver!
+
+Yes, legacy drivers are awkward and messy. This is why the UEFI Driver Model exists!
+

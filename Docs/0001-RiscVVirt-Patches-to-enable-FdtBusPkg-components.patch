@@ -1,4 +1,4 @@
-From c4994884cda87c70f0bb3aee31d90461e0db984f Mon Sep 17 00:00:00 2001
+From c62a13749866a27fbcae0f3216cf874483d31dda Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Thu, 16 Mar 2023 15:46:04 -0500
 Subject: [PATCH 1/1] RiscVVirt: Patches to enable FdtBusPkg components
@@ -10,15 +10,21 @@ and driver binding where possible.
 - PciHostBridgeLibEcam
 - FdtPciPcdProducerLib
 - HighMemDxe
+- PciSioSerialDxe (which supports the FDT UART device),
+  instead of SerialDxe.
+
+The changes to PlatformBm are suboptimal and are WIP. Needs
+to wire up logic to lookup/connect the UART by alias.
 
 Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
 ---
- OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc | 22 +++++++++++++++-------
- OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf |  8 ++++++--
- 2 files changed, 21 insertions(+), 9 deletions(-)
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc           | 25 +++++++++++++------
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf           | 11 +++++---
+ .../PlatformBootManagerLib/PlatformBm.c       |  7 ++++++
+ 3 files changed, 32 insertions(+), 11 deletions(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-index f8b9479345d7..9f883140e4e1 100644
+index f8b9479345d7..0c875fd3065d 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 @@ -95,9 +95,10 @@ [LibraryClasses.common]
@@ -34,7 +40,17 @@ index f8b9479345d7..9f883140e4e1 100644
    PciHostBridgeUtilityLib|OvmfPkg/Library/PciHostBridgeUtilityLib/PciHostBridgeUtilityLib.inf
    PeiHardwareInfoLib|OvmfPkg/Library/HardwareInfoLib/PeiHardwareInfoLib.inf
    PlatformHookLib|MdeModulePkg/Library/BasePlatformHookLibNull/BasePlatformHookLibNull.inf
-@@ -351,14 +352,18 @@ [Components]
+@@ -334,7 +335,8 @@ [Components]
+   MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe.inf
+   MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
+   MdeModulePkg/Universal/Console/TerminalDxe/TerminalDxe.inf
+-  MdeModulePkg/Universal/SerialDxe/SerialDxe.inf
++  # MdeModulePkg/Universal/SerialDxe/SerialDxe.inf
++  FdtBusPkg/Drivers/PciSioSerialDxe/PciSioSerialDxe.inf
+ 
+   MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
+ 
+@@ -351,14 +353,18 @@ [Components]
    #
    # Platform Driver
    #
@@ -55,7 +71,7 @@ index f8b9479345d7..9f883140e4e1 100644
    OvmfPkg/VirtioBlkDxe/VirtioBlk.inf
    OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
    OvmfPkg/VirtioNetDxe/VirtioNet.inf
-@@ -448,12 +453,14 @@ [Components]
+@@ -448,12 +454,14 @@ [Components]
    #
    OvmfPkg/RiscVVirt/PciCpuIo2Dxe/PciCpuIo2Dxe.inf {
      <LibraryClasses>
@@ -72,7 +88,7 @@ index f8b9479345d7..9f883140e4e1 100644
    }
    OvmfPkg/PciHotPlugInitDxe/PciHotPlugInit.inf
    OvmfPkg/VirtioPciDeviceDxe/VirtioPciDeviceDxe.inf
-@@ -503,5 +510,6 @@ [Components]
+@@ -503,5 +511,6 @@ [Components]
    MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
    OvmfPkg/AcpiPlatformDxe/AcpiPlatformDxe.inf {
      <LibraryClasses>
@@ -81,7 +97,7 @@ index f8b9479345d7..9f883140e4e1 100644
 +      NULL|FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
    }
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
-index 40d12e0f4c46..c7093ca43603 100644
+index 40d12e0f4c46..940696a69cf8 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
 @@ -69,9 +69,13 @@ [FV.DXEFV]
@@ -100,6 +116,41 @@ index 40d12e0f4c46..c7093ca43603 100644
  
  #
  # PI DXE Drivers producing Architectural Protocols (EFI Services)
+@@ -98,7 +102,8 @@ [FV.DXEFV]
+ INF  MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe.inf
+ INF  MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
+ INF  MdeModulePkg/Universal/Console/TerminalDxe/TerminalDxe.inf
+-INF  MdeModulePkg/Universal/SerialDxe/SerialDxe.inf
++# INF  MdeModulePkg/Universal/SerialDxe/SerialDxe.inf
++INF  FdtBusPkg/Drivers/PciSioSerialDxe/PciSioSerialDxe.inf
+ 
+ # RISC-V Core Drivers
+ INF  UefiCpuPkg/CpuTimerDxeRiscV64/CpuTimerDxeRiscV64.inf
+diff --git a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
+index 44fd21f74fcf..e86a62fc9689 100644
+--- a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
++++ b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
+@@ -767,6 +767,12 @@ PlatformRegisterOptionsAndKeys (
+ // BDS Platform Functions
+ //
+ 
++VOID
++EFIAPI
++EfiBootManagerConnectAllConsoles (
++  VOID
++  );
++
+ /**
+   Do the platform init, can be customized by OEM/IBV
+   Possible things that can be done in PlatformBootManagerBeforeConsole:
+@@ -954,6 +960,7 @@ PlatformBootManagerAfterConsole (
+     // Connect the rest of the devices.
+     //
+     EfiBootManagerConnectAll ();
++    EfiBootManagerConnectAllConsoles ();
+   }
+ 
+   //
 -- 
 2.34.1
 

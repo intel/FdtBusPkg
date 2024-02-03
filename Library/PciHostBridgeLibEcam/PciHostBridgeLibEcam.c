@@ -468,7 +468,8 @@ PciHostBridgeGetRootBridges (
       continue;
     }
 
-    if (EFI_ERROR (DtIo->IsCompatible (DtIo, "pci-host-ecam-generic"))) {
+    if (EFI_ERROR (DtIo->IsCompatible (DtIo, "pci-host-ecam-generic")) ||
+	DtIo->DeviceStatus != EFI_DT_STATUS_OKAY) {
       //
       // Not a supported node.
       //
@@ -536,7 +537,8 @@ PciHostBridgeGetRootBridges (
       continue;
     }
 
-    if (EFI_ERROR (DtIo->IsCompatible (DtIo, "pci-host-ecam-generic"))) {
+    if (EFI_ERROR (DtIo->IsCompatible (DtIo, "pci-host-ecam-generic")) ||
+	DtIo->DeviceStatus != EFI_DT_STATUS_OKAY) {
       //
       // Don't forget to close unsupported handles, otherwise
       // other drivers won't be able to start!

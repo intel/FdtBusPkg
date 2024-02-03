@@ -68,17 +68,37 @@ The Driver Binding Protocol contains three services. These are
 device driver can manage a device handle. A DT device driver can only
 manage device handles that contain the Device Path Protocol and the
 Devicetree I/O Protocol, so a DT device driver must look for these two
-protocols on the device handle that is being tested. In addition, it
-needs to check to see if the device handle represents a DT controller
-that the DT device driver knows how to manage. This is typically done
-by using the services of the Devicetree I/O Protocol to check the
-device against supported _compatible_ (identification) and other
-expected property values.
+protocols on the device handle that is being tested.
+
+> [!WARNING]
+> Keep it mind that `OpenProtocol()` Boot Service may return
+> `EFI_ALREADY_STARTED`, which should be handled like `EFI_SUCCESS`.
+
+In addition, the `Supported()` function needs to check if the DT controller
+can be managed. This is typically done by using Devicetree I/O Protocol
+functions to check against supported _compatible_ (identification) and
+other expected property values (such as device status):
+
+```
+BOOLEAN Supported;
+
+Supported = !EFI_ERROR (DtIo->IsCompatible (DtIo, "device-compat-string")) &&
+            DtIo->DeviceStatus = EFI_DT_STATUS_OKAY;
+```
 
 #### `Start()`
 
 The `Start()` function tells the DT device driver to start managing a
-DT controller. A DT device driver typically does not create any new
+DT controller. First, the `Start()` function needs to use the `OpenProtocol()`
+Boot Service with `BY_DRIVER` to open the relevant protocols, like the DT
+ I/O Protocol.
+
+> [!WARNING]
+> Keep it mind that `OpenProtocol()` may return `EFI_ALREADY_STARTED`,
+> which should be handled like `EFI_SUCCESS` with some caveats.
+> See [VirtioFdtDxe](../Drivers/VirtioFdtDxe/DriverBinding.c#L416) for a simple example.
+
+A DT device driver typically does not create any new
 device handles. Instead, it installs one or more additional protocol
 instances on the device handle for the DT controller.
 
@@ -194,16 +214,19 @@ C1: HandleBuffer = LocateHandleBuffer(gEfiDtIoProtocolGuid)
 state "Foreach EFI_HANDLE in HandleBuffer" as C2 {
     D1: DtIo = OpenProtocol (Handle, BY_DRIVER)
     D2: DtIo->IsCompatible ("device-compat-string")
-    D4: CloseProtocol (Handle)
-    D3: ProcessController (Handle)
+    D3: DtIo->DeviceStatus == EFI_DT_STATUS_OKAY
+    D5: CloseProtocol (Handle)
+    D4: ProcessController (Handle)
 }
 
 C1 --> C2
 C2 --> C3
 D1 --> D2: EFI_SUCCESS
 D2 --> D3: Yes
-D2 --> D4: No
-D3 --> D4
+D2 --> D5: No
+D3 --> D4: Yes
+D3 --> D5: No
+D4 --> D5
 
 C3: FreePool(HandleBuffer)
 ```
@@ -222,6 +245,7 @@ The steps are:
       or if the driver or library simply wants to query some information about the controller
       (i.e. not talk to hardware), use `HandleProtocol()`.
   - Use the `IsCompatible()` Devicetree I/O Protocol call to identify supported controllers.
+  - Filter out controllers with `DtIo->DeviceStatus != EFI_DT_STATUS_OKAY`.
   - Call `CloseProtocol()` Boot Service on unsupported controllers if `OpenProtocol()` was used.
 - Free handle buffer.
 
@@ -240,8 +264,9 @@ C1: HandleBuffer = LocateHandleBuffer(gEfiDtIoProtocolGuid)
 state "Process Handle" as C3 {
     D1: DtIo = OpenProtocol (Handle, BY_DRIVER)
     D2: DtIo->IsCompatible ("device-compat-string")
-    D4: CloseProtocol (Handle)
-    D3: ProcessController (Handle)
+    D3: DtIo->DeviceStatus == EFI_DT_STATUS_OKAY
+    D5: CloseProtocol (Handle)
+    D4: ProcessController (Handle)
 }
 
 state "Foreach EFI_HANDLE in HandleBuffer" as C2 {
@@ -262,8 +287,10 @@ C1 --> C2: EFI_SUCCESS
 C1 --> C5: EFI_NOT_FOUND
 D1 --> D2: EFI_SUCCESS
 D2 --> D3: Yes
-D2 --> D4: No
-D3 --> D4
+D2 --> D5: No
+D3 --> D4: Yes
+D3 --> D5: No
+D4 --> D5
 
 C2P0 --> C3
 C6P0 --> C3

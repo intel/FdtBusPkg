@@ -87,6 +87,10 @@ ProcessHandle (
     return Status;
   }
 
+  if (DtIo->DeviceStatus != EFI_DT_STATUS_OKAY) {
+    return EFI_UNSUPPORTED;
+  }
+
   //
   // Locate 'config'.
   //

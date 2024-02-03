@@ -1,8 +1,9 @@
 /** @file
-  Header file for PciSioSerial Driver
+    SIO/PCI/FDT 16550 UART driver.
 
-Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
-SPDX-License-Identifier: BSD-2-Clause-Patent
+    Copyright (c) 2006 - 2024, Intel Corporation. All rights reserved.<BR>
+
+    SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -14,6 +15,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <IndustryStandard/Pci.h>
 
 #include <Protocol/SuperIo.h>
+#include <Protocol/DtIo.h>
 #include <Protocol/PciIo.h>
 #include <Protocol/SerialIo.h>
 #include <Protocol/DevicePath.h>
@@ -39,6 +41,7 @@ extern EFI_COMPONENT_NAME2_PROTOCOL  gPciSioSerialComponentName2;
 
 #define SIO_SERIAL_PORT_NAME  L"SIO Serial Port #%d"
 #define PCI_SERIAL_PORT_NAME  L"PCI Serial Port #%d"
+#define FDT_SERIAL_PORT_NAME  L"FDT Serial Port #%d"
 #define SERIAL_PORT_NAME_LEN  (sizeof (SIO_SERIAL_PORT_NAME) / sizeof (CHAR16) + MAXIMUM_VALUE_CHARACTERS)
 
 //
@@ -82,6 +85,7 @@ typedef struct {
 typedef union {
   EFI_PCI_IO_PROTOCOL    *PciIo;
   EFI_SIO_PROTOCOL       *Sio;
+  EFI_DT_IO_PROTOCOL     *DtIo;
 } PARENT_IO_PROTOCOL_PTR;
 
 typedef struct {
@@ -117,6 +121,8 @@ typedef struct {
   BOOLEAN                     ContainsControllerNode; ///< TRUE if the device produced contains Controller node
   UINT32                      Instance;
   PCI_DEVICE_INFO             *PciDeviceInfo;
+  EFI_DT_IO_PROTOCOL          *DtIo;
+  EFI_DT_REG                  DtReg;
 } SERIAL_DEV;
 
 #define SERIAL_DEV_SIGNATURE  SIGNATURE_32 ('s', 'e', 'r', 'd')

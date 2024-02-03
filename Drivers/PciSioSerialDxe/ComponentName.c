@@ -1,8 +1,9 @@
 /** @file
-  UEFI Component Name and Name2 protocol for Isa serial driver.
+    SIO/PCI/FDT 16550 UART driver.
 
-Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
-SPDX-License-Identifier: BSD-2-Clause-Patent
+    Copyright (c) 2006 - 2024, Intel Corporation. All rights reserved.<BR>
+
+    SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -29,7 +30,18 @@ GLOBAL_REMOVE_IF_UNREFERENCED EFI_COMPONENT_NAME2_PROTOCOL  gPciSioSerialCompone
 GLOBAL_REMOVE_IF_UNREFERENCED EFI_UNICODE_STRING_TABLE  mSerialDriverNameTable[] = {
   {
     "eng;en",
-    L"PCI SIO Serial Driver"
+    L"16550 UART Driver"
+  },
+  {
+    NULL,
+    NULL
+  }
+};
+
+GLOBAL_REMOVE_IF_UNREFERENCED EFI_UNICODE_STRING_TABLE  mSerialDeviceNameTable[] = {
+  {
+    "eng;en",
+    L"16550 UART Device"
   },
   {
     NULL,
@@ -196,10 +208,19 @@ SerialComponentNameGetControllerName (
   }
 
   if (EFI_ERROR (Status)) {
+    IoProtocolGuid = &gEfiDtIoProtocolGuid;
+    Status         = EfiTestManagedDevice (
+                       ControllerHandle,
+                       gSerialControllerDriver.DriverBindingHandle,
+                       IoProtocolGuid
+                       );
+  }
+
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  ControllerNameTable = NULL;
+  ControllerNameTable = mSerialDeviceNameTable;
   if (ChildHandle != NULL) {
     Status = EfiTestChildHandle (
                ControllerHandle,
@@ -254,11 +275,20 @@ AddName (
   )
 {
   CHAR16  SerialPortName[SERIAL_PORT_NAME_LEN];
+  CHAR16  *Name;
+
+  if (SerialDevice->DtIo != NULL) {
+    Name = FDT_SERIAL_PORT_NAME;
+  } else if (SerialDevice->PciDeviceInfo != NULL) {
+    Name = PCI_SERIAL_PORT_NAME;
+  } else {
+    Name = SIO_SERIAL_PORT_NAME;
+  }
 
   UnicodeSPrint (
     SerialPortName,
     sizeof (SerialPortName),
-    (SerialDevice->PciDeviceInfo != NULL) ? PCI_SERIAL_PORT_NAME : SIO_SERIAL_PORT_NAME,
+    Name,
     Instance
     );
   AddUnicodeString2 (

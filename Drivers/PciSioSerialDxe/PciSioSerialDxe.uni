@@ -1,15 +1,12 @@
 // /** @file
-// Serial driver for standard UARTS on a SIO chip or PCI/PCIE card.
+//    SIO/PCI/FDT 16550 UART driver.
 //
-// Produces the Serial I/O protocol for standard UARTS using Super I/O or PCI I/O.
+//    Copyright (c) 2006 - 2024, Intel Corporation. All rights reserved.<BR>
 //
-// Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
-//
-// SPDX-License-Identifier: BSD-2-Clause-Patent
+//    SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 // **/
 
+#string STR_MODULE_ABSTRACT             #language en-US "SIO/PCI/FDT 16550 UART Driver"
 
-#string STR_MODULE_ABSTRACT             #language en-US "Serial driver for standard UARTS on a SIO chip or PCI/PCIE card."
-
-#string STR_MODULE_DESCRIPTION          #language en-US "Produces the Serial I/O protocol for standard UARTS using Super I/O or PCI I/O."
+#string STR_MODULE_DESCRIPTION          #language en-US "SIO/PCI/FDT 16550 UART Driver"

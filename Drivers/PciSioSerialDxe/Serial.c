@@ -1,8 +1,9 @@
 /** @file
-  Serial driver for PCI or SIO UARTS.
+    SIO/PCI/FDT 16550 UART driver.
 
-Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
-SPDX-License-Identifier: BSD-2-Clause-Patent
+    Copyright (c) 2006 - 2024, Intel Corporation. All rights reserved.<BR>
+
+    SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -337,6 +338,88 @@ IsPciSerialController (
 }
 
 /**
+  Return whether the controller is a FDT serial controller.
+
+  @param  Controller   The controller handle.
+
+  @retval EFI_SUCCESS  The controller is a FDT serial controller.
+  @retval others       The controller is not a FDT serial controller.
+**/
+EFI_STATUS
+IsFdtSerialController (
+  EFI_HANDLE  Controller
+  )
+{
+  EFI_STATUS                Status;
+  EFI_DT_IO_PROTOCOL        *DtIo;
+  EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
+
+  //
+  // Open the IO Abstraction(s) needed to perform the supported test
+  //
+  Status = gBS->OpenProtocol (
+                  Controller,
+                  &gEfiDtIoProtocolGuid,
+                  (VOID **)&DtIo,
+                  gSerialControllerDriver.DriverBindingHandle,
+                  Controller,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  );
+  if (Status == EFI_ALREADY_STARTED) {
+    return EFI_SUCCESS;
+  }
+
+  if (!EFI_ERROR (Status)) {
+    if (!EFI_ERROR (DtIo->IsCompatible (DtIo, "ns16550a")) &&
+        (DtIo->DeviceStatus == EFI_DT_STATUS_OKAY))
+    {
+      Status = EFI_SUCCESS;
+    } else {
+      Status = EFI_UNSUPPORTED;
+    }
+
+    //
+    // Close the I/O Abstraction(s) used to perform the supported test
+    //
+    gBS->CloseProtocol (
+           Controller,
+           &gEfiDtIoProtocolGuid,
+           gSerialControllerDriver.DriverBindingHandle,
+           Controller
+           );
+  }
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Open the EFI Device Path protocol needed to perform the supported test
+  //
+  Status = gBS->OpenProtocol (
+                  Controller,
+                  &gEfiDevicePathProtocolGuid,
+                  (VOID **)&DevicePath,
+                  gSerialControllerDriver.DriverBindingHandle,
+                  Controller,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  );
+  ASSERT (Status != EFI_ALREADY_STARTED);
+
+  //
+  // Close protocol, don't use device path protocol in the Support() function
+  //
+  gBS->CloseProtocol (
+         Controller,
+         &gEfiDevicePathProtocolGuid,
+         gSerialControllerDriver.DriverBindingHandle,
+         Controller
+         );
+
+  return Status;
+}
+
+/**
   Check to see if this driver supports the given controller
 
   @param  This                 A pointer to the EFI_DRIVER_BINDING_PROTOCOL instance.
@@ -398,6 +481,10 @@ SerialControllerDriverSupported (
     Status = IsPciSerialController (Controller);
   }
 
+  if (EFI_ERROR (Status)) {
+    Status = IsFdtSerialController (Controller);
+  }
+
   return Status;
 }
 
@@ -412,7 +499,8 @@ SerialControllerDriverSupported (
   @param Instance             Instance number of the serial device.
                               The value will be set to the controller node
                               if CreateControllerNode is TRUE.
-  @param ParentIo             A union type pointer to either Sio or PciIo.
+  @param ParentIo             A union type pointer to either Sio, DtIo or PciIo.
+  @param IoProtocolGuid       Protocol GUID for ParentIo.
   @param PciSerialParameter   The PCI serial parameter to be used by current serial device.
                               NULL for SIO serial device.
   @param PciDeviceInfo        The PCI device info for the current serial device.
@@ -429,6 +517,7 @@ CreateSerialDevice (
   IN BOOLEAN                   CreateControllerNode,
   IN UINT32                    Instance,
   IN PARENT_IO_PROTOCOL_PTR    ParentIo,
+  IN EFI_GUID                  *IoProtocolGuid,
   IN PCI_SERIAL_PARAMETER      *PciSerialParameter  OPTIONAL,
   IN PCI_DEVICE_INFO           *PciDeviceInfo       OPTIONAL
   )
@@ -471,10 +560,18 @@ CreateSerialDevice (
     }
   }
 
-  //
-  // For PCI serial device, use the information from PCD
-  //
-  if (PciSerialParameter != NULL) {
+  if (IoProtocolGuid == &gEfiDtIoProtocolGuid) {
+    SerialDevice->DtIo = ParentIo.DtIo;
+    //
+    // TBD, process reg-shift (for stride), reg-io-width (access size),
+    // fifo-size.
+    //
+    ParentIo.DtIo->GetU32 (ParentIo.DtIo, "clock-frequency", 0, &SerialDevice->ClockRate);
+  } else if (IoProtocolGuid == &gEfiPciIoProtocolGuid) {
+    //
+    // For PCI serial device, use the information from PCD.
+    //
+    ASSERT (PciSerialParameter != NULL);
     BarIndex = (PciSerialParameter->BarIndex == MAX_UINT8) ? 0 : PciSerialParameter->BarIndex;
     Offset   = PciSerialParameter->Offset;
     if (PciSerialParameter->RegisterStride != 0) {
@@ -512,64 +609,72 @@ CreateSerialDevice (
     goto CreateError;
   }
 
-  if (PciSerialParameter == NULL) {
-    Status = ParentIo.Sio->GetResources (ParentIo.Sio, &Resources);
+  if (IoProtocolGuid == &gEfiDtIoProtocolGuid) {
+    Status = ParentIo.DtIo->GetReg (ParentIo.DtIo, 0, &SerialDevice->DtReg);
+    ASSERT_EFI_ERROR (Status);
+    if (EFI_ERROR (Status)) {
+      goto CreateError;
+    }
   } else {
-    Status = ParentIo.PciIo->GetBarAttributes (ParentIo.PciIo, BarIndex, NULL, (VOID **)&Resources);
-  }
+    if (IoProtocolGuid == &gEfiSioProtocolGuid) {
+      Status = ParentIo.Sio->GetResources (ParentIo.Sio, &Resources);
+    } else {
+      Status = ParentIo.PciIo->GetBarAttributes (ParentIo.PciIo, BarIndex, NULL, (VOID **)&Resources);
+    }
 
-  if (!EFI_ERROR (Status)) {
-    //
-    // Get the base address information from ACPI resource descriptor.
-    // ACPI_IO_PORT_DESCRIPTOR and ACPI_FIXED_LOCATION_IO_PORT_DESCRIPTOR are returned from Sio;
-    // ACPI_ADDRESS_SPACE_DESCRIPTOR is returned from PciIo.
-    //
-    while ((Resources.SmallHeader->Byte != ACPI_END_TAG_DESCRIPTOR) && (SerialDevice->BaseAddress == 0)) {
-      switch (Resources.SmallHeader->Byte) {
-        case ACPI_IO_PORT_DESCRIPTOR:
-          Io = (EFI_ACPI_IO_PORT_DESCRIPTOR *)Resources.SmallHeader;
-          if (Io->Length != 0) {
-            SerialDevice->BaseAddress = Io->BaseAddressMin;
-          }
-
-          break;
-
-        case ACPI_FIXED_LOCATION_IO_PORT_DESCRIPTOR:
-          FixedIo = (EFI_ACPI_FIXED_LOCATION_IO_PORT_DESCRIPTOR *)Resources.SmallHeader;
-          if (FixedIo->Length != 0) {
-            SerialDevice->BaseAddress = FixedIo->BaseAddress;
-          }
-
-          break;
-
-        case ACPI_ADDRESS_SPACE_DESCRIPTOR:
-          AddressSpace = (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Resources.SmallHeader;
-          if (AddressSpace->AddrLen != 0) {
-            if (AddressSpace->ResType == ACPI_ADDRESS_SPACE_TYPE_MEM) {
-              SerialDevice->MmioAccess = TRUE;
+    if (!EFI_ERROR (Status)) {
+      //
+      // Get the base address information from ACPI resource descriptor.
+      // ACPI_IO_PORT_DESCRIPTOR and ACPI_FIXED_LOCATION_IO_PORT_DESCRIPTOR are returned from Sio;
+      // ACPI_ADDRESS_SPACE_DESCRIPTOR is returned from PciIo.
+      //
+      while ((Resources.SmallHeader->Byte != ACPI_END_TAG_DESCRIPTOR) && (SerialDevice->BaseAddress == 0)) {
+        switch (Resources.SmallHeader->Byte) {
+          case ACPI_IO_PORT_DESCRIPTOR:
+            Io = (EFI_ACPI_IO_PORT_DESCRIPTOR *)Resources.SmallHeader;
+            if (Io->Length != 0) {
+              SerialDevice->BaseAddress = Io->BaseAddressMin;
             }
 
-            SerialDevice->BaseAddress = AddressSpace->AddrRangeMin + Offset;
-          }
+            break;
 
-          break;
-      }
+          case ACPI_FIXED_LOCATION_IO_PORT_DESCRIPTOR:
+            FixedIo = (EFI_ACPI_FIXED_LOCATION_IO_PORT_DESCRIPTOR *)Resources.SmallHeader;
+            if (FixedIo->Length != 0) {
+              SerialDevice->BaseAddress = FixedIo->BaseAddress;
+            }
 
-      if (Resources.SmallHeader->Bits.Type == 0) {
-        Resources.SmallHeader = (ACPI_SMALL_RESOURCE_HEADER *)((UINT8 *)Resources.SmallHeader
-                                                               + Resources.SmallHeader->Bits.Length
-                                                               + sizeof (*Resources.SmallHeader));
-      } else {
-        Resources.LargeHeader = (ACPI_LARGE_RESOURCE_HEADER *)((UINT8 *)Resources.LargeHeader
-                                                               + Resources.LargeHeader->Length
-                                                               + sizeof (*Resources.LargeHeader));
+            break;
+
+          case ACPI_ADDRESS_SPACE_DESCRIPTOR:
+            AddressSpace = (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Resources.SmallHeader;
+            if (AddressSpace->AddrLen != 0) {
+              if (AddressSpace->ResType == ACPI_ADDRESS_SPACE_TYPE_MEM) {
+                SerialDevice->MmioAccess = TRUE;
+              }
+
+              SerialDevice->BaseAddress = AddressSpace->AddrRangeMin + Offset;
+            }
+
+            break;
+        }
+
+        if (Resources.SmallHeader->Bits.Type == 0) {
+          Resources.SmallHeader = (ACPI_SMALL_RESOURCE_HEADER *)((UINT8 *)Resources.SmallHeader
+                                                                 + Resources.SmallHeader->Bits.Length
+                                                                 + sizeof (*Resources.SmallHeader));
+        } else {
+          Resources.LargeHeader = (ACPI_LARGE_RESOURCE_HEADER *)((UINT8 *)Resources.LargeHeader
+                                                                 + Resources.LargeHeader->Length
+                                                                 + sizeof (*Resources.LargeHeader));
+        }
       }
     }
-  }
 
-  if (SerialDevice->BaseAddress == 0) {
-    Status = EFI_INVALID_PARAMETER;
-    goto CreateError;
+    if (SerialDevice->BaseAddress == 0) {
+      Status = EFI_INVALID_PARAMETER;
+      goto CreateError;
+    }
   }
 
   SerialDevice->HardwareFlowControl = (BOOLEAN)(FlowControlMap == UART_FLOW_CONTROL_HARDWARE);
@@ -683,7 +788,7 @@ CreateSerialDevice (
   //
   Status = gBS->OpenProtocol (
                   Controller,
-                  PciSerialParameter != NULL ? &gEfiPciIoProtocolGuid : &gEfiSioProtocolGuid,
+                  IoProtocolGuid,
                   (VOID **)&ParentIo,
                   gSerialControllerDriver.DriverBindingHandle,
                   SerialDevice->Handle,
@@ -722,7 +827,7 @@ CreateError:
 
   @param Controller      The parent controller handle.
   @param IoProtocolGuid  The protocol GUID, either equals to gEfiSioProtocolGuid
-                         or equals to gEfiPciIoProtocolGuid.
+                         gEfiDtIoProtocolGuid or gEfiPciIoProtocolGuid.
   @param Count           Count of the serial devices.
 
   @return  An array of pointers containing all the child serial device pointers.
@@ -879,6 +984,18 @@ SerialControllerDriverStart (
                             );
   }
 
+  if (EFI_ERROR (Status) && (Status != EFI_ALREADY_STARTED)) {
+    IoProtocolGuid = &gEfiDtIoProtocolGuid;
+    Status         = gBS->OpenProtocol (
+                            Controller,
+                            IoProtocolGuid,
+                            (VOID **)&ParentIo,
+                            This->DriverBindingHandle,
+                            Controller,
+                            EFI_OPEN_PROTOCOL_BY_DRIVER
+                            );
+  }
+
   ASSERT (!EFI_ERROR (Status) || Status == EFI_ALREADY_STARTED);
 
   //
@@ -982,7 +1099,7 @@ SerialControllerDriverStart (
   }
 
   PciDeviceInfo = NULL;
-  if (IoProtocolGuid == &gEfiSioProtocolGuid) {
+  if (IoProtocolGuid == &gEfiDtIoProtocolGuid) {
     Status = EFI_NOT_FOUND;
     if ((RemainingDevicePath == NULL) || !ContainsControllerNode) {
       Node = ParentDevicePath;
@@ -991,7 +1108,19 @@ SerialControllerDriverStart (
         Node = NextDevicePathNode (Node);
       } while (!IsDevicePathEnd (Node));
 
-      Status = CreateSerialDevice (Controller, Uart, ParentDevicePath, FALSE, Acpi->UID, ParentIo, NULL, NULL);
+      Status = CreateSerialDevice (Controller, Uart, ParentDevicePath, FALSE, 0, ParentIo, IoProtocolGuid, NULL, NULL);
+      DEBUG ((DEBUG_INFO, "PciSioSerial: Create FDT child serial device - %r\n", Status));
+    }
+  } else if (IoProtocolGuid == &gEfiSioProtocolGuid) {
+    Status = EFI_NOT_FOUND;
+    if ((RemainingDevicePath == NULL) || !ContainsControllerNode) {
+      Node = ParentDevicePath;
+      do {
+        Acpi = (ACPI_HID_DEVICE_PATH *)Node;
+        Node = NextDevicePathNode (Node);
+      } while (!IsDevicePathEnd (Node));
+
+      Status = CreateSerialDevice (Controller, Uart, ParentDevicePath, FALSE, Acpi->UID, ParentIo, IoProtocolGuid, NULL, NULL);
       DEBUG ((DEBUG_INFO, "PciSioSerial: Create SIO child serial device - %r\n", Status));
     }
   } else {
@@ -1073,7 +1202,7 @@ SerialControllerDriverStart (
             PciSerialParameter = PcdGetPtr (PcdPciSerialParameters);
           }
 
-          Status = CreateSerialDevice (Controller, Uart, ParentDevicePath, FALSE, 0, ParentIo, PciSerialParameter, PciDeviceInfo);
+          Status = CreateSerialDevice (Controller, Uart, ParentDevicePath, FALSE, 0, ParentIo, IoProtocolGuid, PciSerialParameter, PciDeviceInfo);
           DEBUG ((DEBUG_INFO, "PciSioSerial: Create PCI child serial device (single) - %r\n", Status));
           if (!EFI_ERROR (Status)) {
             PciDeviceInfo->ChildCount++;
@@ -1094,7 +1223,7 @@ SerialControllerDriverStart (
               //
               // Create controller node when PCI serial device contains multiple UARTs
               //
-              Status = CreateSerialDevice (Controller, Uart, ParentDevicePath, TRUE, PciSerialCount, ParentIo, PciSerialParameter, PciDeviceInfo);
+              Status = CreateSerialDevice (Controller, Uart, ParentDevicePath, TRUE, PciSerialCount, ParentIo, IoProtocolGuid, PciSerialParameter, PciDeviceInfo);
               PciSerialCount++;
               DEBUG ((DEBUG_INFO, "PciSioSerial: Create PCI child serial device (multiple) - %r\n", Status));
               if (!EFI_ERROR (Status)) {
@@ -1177,6 +1306,7 @@ SerialControllerDriverStop (
   VOID                      *IoProtocol;
   EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
   PCI_DEVICE_INFO           *PciDeviceInfo;
+  EFI_GUID                  *IoProtocolGuid;
 
   PciDeviceInfo = NULL;
 
@@ -1195,21 +1325,39 @@ SerialControllerDriverStop (
     DevicePath
     );
 
-  if (NumberOfChildren == 0) {
-    //
-    // Close the bus driver
-    //
+  Status = gBS->OpenProtocol (
+                  Controller,
+                  &gEfiPciIoProtocolGuid,
+                  &IoProtocol,
+                  This->DriverBindingHandle,
+                  Controller,
+                  EFI_OPEN_PROTOCOL_TEST_PROTOCOL
+                  );
+  if (!EFI_ERROR (Status)) {
+    IoProtocolGuid = &gEfiPciIoProtocolGuid;
+  } else {
     Status = gBS->OpenProtocol (
                     Controller,
-                    &gEfiPciIoProtocolGuid,
+                    &gEfiDtIoProtocolGuid,
                     &IoProtocol,
                     This->DriverBindingHandle,
                     Controller,
                     EFI_OPEN_PROTOCOL_TEST_PROTOCOL
                     );
+    if (!EFI_ERROR (Status)) {
+      IoProtocolGuid = &gEfiDtIoProtocolGuid;
+    } else {
+      IoProtocolGuid = &gEfiSioProtocolGuid;
+    }
+  }
+
+  if (NumberOfChildren == 0) {
+    //
+    // Close the bus driver
+    //
     gBS->CloseProtocol (
            Controller,
-           !EFI_ERROR (Status) ? &gEfiPciIoProtocolGuid : &gEfiSioProtocolGuid,
+           IoProtocolGuid,
            This->DriverBindingHandle,
            Controller
            );
@@ -1241,7 +1389,7 @@ SerialControllerDriverStop (
 
       Status = gBS->CloseProtocol (
                       Controller,
-                      PciDeviceInfo != NULL ? &gEfiPciIoProtocolGuid : &gEfiSioProtocolGuid,
+                      IoProtocolGuid,
                       This->DriverBindingHandle,
                       ChildHandleBuffer[Index]
                       );
@@ -1257,7 +1405,7 @@ SerialControllerDriverStop (
       if (EFI_ERROR (Status)) {
         gBS->OpenProtocol (
                Controller,
-               PciDeviceInfo != NULL ? &gEfiPciIoProtocolGuid : &gEfiSioProtocolGuid,
+               IoProtocolGuid,
                &IoProtocol,
                This->DriverBindingHandle,
                ChildHandleBuffer[Index],

@@ -1,8 +1,9 @@
 /** @file
-  SerialIo implementation for PCI or SIO UARTs.
+    SIO/PCI/FDT 16550 UART driver.
 
-Copyright (c) 2006 - 2020, Intel Corporation. All rights reserved.<BR>
-SPDX-License-Identifier: BSD-2-Clause-Patent
+    Copyright (c) 2006 - 2024, Intel Corporation. All rights reserved.<BR>
+
+    SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -1366,7 +1367,19 @@ SerialReadRegister (
   UINT8       Data;
   EFI_STATUS  Status;
 
-  if (SerialDev->PciDeviceInfo == NULL) {
+  if (SerialDev->DtIo != NULL) {
+    Status = SerialDev->DtIo->ReadReg (
+                                SerialDev->DtIo,
+                                EfiDtIoWidthUint8,
+                                &SerialDev->DtReg,
+                                Offset * SerialDev->RegisterStride,
+                                1,
+                                &Data
+                                );
+
+    ASSERT_EFI_ERROR (Status);
+    return Data;
+  } else if (SerialDev->PciDeviceInfo == NULL) {
     return IoRead8 ((UINTN)SerialDev->BaseAddress + Offset * SerialDev->RegisterStride);
   } else {
     if (SerialDev->MmioAccess) {
@@ -1410,7 +1423,17 @@ SerialWriteRegister (
 {
   EFI_STATUS  Status;
 
-  if (SerialDev->PciDeviceInfo == NULL) {
+  if (SerialDev->DtIo != NULL) {
+    Status = SerialDev->DtIo->WriteReg (
+                                SerialDev->DtIo,
+                                EfiDtIoWidthUint8,
+                                &SerialDev->DtReg,
+                                Offset * SerialDev->RegisterStride,
+                                1,
+                                &Data
+                                );
+    ASSERT_EFI_ERROR (Status);
+  } else if (SerialDev->PciDeviceInfo == NULL) {
     IoWrite8 ((UINTN)SerialDev->BaseAddress + Offset * SerialDev->RegisterStride, Data);
   } else {
     if (SerialDev->MmioAccess) {

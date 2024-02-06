@@ -309,10 +309,20 @@ ProcessPciHost (
     return Status;
   }
 
+  ASSERT (Reg.BusDtIo == NULL);
+  if (Reg.BusDtIo != NULL) {
+    DEBUG ((
+	    DEBUG_ERROR,
+	    "%a: couldn't translate ECAM range to CPU addresses\n",
+	    __func__
+	    ));
+    return EFI_UNSUPPORTED;
+  }
+
   //
   // Fetch the ECAM window.
   //
-  ConfigBase = Reg.Base;
+  ConfigBase = Reg.TranslatedBase;
   ConfigSize = Reg.Length;
 
   //

@@ -78,10 +78,12 @@ typedef UINT32    EFI_DT_CELL;
 typedef unsigned __int128  EFI_DT_U128;
 
 typedef struct {
-  EFI_DT_BUS_ADDRESS    Base;
+  EFI_DT_BUS_ADDRESS    BusBase;
+  EFI_DT_BUS_ADDRESS    TranslatedBase;
   EFI_DT_SIZE           Length;
   //
-  // BusDevice == NULL means Base is a CPU real address.
+  // BusDevice == NULL means TranslatedBase is a
+  // CPU address.
   //
   EFI_DT_IO_PROTOCOL    *BusDtIo;
 } EFI_DT_REG;

@@ -223,11 +223,11 @@ TEST_DEF (G2P0) {
   ASSERT (!EFI_ERROR (DtIo->GetReg (DtIo, 0, &Reg)));
   ASSERT (Reg.BusDtIo == &(DtDevice->Parent->DtIo));
   ASSERT (
-    (Reg.Base & (UINT64)-1UL) ==
+    (Reg.BusBase & (UINT64)-1UL) ==
     0x0000000300000004
     );
   ASSERT (
-    ((Reg.Base >> 64) & (UINT64)-1UL) ==
+    ((Reg.BusBase >> 64) & (UINT64)-1UL) ==
     0x0000000100000002
     );
   ASSERT (
@@ -242,11 +242,11 @@ TEST_DEF (G2P0) {
   ASSERT (!EFI_ERROR (DtIo->GetReg (DtIo, 1, &Reg)));
   ASSERT (Reg.BusDtIo == &(DtDevice->Parent->DtIo));
   ASSERT (
-    (Reg.Base & (UINT64)-1UL) ==
+    (Reg.BusBase & (UINT64)-1UL) ==
     0x000000030000000b
     );
   ASSERT (
-    ((Reg.Base >> 64) & (UINT64)-1UL) ==
+    ((Reg.BusBase >> 64) & (UINT64)-1UL) ==
     0x000000010000000a
     );
   ASSERT (
@@ -442,7 +442,7 @@ TEST_DEF (G5P0) {
   CopyMem (Array2, Dt_DeviceRegs_TestTemplate00, 16);
 
   ZeroMem (&Reg00, sizeof (EFI_DT_REG));
-  Reg00.Base   = (EFI_PHYSICAL_ADDRESS)TempMemBuffer;
+  Reg00.TranslatedBase = (EFI_PHYSICAL_ADDRESS)TempMemBuffer;
   Reg00.Length = TestRegionSize;
   ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0, 16, Array1) == EFI_SUCCESS);
   ASSERT (CompareMem (Array1, Array2, 16) == 0);
@@ -489,7 +489,7 @@ TEST_DEF (G5P1) {
   CopyMem (Array2, Dt_DeviceRegs_TestTemplate00, 16);
 
   ZeroMem (&Reg00, sizeof (EFI_DT_REG));
-  Reg00.Base   = (EFI_PHYSICAL_ADDRESS)TempMemBuffer;
+  Reg00.TranslatedBase = (EFI_PHYSICAL_ADDRESS)TempMemBuffer;
   Reg00.Length = TestRegionSize;
   ASSERT (DtIo->WriteReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0x10, 16, Array1) == EFI_SUCCESS);
   ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0x10, 16, Array2) == EFI_SUCCESS);
@@ -519,7 +519,7 @@ TEST_DEF (G5P2) {
 
   CopyMem (TempMemBuffer, Dt_DeviceRegs_TestTemplate00, TestRegionSize);
   ZeroMem (&Reg00, sizeof (EFI_DT_REG));
-  Reg00.Base   = (EFI_PHYSICAL_ADDRESS)TempMemBuffer;
+  Reg00.TranslatedBase = (EFI_PHYSICAL_ADDRESS)TempMemBuffer;
   Reg00.Length = TestRegionSize;
 
   //
@@ -549,14 +549,14 @@ TEST_DEF (G5P3) {
 
   CopyMem (TempMemBuffer, Dt_DeviceRegs_TestTemplate00, TestRegionSize);
   ZeroMem (&Reg00, sizeof (EFI_DT_REG));
-  Reg00.Base   = (EFI_PHYSICAL_ADDRESS)TempMemBuffer;
+  Reg00.TranslatedBase = (EFI_PHYSICAL_ADDRESS)TempMemBuffer;
   Reg00.Length = TestRegionSize;
 
   ZeroMem (&Reg11, sizeof (EFI_DT_REG));
-  Reg11.Base   = (EFI_DT_BUS_ADDRESS)(UINTN)Array2;
+  Reg11.TranslatedBase = (EFI_DT_BUS_ADDRESS)(UINTN)Array2;
   Reg11.Length = 32;
   ASSERT (DtIo->CopyReg (DtIo, EfiDtIoWidthUint32, &Reg11, 0, &Reg00, 0, 8) == EFI_SUCCESS);
-  ASSERT (CompareMem ((UINT8 *)(UINTN)Reg00.Base, (UINT8 *)(UINTN)Reg11.Base, 32) == 0);
+  ASSERT (CompareMem ((UINT8 *)(UINTN)Reg00.TranslatedBase, (UINT8 *)(UINTN)Reg11.TranslatedBase, 32) == 0);
 
   FreePool (TempMemBuffer);
   return TRUE;
@@ -648,13 +648,13 @@ TEST_DEF (G7P0) {
   ASSERT (DtIo->GetRegByName (DtIo, NULL, &Reg) == EFI_INVALID_PARAMETER);
   ASSERT (DtIo->GetRegByName (DtIo, "apple", NULL) == EFI_INVALID_PARAMETER);
   ASSERT (DtIo->GetRegByName (DtIo, "apple", &Reg) == EFI_SUCCESS);
-  ASSERT (((UINT64)Reg.Base == 0x100000002) && ((UINT64)Reg.Length == 0x300000004));
+  ASSERT (((UINT64)Reg.BusBase == 0x100000002) && ((UINT64)Reg.Length == 0x300000004));
 
   ASSERT (DtIo->GetRegByName (DtIo, "orange", &Reg) == EFI_SUCCESS);
-  ASSERT (((UINT64)Reg.Base == 0x90000000A) && ((UINT64)Reg.Length == 0xB0000000C));
+  ASSERT (((UINT64)Reg.BusBase == 0x90000000A) && ((UINT64)Reg.Length == 0xB0000000C));
 
   ASSERT (DtIo->GetRegByName (DtIo, "peach", &Reg) == EFI_SUCCESS);
-  ASSERT (((UINT64)Reg.Base == 0x1200000013) && ((UINT64)Reg.Length == 0x1400000015));
+  ASSERT (((UINT64)Reg.BusBase == 0x1200000013) && ((UINT64)Reg.Length == 0x1400000015));
 
   ASSERT (DtIo->GetRegByName (DtIo, "gsdfsdfds", &Reg) == EFI_NOT_FOUND);
   ASSERT (DtIo->GetRegByName (DtIo, "", &Reg) == EFI_NOT_FOUND);

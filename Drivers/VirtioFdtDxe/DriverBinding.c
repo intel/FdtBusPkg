@@ -438,20 +438,19 @@ DriverStart (
     goto out;
   }
 
+  ASSERT (Reg.BusDtIo == NULL);
   if (Reg.BusDtIo != NULL) {
     DEBUG ((
       DEBUG_ERROR,
-      "%a: range 0x%lx - 0x%lx are not CPU real addresses\n",
-      __func__,
-      Reg.Base,
-      Reg.Base + Reg.Length - 1
+      "%a: couldn't translate range to CPU addresses\n",
+      __func__
       ));
     Status = EFI_UNSUPPORTED;
     goto out;
   }
 
   Status = ChildCreate (
-             Reg.Base,
+             Reg.TranslatedBase,
              ControllerHandle,
              This->DriverBindingHandle,
              ControllerPath
@@ -560,7 +559,7 @@ DriverStop (
                ControllerHandle,
                This->DriverBindingHandle,
                ChildHandleBuffer[Index],
-               Reg.Base
+               Reg.TranslatedBase
                );
     if (EFI_ERROR (Status)) {
       AllChildrenStopped = FALSE;

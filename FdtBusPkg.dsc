@@ -58,6 +58,14 @@
   gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x8000004F
 !endif
 
+[PcdsDynamicDefault]
+#
+# These 3 are here only to compile FdtPciPcdProducerLib.
+#
+  gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress|0x0
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPciDisableBusEnumeration|TRUE
+  gEfiMdePkgTokenSpaceGuid.PcdPciIoTranslation|0x0
+
 [LibraryClasses.common]
   DebugLib|MdePkg/Library/UefiDebugLibConOut/UefiDebugLibConOut.inf
   # DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
@@ -89,6 +97,9 @@
   TimerLib|UefiCpuPkg/Library/BaseRiscV64CpuTimerLib/BaseRiscV64CpuTimerLib.inf
 
 [Components]
+  FdtBusPkg/Library/PciHostBridgeLibEcam/PciHostBridgeLibEcam.inf
+  FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
+
   FdtBusPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
   FdtBusPkg/Drivers/VirtioFdtDxe/VirtioFdtDxe.inf {
     <LibraryClasses>
@@ -103,4 +114,9 @@
   FdtBusPkg/Drivers/HighMemDxe/HighMemDxeNoBinding.inf {
     <LibraryClasses>
        DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
+  }
+  FdtBusPkg/Drivers/PciSioSerialDxe/PciSioSerialDxe.inf {
+    <LibraryClasses>
+       IoLib|MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
+       ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
   }

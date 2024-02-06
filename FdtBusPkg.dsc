@@ -99,7 +99,18 @@
 [Components]
   FdtBusPkg/Library/PciHostBridgeLibEcam/PciHostBridgeLibEcam.inf
   FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
-  FdtBusPkg/Library/FbpAppUtilsLib/FbpAppUtilsLib.inf
+
+  FdtBusPkg/Application/DtInfo/DtInfo.inf {
+    <LibraryClasses>
+      UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
+      FbpAppUtilsLib|FdtBusPkg/Library/FbpAppUtilsLib/FbpAppUtilsLib.inf
+      HandleParsingLib|ShellPkg/Library/UefiHandleParsingLib/UefiHandleParsingLib.inf
+      FileHandleLib|MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
+      HiiLib|MdeModulePkg/Library/UefiHiiLib/UefiHiiLib.inf
+      SortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
+      PeCoffGetEntryPointLib|MdePkg/Library/BasePeCoffGetEntryPointLib/BasePeCoffGetEntryPointLib.inf
+      UefiHiiServicesLib|MdeModulePkg/Library/UefiHiiServicesLib/UefiHiiServicesLib.inf
+  }
 
   FdtBusPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
   FdtBusPkg/Drivers/VirtioFdtDxe/VirtioFdtDxe.inf {

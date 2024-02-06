@@ -31,10 +31,10 @@ EntryPoint (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  UINTN                     Argc;
-  CHAR16                    **Argv;
-  EFI_STATUS                Status;
-  GET_OPT_CONTEXT           GetOptContext;
+  UINTN            Argc;
+  CHAR16           **Argv;
+  EFI_STATUS       Status;
+  GET_OPT_CONTEXT  GetOptContext;
 
   Status = GetShellArgcArgv (ImageHandle, &Argc, &Argv);
   if ((Status != EFI_SUCCESS) || (Argc < 1)) {

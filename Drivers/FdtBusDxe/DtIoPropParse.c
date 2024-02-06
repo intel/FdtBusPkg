@@ -455,14 +455,14 @@ DtIoParsePropReg (
     goto Out;
   }
 
-  BusDevice    = NULL;
-  Status       = DtDeviceTranslateRangeToCpu (
-                   DtDevice,
-                   &Reg->BusBase,
-                   &Reg->Length,
-                   &Reg->TranslatedBase,
-                   &BusDevice
-                   );
+  BusDevice = NULL;
+  Status    = DtDeviceTranslateRangeToCpu (
+                DtDevice,
+                &Reg->BusBase,
+                &Reg->Length,
+                &Reg->TranslatedBase,
+                &BusDevice
+                );
   if (EFI_ERROR (Status)) {
     DEBUG ((
       DEBUG_ERROR,

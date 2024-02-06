@@ -112,7 +112,17 @@ ProcessHandle (
     return Status;
   }
 
-  Status = PcdSet64S (PcdPciExpressBaseAddress, Reg.Base);
+  ASSERT (Reg.BusDtIo == NULL);
+  if (Reg.BusDtIo != NULL) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: couldn't translate ECAM range to CPU addresses\n",
+      __func__
+      ));
+    return EFI_UNSUPPORTED;
+  }
+
+  Status = PcdSet64S (PcdPciExpressBaseAddress, Reg.TranslatedBase);
   ASSERT_EFI_ERROR (Status);
 
   Status = PcdSetBoolS (PcdPciDisableBusEnumeration, FALSE);

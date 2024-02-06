@@ -432,8 +432,8 @@ DtIoWriteReg (
     }
 
     //
-    // Reg addresses are not CPU addresses, use the parent bus
-    // accessor.
+    // Reg->TranslatedBase is not a CPU address - use the
+    // parent bus accessor.
     //
     return Reg->BusDtIo->WriteReg (
                            Reg->BusDtIo,
@@ -451,7 +451,7 @@ DtIoWriteReg (
   return gCpuIo2->Mem.Write (
                         gCpuIo2,
                         (EFI_CPU_IO_PROTOCOL_WIDTH)Width,
-                        Reg->Base + Offset,
+                        Reg->TranslatedBase + Offset,
                         Count,
                         Buffer
                         );
@@ -530,8 +530,8 @@ DtIoReadReg (
     }
 
     //
-    // Reg addresses are not CPU addresses, use the parent bus
-    // accessor.
+    // Reg->TranslatedBase is not a CPU address - use the
+    // parent bus accessor.
     //
     return Reg->BusDtIo->ReadReg (
                            Reg->BusDtIo,
@@ -549,7 +549,7 @@ DtIoReadReg (
   return gCpuIo2->Mem.Read (
                         gCpuIo2,
                         (EFI_CPU_IO_PROTOCOL_WIDTH)Width,
-                        Reg->Base + Offset,
+                        Reg->TranslatedBase + Offset,
                         Count,
                         Buffer
                         );

@@ -65,19 +65,19 @@ ProcessMemoryRange (
     return EFI_SUCCESS;
   }
 
-  Status = gDS->GetMemorySpaceDescriptor (Reg->Base, &GcdDescriptor);
+  Status = gDS->GetMemorySpaceDescriptor (Reg->TranslatedBase, &GcdDescriptor);
   if (EFI_ERROR (Status)) {
     //
-    // This can happen if Reg->Base exceeds the Gcd limits as set
+    // This can happen if Reg->TranslatedBase exceeds the Gcd limits as set
     // by the Cpu HOB. You'll get an EFI_NOT_FOUND and it's really
-    // a programmer error since the Reg->Base is clearly invalid.
+    // a programmer error since the Reg->TranslatedBase is clearly invalid.
     //
     DEBUG ((
       DEBUG_ERROR,
       "%a: gDS->GetMemorySpaceDescriptor(0x%lx-0x%lx): %r\n",
       __func__,
-      Reg->Base,
-      Reg->Base + Reg->Length - 1
+      Reg->TranslatedBase,
+      Reg->TranslatedBase + Reg->Length - 1
       ));
     return Status;
   }
@@ -87,15 +87,15 @@ ProcessMemoryRange (
       DEBUG_ERROR,
       "%a: Nothing to do for 0x%lx-0x%lx\n",
       __func__,
-      Reg->Base,
-      Reg->Base + Reg->Length - 1
+      Reg->TranslatedBase,
+      Reg->TranslatedBase + Reg->Length - 1
       ));
     return EFI_SUCCESS;
   }
 
   Status = gDS->AddMemorySpace (
                   EfiGcdMemoryTypeSystemMemory,
-                  Reg->Base,
+                  Reg->TranslatedBase,
                   Reg->Length,
                   EFI_MEMORY_WB
                   );
@@ -104,15 +104,15 @@ ProcessMemoryRange (
       DEBUG_ERROR,
       "%a: gDS->AddMemorySpace(0x%lx-0x%lx): %r\n",
       __func__,
-      Reg->Base,
-      Reg->Base + Reg->Length - 1,
+      Reg->TranslatedBase,
+      Reg->TranslatedBase + Reg->Length - 1,
       Status
       ));
     return Status;
   }
 
   Status = gDS->SetMemorySpaceAttributes (
-                  Reg->Base,
+                  Reg->TranslatedBase,
                   Reg->Length,
                   EFI_MEMORY_WB
                   );
@@ -121,8 +121,8 @@ ProcessMemoryRange (
       DEBUG_WARN,
       "%a: gDS->SetMemorySpaceAttributes(0x%lx-0x%lx): %r\n",
       __func__,
-      Reg->Base,
-      Reg->Base + Reg->Length - 1,
+      Reg->TranslatedBase,
+      Reg->TranslatedBase + Reg->Length - 1,
       Status
       ));
     return Status;
@@ -146,15 +146,15 @@ ProcessMemoryRange (
     Attributes |= EFI_MEMORY_XP;
   }
 
-  Status = mCpu->SetMemoryAttributes (mCpu, Reg->Base, Reg->Length, Attributes);
+  Status = mCpu->SetMemoryAttributes (mCpu, Reg->TranslatedBase, Reg->Length, Attributes);
 
   if (EFI_ERROR (Status)) {
     DEBUG ((
       DEBUG_ERROR,
       "%a: mCpu->SetMemorySpaceAttributes(0x%lx-0x%lx): %r\n",
       __func__,
-      Reg->Base,
-      Reg->Base + Reg->Length - 1,
+      Reg->TranslatedBase,
+      Reg->TranslatedBase + Reg->Length - 1,
       Status
       ));
   } else {
@@ -162,8 +162,8 @@ ProcessMemoryRange (
       DEBUG_INFO,
       "%a: Add System RAM @ 0x%lx - 0x%lx\n",
       __func__,
-      Reg->Base,
-      Reg->Base + Reg->Length - 1
+      Reg->TranslatedBase,
+      Reg->TranslatedBase + Reg->Length - 1
       ));
   }
 
@@ -209,13 +209,12 @@ ProcessMemoryRanges (
       break;
     }
 
+    ASSERT (Reg.BusDtIo == NULL);
     if (Reg.BusDtIo != NULL) {
       DEBUG ((
         DEBUG_ERROR,
-        "%a: range 0x%lx - 0x%lx are not CPU real addresses\n",
-        __func__,
-        Reg.Base,
-        Reg.Base + Reg.Length - 1
+        "%a: couldn't translate range to CPU addresses\n",
+        __func__
         ));
       Status = EFI_UNSUPPORTED;
       break;

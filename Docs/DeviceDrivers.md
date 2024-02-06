@@ -363,3 +363,32 @@ and not `OpenProtocol`.
 
 Yes, legacy drivers are awkward and messy. This is why the UEFI Driver Model exists!
 
+## Adapting Existing Drivers to `EFI_DT_IO_PROTOCOL`
+
+Aside from figuring out device discovery (legacy vs. UEFI Driver Model) the
+next big question to solve is how to interact with a device. The `GetReg()`
+DT I/O Protocol function is similar to fetching the BAR info for a PCI
+device. `GetReg()` will populate an `EFI_DT_REG` descriptor.
+
+For some drivers, it will be easy enough to simply use appropriate DT
+I/O Protocol functions (`ReadReg()` and friends), which operate
+directly on the `EFI_DT_REG` descriptor.
+[PciSioSerialDxe](../Drivers/PciSioSerialDxe/SerialIo.c#L1371) is a
+good example.
+
+Other drivers may be a bit more involved. Maybe you need the actual
+CPU address. Maybe you'll need the untranslated bus address. Maybe
+you'll need the length of the register
+region. [VirtioFdtDxe](../Drivers/VirtioFdtDxe/DriverBinding.c#L441) is a
+good example: it actually creates a child device for the managed DT
+controller, to which a generic (Virtio10) driver binds. This generic
+driver doesn't know anything about FDT or PCI controllers, so the
+`VIRTIO_MMIO_DEVICE` needs the actual CPU address of the device. The
+`TranslatedBase` field of a register descriptor is a CPU address
+if the `BusDtIo` field is NULL, meaning that FdtBusDxe was able
+to translate the bus address to a CPU address. If the field is not
+NULL, then `TranslatedBase` is a bus address that is valid in the
+context of the ancestor DT controller referenced by `BusDtIo`, and you
+can only perform I/O using the DT I/O Protocol functions (`ReadReg()` and
+friends, and [only if the ancestor device driver implements the I/O
+callbacks](../Drivers/FdtBusDxe/DtIo.c#L438)).

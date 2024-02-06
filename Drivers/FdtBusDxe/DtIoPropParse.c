@@ -426,6 +426,8 @@ DtIoParsePropReg (
   AddressCells = DtDevice->DtIo.AddressCells;
   SizeCells    = DtDevice->DtIo.SizeCells;
 
+  SetMem (Reg, sizeof (EFI_DT_REG), 0);
+
   //
   // Enforced in FdtGetAddressCells/FdtGetSizeCells.
   //
@@ -443,7 +445,7 @@ DtIoParsePropReg (
 
   Prop->Iter = (EFI_DT_CELL *)Prop->Iter + ElemCells * Index;
 
-  Status = DtIoParsePropBusAddress (DtDevice, Prop, 0, &Reg->Base);
+  Status = DtIoParsePropBusAddress (DtDevice, Prop, 0, &Reg->BusBase);
   if (EFI_ERROR (Status)) {
     goto Out;
   }
@@ -453,13 +455,12 @@ DtIoParsePropReg (
     goto Out;
   }
 
-  Reg->BusDtIo = NULL;
   BusDevice    = NULL;
   Status       = DtDeviceTranslateRangeToCpu (
                    DtDevice,
-                   &Reg->Base,
+                   &Reg->BusBase,
                    &Reg->Length,
-                   &Reg->Base,
+                   &Reg->TranslatedBase,
                    &BusDevice
                    );
   if (EFI_ERROR (Status)) {

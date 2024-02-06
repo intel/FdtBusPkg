@@ -83,7 +83,7 @@ other expected property values (such as device status):
 BOOLEAN Supported;
 
 Supported = !EFI_ERROR (DtIo->IsCompatible (DtIo, "device-compat-string")) &&
-            DtIo->DeviceStatus = EFI_DT_STATUS_OKAY;
+            DtIo->DeviceStatus == EFI_DT_STATUS_OKAY;
 ```
 
 #### `Start()`

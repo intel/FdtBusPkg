@@ -99,6 +99,7 @@
 [Components]
   FdtBusPkg/Library/PciHostBridgeLibEcam/PciHostBridgeLibEcam.inf
   FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
+  FdtBusPkg/Library/FbpAppUtilsLib/FbpAppUtilsLib.inf
 
   FdtBusPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
   FdtBusPkg/Drivers/VirtioFdtDxe/VirtioFdtDxe.inf {

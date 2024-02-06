@@ -46,7 +46,12 @@ Configuring a development environment is easy:
 
 ## Building
 
-Once the environment is set up, to build RISC-V OVMF firmware enabled with FdtBusPkg components:
+Once the environment is set up, to build all of the components (outside of a firmware build):
+
+        $ export GCC_RISCV64_PREFIX=... (if you are on a non-RISCV64 system)
+        $ build -a RISCV64 -t GCC5 -p FdtBusPkg/FdtBusPkg.dsc -b DEBUG
+
+To build RISC-V OVMF firmware enabled with FdtBusPkg components:
 
         $ git am FdtBusPkg/Docs/0001-RiscVVirt-Patches-to-enable-FdtBusPkg-components.patch
         $ export GCC_RISCV64_PREFIX=... (if you are on a non-RISCV64 system)
@@ -59,3 +64,4 @@ Once the environment is set up, to build RISC-V OVMF firmware enabled with FdtBu
 - Use Tiano coding style (run edk2 uncrustify).
 - Regression tests should avoid unnecessary logging and test conditionals. `ASSERT` is your friend.
 - Checking in regression tests means checking in TestDt.dts **and** TestDt.dtbi changes.
+- When adding new components, don't forget to add them to [FdtBusPkg.dsc](../FdtBusPkg.dsc) and test the build.

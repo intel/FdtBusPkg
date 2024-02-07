@@ -312,10 +312,10 @@ ProcessPciHost (
   ASSERT (Reg.BusDtIo == NULL);
   if (Reg.BusDtIo != NULL) {
     DEBUG ((
-	    DEBUG_ERROR,
-	    "%a: couldn't translate ECAM range to CPU addresses\n",
-	    __func__
-	    ));
+      DEBUG_ERROR,
+      "%a: couldn't translate ECAM range to CPU addresses\n",
+      __func__
+      ));
     return EFI_UNSUPPORTED;
   }
 
@@ -479,7 +479,8 @@ PciHostBridgeGetRootBridges (
     }
 
     if (EFI_ERROR (DtIo->IsCompatible (DtIo, "pci-host-ecam-generic")) ||
-	DtIo->DeviceStatus != EFI_DT_STATUS_OKAY) {
+        (DtIo->DeviceStatus != EFI_DT_STATUS_OKAY))
+    {
       //
       // Not a supported node.
       //
@@ -548,7 +549,8 @@ PciHostBridgeGetRootBridges (
     }
 
     if (EFI_ERROR (DtIo->IsCompatible (DtIo, "pci-host-ecam-generic")) ||
-	DtIo->DeviceStatus != EFI_DT_STATUS_OKAY) {
+        (DtIo->DeviceStatus != EFI_DT_STATUS_OKAY))
+    {
       //
       // Don't forget to close unsupported handles, otherwise
       // other drivers won't be able to start!

@@ -14,7 +14,7 @@ the existing Tiano FdtClientDxe component.
 
 On loading, `EntryPoint()`:
 
-- Looks for the Devicetree HOB (`gFdtHobGuid`)
+- Looks for the Devicetree HOB (`gFdtHobGuid`). The driver bails if the Devicetree HOB is not present or if the Devicetree structure appears to be corrupt.
 - Locates `EFI_CPU_IO2_PROTOCOL` (`gEfiCpuIo2ProtocolGuid` is in the `[Depex]` list)
 - Registers a notification callback on
 `gEdkiiPlatformHasDeviceTreeGuid`, which is the "UEFI will expose

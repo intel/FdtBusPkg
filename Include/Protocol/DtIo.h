@@ -74,7 +74,7 @@ typedef enum {
 
 typedef unsigned __int128  EFI_DT_BUS_ADDRESS;
 typedef unsigned __int128  EFI_DT_SIZE;
-typedef UINT32    EFI_DT_CELL;
+typedef UINT32             EFI_DT_CELL;
 typedef unsigned __int128  EFI_DT_U128;
 
 typedef struct {

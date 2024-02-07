@@ -32,10 +32,13 @@
   FbpAppUtilsLib
   UefiApplicationEntryPoint
   HandleParsingLib
+  MemoryAllocationLib
+  DebugLib
 
 [Guids]
 
 [Protocols]
+  gEfiDtIoProtocolGuid
 
 [Depex]
 

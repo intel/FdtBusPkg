@@ -7,7 +7,7 @@
 ##
 
 [Defines]
-  PLATFORM_NAME                  = FdtBusPkg
+  PLATFORM_NAME                  = FdtBusPkgApps
   PLATFORM_GUID                  = 62ad1d2c-3333-4021-b32d-268d0e71c032
   PLATFORM_VERSION               = 0.98
   DSC_SPECIFICATION              = 0x00010005
@@ -15,7 +15,6 @@
   SUPPORTED_ARCHITECTURES        = AARCH64|RISCV64
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
-  PREBUILD                       = sh FdtBusPkg/Drivers/FdtBusDxe/TestDt.sh
 
 !include MdePkg/MdeLibs.dsc.inc
 
@@ -58,65 +57,37 @@
   gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x8000004F
 !endif
 
-[PcdsDynamicDefault]
-#
-# These 3 are here only to compile FdtPciPcdProducerLib.
-#
-  gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress|0x0
-  gEfiMdeModulePkgTokenSpaceGuid.PcdPciDisableBusEnumeration|TRUE
-  gEfiMdePkgTokenSpaceGuid.PcdPciIoTranslation|0x0
-
 [LibraryClasses.common]
-  DebugLib|MdePkg/Library/UefiDebugLibConOut/UefiDebugLibConOut.inf
-  # DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
-  # DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
-  # SerialPortLib|MdePkg/Library/BaseSerialPortLibNull/BaseSerialPortLibNull.inf
-
-  UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
-  DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
   BaseLib|MdePkg/Library/BaseLib/BaseLib.inf
   BaseMemoryLib|MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf
-  PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
-  PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
-  UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
   NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
-  HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
-  FdtLib|EmbeddedPkg/Library/FdtLib/FdtLib.inf
-  UefiLib|MdePkg/Library/UefiLib/UefiLib.inf
+  #
+  # Even on RELEASE. You want to see the logging.
+  #
+  DebugLib|MdePkg/Library/UefiDebugLibConOut/UefiDebugLibConOut.inf
+  DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
+  PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
+  PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
+  UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
+  UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
-  DevicePathLib|MdePkg/Library/UefiDevicePathLibDevicePathProtocol/UefiDevicePathLibDevicePathProtocol.inf
+  DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
   UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
+  UefiLib|MdePkg/Library/UefiLib/UefiLib.inf
+  FbpAppUtilsLib|FdtBusPkg/Library/FbpAppUtilsLib/FbpAppUtilsLib.inf
 
 [LibraryClasses.AARCH64]
   NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
-  TimerLib|ArmPkg/Library/ArmArchTimerLib/ArmArchTimerLib.inf
-  ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
-  ArmGenericTimerCounterLib|ArmPkg/Library/ArmGenericTimerVirtCounterLib/ArmGenericTimerVirtCounterLib.inf
 
-[LibraryClasses.RISCV64]
-  TimerLib|UefiCpuPkg/Library/BaseRiscV64CpuTimerLib/BaseRiscV64CpuTimerLib.inf
+[BuildOptions]
 
 [Components]
-  FdtBusPkg/Library/PciHostBridgeLibEcam/PciHostBridgeLibEcam.inf
-  FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
-
-  FdtBusPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
-  FdtBusPkg/Drivers/VirtioFdtDxe/VirtioFdtDxe.inf {
+  FdtBusPkg/Application/DtInfo/DtInfo.inf {
     <LibraryClasses>
-       IoLib|MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
-       VirtioLib|OvmfPkg/Library/VirtioLib/VirtioLib.inf
-       VirtioMmioDeviceLib|OvmfPkg/Library/VirtioMmioDeviceLib/VirtioMmioDeviceLib.inf
-  }
-  FdtBusPkg/Drivers/HighMemDxe/HighMemDxe.inf {
-    <LibraryClasses>
-       DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
-  }
-  FdtBusPkg/Drivers/HighMemDxe/HighMemDxeNoBinding.inf {
-    <LibraryClasses>
-       DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
-  }
-  FdtBusPkg/Drivers/PciSioSerialDxe/PciSioSerialDxe.inf {
-    <LibraryClasses>
-       IoLib|MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
-       ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
+      HandleParsingLib|ShellPkg/Library/UefiHandleParsingLib/UefiHandleParsingLib.inf
+      FileHandleLib|MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
+      HiiLib|MdeModulePkg/Library/UefiHiiLib/UefiHiiLib.inf
+      SortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
+      PeCoffGetEntryPointLib|MdePkg/Library/BasePeCoffGetEntryPointLib/BasePeCoffGetEntryPointLib.inf
+      UefiHiiServicesLib|MdeModulePkg/Library/UefiHiiServicesLib/UefiHiiServicesLib.inf
   }

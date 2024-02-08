@@ -442,6 +442,12 @@ AsciiStrFindEnd (
   IN  CONST CHAR8  *End
   );
 
+CHAR8 *
+AsciiStrChr (
+  IN  CHAR8  *Str,
+  IN  CHAR8  Chr
+  );
+
 #ifndef MDEPKG_NDEBUG
 EFI_STATUS
 TestsInit (

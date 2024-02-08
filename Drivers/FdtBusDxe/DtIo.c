@@ -108,10 +108,7 @@ DtIoLookup (
     CHAR8                     *EndOfName;
 
     StartOfName = Iter;
-    //
-    // Really ought to be strchr or strchrnul (even better).
-    //
-    EndOfName = AsciiStrStr (Iter, "/");
+    EndOfName   = AsciiStrChr (Iter, '/');
     if (EndOfName != NULL) {
       *EndOfName = '\0';
       Iter       = EndOfName + 1;

@@ -368,3 +368,28 @@ AsciiStrFindEnd (
 
   return NULL;
 }
+
+/**
+  Locate the first occurance of a character in a string.
+
+  @param  Str Pointer to NULL terminated ASCII string.
+  @param  Chr Character to locate.
+
+  @return  NULL or first occurance of Chr in Str.
+**/
+CHAR8 *
+AsciiStrChr (
+  IN  CHAR8  *Str,
+  IN  CHAR8  Chr
+  )
+{
+  if (Str == NULL) {
+    return Str;
+  }
+
+  while (*Str != '\0' && *Str != Chr) {
+    ++Str;
+  }
+
+  return (*Str == Chr) ? Str : NULL;
+}

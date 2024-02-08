@@ -225,40 +225,65 @@ DtPathNodeCreate (
   See if a handle with exactly matching device path already exists.
 
   @param[in]    Path           Device Path.
+  @param[in]    Connect        TRUE if connect should be called on
+                               missing components.
   @param[out]   FoundHandle    Optional pointer for storing found handle.
 
-  @retval TRUE                 Exists.
-  @retval FALSE                Does not exist or error.
-
+  @retval EFI_SUCCESS          Found.
+  @retval EFI_NOT_FOUND        Not found.
+  @retval Other.               EFI_STATUS.
 **/
-BOOLEAN
-DtPathMatchesHandle (
+EFI_STATUS
+DtPathToHandle (
   IN  EFI_DEVICE_PATH_PROTOCOL  *Path,
+  IN  BOOLEAN                   Connect,
   OUT EFI_HANDLE                *FoundHandle OPTIONAL
   )
 {
-  EFI_STATUS  Status;
-  EFI_HANDLE  Handle;
+  EFI_STATUS                Status;
+  EFI_HANDLE                Handle;
+  EFI_HANDLE                PreviousHandle;
+  EFI_DEVICE_PATH_PROTOCOL  *RemainingDevicePath;
 
-  Status = gBS->LocateDevicePath (
-                  &gEfiDtIoProtocolGuid,
-                  &Path,
-                  &Handle
-                  );
-  ASSERT (Status != EFI_INVALID_PARAMETER);
-  if (EFI_ERROR (Status)) {
-    return FALSE;
-  }
+  ASSERT (Path != NULL);
 
-  if (IsDevicePathEnd ((VOID *)Path)) {
+  PreviousHandle = NULL;
+  do {
+    RemainingDevicePath = Path;
+    Status              = gBS->LocateDevicePath (&gEfiDtIoProtocolGuid, &RemainingDevicePath, &Handle);
+    ASSERT (Status != EFI_INVALID_PARAMETER);
+
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+
+    if (!Connect && !IsDevicePathEnd (RemainingDevicePath)) {
+      Status = EFI_NOT_FOUND;
+      break;
+    }
+
+    if (Connect) {
+      if (PreviousHandle == Handle) {
+        //
+        // Second attempt after a connect.
+        //
+        Status = EFI_NOT_FOUND;
+        break;
+      }
+
+      PreviousHandle = Handle;
+      Status         = gBS->ConnectController (Handle, NULL, RemainingDevicePath, FALSE);
+    }
+  } while (!EFI_ERROR (Status) && !IsDevicePathEnd (RemainingDevicePath));
+
+  if (!EFI_ERROR (Status)) {
+    ASSERT (IsDevicePathEnd (RemainingDevicePath));
     if (FoundHandle != NULL) {
       *FoundHandle = Handle;
     }
-
-    return TRUE;
   }
 
-  return FALSE;
+  return Status;
 }
 
 /**

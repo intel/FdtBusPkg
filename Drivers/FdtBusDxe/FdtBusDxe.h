@@ -107,9 +107,10 @@ DtPathNodeCreate (
   IN  CONST CHAR8  *Name
   );
 
-BOOLEAN
-DtPathMatchesHandle (
+EFI_STATUS
+DtPathToHandle (
   IN  EFI_DEVICE_PATH_PROTOCOL  *Path,
+  IN  BOOLEAN                   Connect,
   OUT EFI_HANDLE                *FoundHandle OPTIONAL
   );
 

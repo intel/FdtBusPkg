@@ -137,14 +137,13 @@ DtIoLookup (
 
   //
   // At this point we have a fully assembled device path to
-  // the handle of interest.
+  // the handle of interest. Using DtPathToHandle/LocateDevicePath
+  // imposes a restrictions on the lookup. Namely, the unit
+  // address portion of the node name may not be omitted. Supporting
+  // fuzzy matching will require an entirely different O(N^2)
+  // lookup mechanism (or tracking children in DtDevice nodes).
   //
-  if (!Connect) {
-    Status = DtPathMatchesHandle (CurrentDp, FoundHandle) ? EFI_SUCCESS :
-             EFI_NOT_FOUND;
-  } else {
-    Status = EFI_UNSUPPORTED;
-  }
+  Status = DtPathToHandle (CurrentDp, Connect, FoundHandle);
 
 Out:
   if (CurrentDp != NULL) {

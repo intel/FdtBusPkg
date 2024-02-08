@@ -528,7 +528,7 @@ optionally connecting any missing drivers along the way.
 - absolute DT path (/foo/bar).
 
 > [!CAUTION]
-> `Connect` == TRUE is not supported at the moment.
+> The unit address portion of the DT path may not be omitted under any circumstances. Passing "/soc/pci@30000000" is okay but "/soc/pci" is not. This is a restriction in the current implementation and a difference in behavior, when compared to the [Devicetree Specification, Section 2.2.3](https://devicetree-specification.readthedocs.io/en/stable/devicetree-basics.html#path-names).
 
 #### Prototype
 

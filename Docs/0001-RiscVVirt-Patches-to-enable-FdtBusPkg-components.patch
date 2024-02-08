@@ -1,4 +1,4 @@
-From c62a13749866a27fbcae0f3216cf874483d31dda Mon Sep 17 00:00:00 2001
+From f5845eda5223890125050757a4d5fa05357ad0f4 Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Thu, 16 Mar 2023 15:46:04 -0500
 Subject: [PATCH 1/1] RiscVVirt: Patches to enable FdtBusPkg components
@@ -9,22 +9,23 @@ and driver binding where possible.
 - VirtioFdtDxe
 - PciHostBridgeLibEcam
 - FdtPciPcdProducerLib
-- HighMemDxe
+- HighMemDxe (binding variant by default)
 - PciSioSerialDxe (which supports the FDT UART device),
   instead of SerialDxe.
 
-The changes to PlatformBm are suboptimal and are WIP. Needs
-to wire up logic to lookup/connect the UART by alias.
+The changes to PlatformBm are a bit suboptimal. Need to lookup
+the UART by alias or /chosen/stdout-path.
 
 Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
 ---
- OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc           | 25 +++++++++++++------
- OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf           | 11 +++++---
- .../PlatformBootManagerLib/PlatformBm.c       |  7 ++++++
- 3 files changed, 32 insertions(+), 11 deletions(-)
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc           | 25 ++++--
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf           | 11 ++-
+ .../PlatformBootManagerLib.inf                |  3 +
+ .../PlatformBootManagerLib/PlatformBm.c       | 76 +++++++++++--------
+ 4 files changed, 74 insertions(+), 41 deletions(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-index f8b9479345d7..0c875fd3065d 100644
+index f8b9479345d7..85c3dbfc427d 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 @@ -95,9 +95,10 @@ [LibraryClasses.common]
@@ -66,8 +67,8 @@ index f8b9479345d7..0c875fd3065d 100644
    }
 -  OvmfPkg/Fdt/HighMemDxe/HighMemDxe.inf
 +  #OvmfPkg/Fdt/HighMemDxe/HighMemDxe.inf
-+  #FdtBusPkg/Drivers/HighMemDxe/HighMemDxe.inf
-+  FdtBusPkg/Drivers/HighMemDxe/HighMemDxeNoBinding.inf
++  FdtBusPkg/Drivers/HighMemDxe/HighMemDxe.inf
++  #FdtBusPkg/Drivers/HighMemDxe/HighMemDxeNoBinding.inf
    OvmfPkg/VirtioBlkDxe/VirtioBlk.inf
    OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
    OvmfPkg/VirtioNetDxe/VirtioNet.inf
@@ -97,7 +98,7 @@ index f8b9479345d7..0c875fd3065d 100644
 +      NULL|FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
    }
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
-index 40d12e0f4c46..940696a69cf8 100644
+index 40d12e0f4c46..792144bfcab6 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
 @@ -69,9 +69,13 @@ [FV.DXEFV]
@@ -111,8 +112,8 @@ index 40d12e0f4c46..940696a69cf8 100644
  INF  EmbeddedPkg/Drivers/FdtClientDxe/FdtClientDxe.inf
 -INF  OvmfPkg/Fdt/HighMemDxe/HighMemDxe.inf
 +# INF  OvmfPkg/Fdt/HighMemDxe/HighMemDxe.inf
-+# INF  FdtBusPkg/Drivers/HighMemDxe/HighMemDxe.inf
-+INF  FdtBusPkg/Drivers/HighMemDxe/HighMemDxeNoBinding.inf
++INF  FdtBusPkg/Drivers/HighMemDxe/HighMemDxe.inf
++# INF  FdtBusPkg/Drivers/HighMemDxe/HighMemDxeNoBinding.inf
  
  #
  # PI DXE Drivers producing Architectural Protocols (EFI Services)
@@ -126,11 +127,75 @@ index 40d12e0f4c46..940696a69cf8 100644
  
  # RISC-V Core Drivers
  INF  UefiCpuPkg/CpuTimerDxeRiscV64/CpuTimerDxeRiscV64.inf
+diff --git a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBootManagerLib.inf b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBootManagerLib.inf
+index 9d66c8110c53..d9dd7391f547 100644
+--- a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBootManagerLib.inf
++++ b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBootManagerLib.inf
+@@ -32,6 +32,7 @@ [Packages]
+   OvmfPkg/OvmfPkg.dec
+   SecurityPkg/SecurityPkg.dec
+   ShellPkg/ShellPkg.dec
++  FdtBusPkg/FdtBusPkg.dec
+ 
+ [LibraryClasses]
+   BaseLib
+@@ -73,3 +74,5 @@ [Protocols]
+   gEfiGraphicsOutputProtocolGuid
+   gEfiPciRootBridgeIoProtocolGuid
+   gVirtioDeviceProtocolGuid
++  gEfiDtIoProtocolGuid
++  gEfiDevicePathProtocolGuid
 diff --git a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
-index 44fd21f74fcf..e86a62fc9689 100644
+index 44fd21f74fcf..74ab93aeec1d 100644
 --- a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
 +++ b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
-@@ -767,6 +767,12 @@ PlatformRegisterOptionsAndKeys (
+@@ -18,6 +18,7 @@
+ #include <Library/QemuBootOrderLib.h>
+ #include <Library/TpmPlatformHierarchyLib.h>
+ #include <Library/UefiBootManagerLib.h>
++#include <Library/DevicePathLib.h>
+ #include <Protocol/DevicePath.h>
+ #include <Protocol/FirmwareVolume2.h>
+ #include <Protocol/GraphicsOutput.h>
+@@ -25,6 +26,7 @@
+ #include <Protocol/PciIo.h>
+ #include <Protocol/PciRootBridgeIo.h>
+ #include <Protocol/VirtioDevice.h>
++#include <Protocol/DtIo.h>
+ #include <Guid/EventGroup.h>
+ #include <Guid/GlobalVariable.h>
+ #include <Guid/RootBridgesConnectedEventGroup.h>
+@@ -39,27 +41,18 @@
+ 
+ #pragma pack (1)
+ typedef struct {
+-  VENDOR_DEVICE_PATH            SerialDxe;
+   UART_DEVICE_PATH              Uart;
+   VENDOR_DEFINED_DEVICE_PATH    TermType;
+   EFI_DEVICE_PATH_PROTOCOL      End;
+ } PLATFORM_SERIAL_CONSOLE;
+ #pragma pack ()
+ 
+-STATIC PLATFORM_SERIAL_CONSOLE  mSerialConsole = {
+-  //
+-  // VENDOR_DEVICE_PATH SerialDxe
+-  //
+-  {
+-    { HARDWARE_DEVICE_PATH,  HW_VENDOR_DP, DP_NODE_LEN (VENDOR_DEVICE_PATH) },
+-    EDKII_SERIAL_PORT_LIB_VENDOR_GUID
+-  },
+-
++STATIC PLATFORM_SERIAL_CONSOLE  mSerialConsoleSuffix = {
+   //
+   // UART_DEVICE_PATH Uart
+   //
+   {
+-    { MESSAGING_DEVICE_PATH, MSG_UART_DP,  DP_NODE_LEN (UART_DEVICE_PATH)   },
++    { MESSAGING_DEVICE_PATH, MSG_UART_DP, DP_NODE_LEN (UART_DEVICE_PATH) },
+     0,                                      // Reserved
+     FixedPcdGet64 (PcdUartDefaultBaudRate), // BaudRate
+     FixedPcdGet8 (PcdUartDefaultDataBits),  // DataBits
+@@ -767,6 +760,12 @@ PlatformRegisterOptionsAndKeys (
  // BDS Platform Functions
  //
  
@@ -143,11 +208,80 @@ index 44fd21f74fcf..e86a62fc9689 100644
  /**
    Do the platform init, can be customized by OEM/IBV
    Possible things that can be done in PlatformBootManagerBeforeConsole:
-@@ -954,6 +960,7 @@ PlatformBootManagerAfterConsole (
+@@ -784,9 +783,13 @@ PlatformBootManagerBeforeConsole (
+   VOID
+   )
+ {
+-  UINT16         FrontPageTimeout;
+-  RETURN_STATUS  PcdStatus;
+-  EFI_STATUS     Status;
++  UINT16                    FrontPageTimeout;
++  RETURN_STATUS             PcdStatus;
++  EFI_STATUS                Status;
++  EFI_HANDLE                Handle;
++  EFI_DT_IO_PROTOCOL        *DtIo;
++  EFI_DEVICE_PATH_PROTOCOL  *DtDp;
++  EFI_DEVICE_PATH_PROTOCOL  *NewDp;
+ 
+   //
+   // Signal EndOfDxe PI Event
+@@ -840,23 +843,30 @@ PlatformBootManagerBeforeConsole (
+   //
+   // Add the hardcoded serial console device path to ConIn, ConOut, ErrOut.
+   //
+-  CopyGuid (&mSerialConsole.TermType.Guid, &gEfiTtyTermGuid);
++  CopyGuid (&mSerialConsoleSuffix.TermType.Guid, &gEfiTtyTermGuid);
+ 
+-  EfiBootManagerUpdateConsoleVariable (
+-    ConIn,
+-    (EFI_DEVICE_PATH_PROTOCOL *)&mSerialConsole,
+-    NULL
+-    );
+-  EfiBootManagerUpdateConsoleVariable (
+-    ConOut,
+-    (EFI_DEVICE_PATH_PROTOCOL *)&mSerialConsole,
+-    NULL
+-    );
+-  EfiBootManagerUpdateConsoleVariable (
+-    ErrOut,
+-    (EFI_DEVICE_PATH_PROTOCOL *)&mSerialConsole,
+-    NULL
+-    );
++  Status = gBS->LocateProtocol (
++                  &gEfiDtIoProtocolGuid,
++                  NULL,
++                  (VOID **)&DtIo
++                  );
++  ASSERT_EFI_ERROR (Status);
++
++  Status = DtIo->Lookup (DtIo, "/soc/serial@10000000", TRUE, &Handle);
++  ASSERT_EFI_ERROR (Status);
++
++  Status = gBS->HandleProtocol (
++                  Handle,
++                  &gEfiDevicePathProtocolGuid,
++                  (VOID **)&DtDp
++                  );
++  ASSERT_EFI_ERROR (Status);
++
++  NewDp = AppendDevicePath (DtDp, (VOID *)&mSerialConsoleSuffix);
++
++  EfiBootManagerUpdateConsoleVariable (ConIn, NewDp, NULL);
++  EfiBootManagerUpdateConsoleVariable (ConOut, NewDp, NULL);
++  EfiBootManagerUpdateConsoleVariable (ErrOut, NewDp, NULL);
+ 
+   //
+   // Set the front page timeout from the QEMU configuration.
+@@ -954,6 +964,12 @@ PlatformBootManagerAfterConsole (
      // Connect the rest of the devices.
      //
      EfiBootManagerConnectAll ();
-+    EfiBootManagerConnectAllConsoles ();
++    //
++    // Uncomment if you want to use an alternate console instead of
++    // the /soc/serial@10000000 one.
++    //
++    // EfiBootManagerConnectAllConsoles ();
++    //
    }
  
    //

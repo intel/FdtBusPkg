@@ -55,7 +55,7 @@ Usage (
   IN CHAR16  *Name
   )
 {
-  Print (L"Usage: %s handle|handle index|path\n", Name);
+  Print (L"Usage: %s [-c] handle|handle index|path\n", Name);
   return EFI_INVALID_PARAMETER;
 }
 
@@ -150,8 +150,10 @@ EntryPoint (
   EFI_HANDLE          Handle;
   EFI_DT_IO_PROTOCOL  *DtIo;
   EFI_DT_IO_PROTOCOL  *AnyDtIo;
+  BOOLEAN             Connect;
 
-  Status = GetShellArgcArgv (ImageHandle, &Argc, &Argv);
+  Connect = FALSE;
+  Status  = GetShellArgcArgv (ImageHandle, &Argc, &Argv);
   if ((Status != EFI_SUCCESS) || (Argc < 1)) {
     Print (
       L"This program requires Microsoft Windows.\n"
@@ -169,6 +171,9 @@ EntryPoint (
                      )) == EFI_SUCCESS)
   {
     switch (GetOptContext.Opt) {
+      case L'c':
+        Connect = TRUE;
+        break;
       default:
         Print (L"Unknown option '%c'\n", GetOptContext.Opt);
         return Usage (Argv[0]);
@@ -223,7 +228,7 @@ EntryPoint (
                     );
     ASSERT_EFI_ERROR (Status);
 
-    Status = DtIo->Lookup (DtIo, AsciiArg, FALSE, &Handle);
+    Status = DtIo->Lookup (DtIo, AsciiArg, Connect, &Handle);
     FreePool (AsciiArg);
 
     if (EFI_ERROR (Status)) {
@@ -237,6 +242,16 @@ EntryPoint (
                     (VOID **)&DtIo
                     );
     ASSERT_EFI_ERROR (Status);
+  } else if (Connect) {
+    Status = gBS->ConnectController (Handle, NULL, NULL, TRUE);
+    if (EFI_ERROR (Status)) {
+      Print (
+        L"ConnectController '%s' failed: %r\n",
+        Argv[GetOptContext.OptIndex],
+        Status
+        );
+      return Status;
+    }
   }
 
   Status = DtInfo (DtIo);

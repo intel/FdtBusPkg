@@ -107,9 +107,10 @@ DtPathNodeCreate (
   IN  CONST CHAR8  *Name
   );
 
-BOOLEAN
-DtPathMatchesHandle (
+EFI_STATUS
+DtPathToHandle (
   IN  EFI_DEVICE_PATH_PROTOCOL  *Path,
+  IN  BOOLEAN                   Connect,
   OUT EFI_HANDLE                *FoundHandle OPTIONAL
   );
 
@@ -440,6 +441,12 @@ CONST CHAR8 *
 AsciiStrFindEnd (
   IN  CONST CHAR8  *Start,
   IN  CONST CHAR8  *End
+  );
+
+CHAR8 *
+AsciiStrChr (
+  IN  CHAR8  *Str,
+  IN  CHAR8  Chr
   );
 
 #ifndef MDEPKG_NDEBUG

@@ -40,7 +40,7 @@ Note: this is Devicetree being used internally by UEFI. There is no
 relation to using Devicetree as possible mechanism of describing
 hardware configuration to an OS.
 
-See the [presentation slides](Docs/Uefi2023/slides.pdf) from the UEFI Fall 2023 Developers Conference and Plugfest.
+See the [presentation video](https://www.youtube.com/watch?v=2w9iQE8jA1w) and [slides](Docs/Uefi2023/slides.pdf) from the UEFI Fall 2023 Developers Conference and Plugfest.
 
 ## Updates
 

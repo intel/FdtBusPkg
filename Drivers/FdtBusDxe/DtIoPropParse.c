@@ -193,6 +193,10 @@ DtIoParsePropBusAddress (
   Cells     = (Prop->End - Prop->Iter) / sizeof (EFI_DT_CELL);
   Buf       = Prop->Iter;
 
+  if (ElemCells == 0) {
+    return EFI_NOT_FOUND;
+  }
+
   if ((Cells / ElemCells) <= Index) {
     return EFI_NOT_FOUND;
   }
@@ -252,6 +256,10 @@ DtIoParsePropChildBusAddress (
   ElemCells = ChildAddressCells;
   Cells     = (Prop->End - Prop->Iter) / sizeof (EFI_DT_CELL);
   Buf       = Prop->Iter;
+
+  if (ElemCells == 0) {
+    return EFI_NOT_FOUND;
+  }
 
   if ((Cells / ElemCells) <= Index) {
     return EFI_NOT_FOUND;
@@ -313,6 +321,11 @@ DtIoParsePropSize (
   Cells     = (Prop->End - Prop->Iter) / sizeof (EFI_DT_CELL);
   Buf       = Prop->Iter;
 
+  if (ElemCells == 0) {
+    *Size = 0;
+    return EFI_SUCCESS;
+  }
+
   if ((Cells / ElemCells) <= Index) {
     return EFI_NOT_FOUND;
   }
@@ -372,6 +385,11 @@ DtIoParsePropChildSize (
   ElemCells = ChildSizeCells;
   Cells     = (Prop->End - Prop->Iter) / sizeof (EFI_DT_CELL);
   Buf       = Prop->Iter;
+
+  if (ElemCells == 0) {
+    *Size = 0;
+    return EFI_SUCCESS;
+  }
 
   if ((Cells / ElemCells) <= Index) {
     return EFI_NOT_FOUND;
@@ -438,6 +456,10 @@ DtIoParsePropReg (
   ElemCells    = AddressCells + SizeCells;
   Cells        = (Prop->End - Prop->Iter) / sizeof (EFI_DT_CELL);
   OriginalIter = Prop->Iter;
+
+  if (ElemCells == 0) {
+    return EFI_NOT_FOUND;
+  }
 
   if ((Cells / ElemCells) <= Index) {
     return EFI_NOT_FOUND;
@@ -534,6 +556,10 @@ DtIoParsePropRange (
   ElemCells    = ChildAddressCells + AddressCells + ChildSizeCells;
   Cells        = (Prop->End - Prop->Iter) / sizeof (EFI_DT_CELL);
   OriginalIter = Prop->Iter;
+
+  if (ElemCells == 0) {
+    return EFI_NOT_FOUND;
+  }
 
   if ((Cells / ElemCells) <= Index) {
     return EFI_NOT_FOUND;

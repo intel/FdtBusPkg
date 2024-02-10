@@ -30,6 +30,7 @@
 [LibraryClasses]
   UefiLib
   FbpAppUtilsLib
+  FbpUtilsLib
   UefiApplicationEntryPoint
   HandleParsingLib
   MemoryAllocationLib

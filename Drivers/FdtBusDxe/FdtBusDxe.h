@@ -21,6 +21,7 @@
 #include <Library/UefiDriverEntryPoint.h>
 #include <Library/HobLib.h>
 #include <Library/DevicePathLib.h>
+#include <Library/FbpUtilsLib.h>
 #include <Guid/FdtHob.h>
 #include <libfdt.h>
 #include <Library/TimerLib.h>
@@ -100,11 +101,6 @@ HandleHasBoundDriver (
 CHAR16 *
 FormatComponentName (
   IN  CONST CHAR8  *AsciiStr
-  );
-
-EFI_DT_DEVICE_PATH_NODE *
-DtPathNodeCreate (
-  IN  CONST CHAR8  *Name
   );
 
 EFI_STATUS

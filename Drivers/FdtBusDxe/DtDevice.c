@@ -41,7 +41,7 @@ DtDeviceCreate (
   Broken   = FALSE;
   TreeBase = GetTreeBaseFromDeviceFlags (DeviceFlags);
 
-  NewPathNode = DtPathNodeCreate (Name);
+  NewPathNode = FbpPathNodeCreate (Name);
   if (NewPathNode == NULL) {
     DEBUG ((DEBUG_ERROR, "%a: DtDevicePathNodeCreate\n", __func__));
     return EFI_OUT_OF_RESOURCES;

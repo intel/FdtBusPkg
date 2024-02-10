@@ -15,6 +15,7 @@
 #include <Library/HandleParsingLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/FbpAppUtilsLib.h>
+#include <Library/FbpUtilsLib.h>
 #include <Library/DebugLib.h>
 
 /**
@@ -132,8 +133,12 @@ DtInfo (
 
   P ("ComponentName", s, DtIo->ComponentName);
   P ("Name", a, DtIo->Name);
-  P ("DeviceType", a, AsciiStrLen (DtIo->DeviceType) == 0 ?
-     NoneValue : DtIo->DeviceType);
+  P (
+    "DeviceType",
+    a,
+    AsciiStrLen (DtIo->DeviceType) == 0 ?
+    NoneValue : DtIo->DeviceType
+    );
   P ("DeviceStatus", a, DtStatusString (DtIo->DeviceStatus));
   P ("AddressCells", u, DtIo->AddressCells);
   P ("SizeCells", u, DtIo->SizeCells);
@@ -225,7 +230,7 @@ EntryPoint (
   UINTN               ArgValue;
   EFI_HANDLE          Handle;
   EFI_DT_IO_PROTOCOL  *DtIo;
-  EFI_DT_IO_PROTOCOL  *AnyDtIo;
+  EFI_DT_IO_PROTOCOL  *RootDtIo;
   BOOLEAN             Connect;
 
   Connect = FALSE;
@@ -260,15 +265,10 @@ EntryPoint (
     return Usage (Argv[0]);
   }
 
-  Status = gBS->LocateProtocol (
-                  &gEfiDtIoProtocolGuid,
-                  NULL,
-                  (VOID **)&AnyDtIo
-                  );
-  ASSERT (Status != EFI_INVALID_PARAMETER);
-  if (EFI_ERROR (Status)) {
+  RootDtIo = FbpGetDtRoot ();
+  if (RootDtIo == NULL) {
     Print (L"No EFI_DT_IO_PROTOCOL devices present!\n");
-    return Status;
+    return EFI_UNSUPPORTED;
   }
 
   ArgValue = StrHexToUintn (Argv[GetOptContext.OptIndex]);
@@ -294,17 +294,18 @@ EntryPoint (
       return EFI_OUT_OF_RESOURCES;
     }
 
-    Status = AnyDtIo->Lookup (AnyDtIo, "/", FALSE, &Handle);
-    ASSERT_EFI_ERROR (Status);
+    Status = RootDtIo->Lookup (RootDtIo, AsciiArg, Connect, &Handle);
+    if (Status == EFI_NOT_FOUND) {
+      //
+      // Allow path/alias lookups of test devicetree nodes (the ones
+      // used by the FdtBusDxe unit tests on DEBUG builds).
+      //
+      RootDtIo = FbpGetDtTestRoot ();
+      if (RootDtIo != NULL) {
+        Status = RootDtIo->Lookup (RootDtIo, AsciiArg, Connect, &Handle);
+      }
+    }
 
-    Status = gBS->HandleProtocol (
-                    Handle,
-                    &gEfiDtIoProtocolGuid,
-                    (VOID **)&DtIo
-                    );
-    ASSERT_EFI_ERROR (Status);
-
-    Status = DtIo->Lookup (DtIo, AsciiArg, Connect, &Handle);
     FreePool (AsciiArg);
 
     if (EFI_ERROR (Status)) {

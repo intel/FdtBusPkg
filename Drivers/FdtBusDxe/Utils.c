@@ -49,7 +49,7 @@ GetDtRootNameFromDeviceFlags (
   CONST CHAR8  *Name;
 
   Name = (DeviceFlags & DT_DEVICE_TEST) != 0 ?
-         "DtTestRoot" : "DtRoot";
+         FBP_DT_TEST_ROOT_NAME : FBP_DT_ROOT_NAME;
 
   ASSERT (Name != NULL);
   return Name;
@@ -180,48 +180,6 @@ FormatComponentName (
 }
 
 /**
-  Given an ASCII name, allocate/fill a EFI_DT_DEVICE_PATH_NODE.
-
-  @param[in]    Name           ASCII string.
-
-  @retval NULL                 Failed to allocate memory.
-  @retval Others               EFI_DT_DEVICE_PATH_NODE.
-
-**/
-EFI_DT_DEVICE_PATH_NODE *
-DtPathNodeCreate (
-  IN  CONST CHAR8  *Name
-  )
-{
-  UINTN                    Size;
-  EFI_STATUS               Status;
-  EFI_DT_DEVICE_PATH_NODE  *Node;
-
-  Size = AsciiStrSize (Name);
-  Node = AllocateZeroPool (sizeof (EFI_DT_DEVICE_PATH_NODE) + Size);
-  if (Node == NULL) {
-    return NULL;
-  }
-
-  Node->VendorDevicePath.Header.Type      = HARDWARE_DEVICE_PATH;
-  Node->VendorDevicePath.Header.SubType   = HW_VENDOR_DP;
-  Node->VendorDevicePath.Header.Length[0] =
-    (UINT8)(sizeof (EFI_DT_DEVICE_PATH_NODE) + Size);
-  Node->VendorDevicePath.Header.Length[1] =
-    (UINT8)((sizeof (EFI_DT_DEVICE_PATH_NODE) + Size) >> 8);
-  CopyGuid (&Node->VendorDevicePath.Guid, &gEfiDtIoProtocolGuid);
-
-  Status = AsciiStrCpyS (Node->Name, Size, Name);
-  if (EFI_ERROR (Status)) {
-    FreePool (Node);
-    DEBUG ((DEBUG_ERROR, "%a: AsciiStrCpyS: %r\n", __func__, Status));
-    return NULL;
-  }
-
-  return Node;
-}
-
-/**
   See if a handle with exactly matching device path already exists.
 
   @param[in]    Path           Device Path.
@@ -276,11 +234,15 @@ DtPathToHandle (
     }
   } while (!EFI_ERROR (Status) && !IsDevicePathEnd (RemainingDevicePath));
 
-  if (!EFI_ERROR (Status)) {
-    ASSERT (IsDevicePathEnd (RemainingDevicePath));
+  if (IsDevicePathEnd (RemainingDevicePath)) {
     if (FoundHandle != NULL) {
       *FoundHandle = Handle;
     }
+
+    //
+    // Ignore ConnectController failures on the last component.
+    //
+    Status = EFI_SUCCESS;
   }
 
   return Status;

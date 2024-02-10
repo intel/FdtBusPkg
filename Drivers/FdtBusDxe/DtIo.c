@@ -116,7 +116,7 @@ DtIoLookup (
       Iter = Iter + AsciiStrLen (Iter);
     }
 
-    DpNode = DtPathNodeCreate (StartOfName);
+    DpNode = FbpPathNodeCreate (StartOfName);
     if (DpNode == NULL) {
       DEBUG ((DEBUG_ERROR, "%a: DtDevicePathNodeCreate\n", __func__));
       Status = EFI_OUT_OF_RESOURCES;

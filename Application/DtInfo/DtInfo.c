@@ -132,7 +132,8 @@ DtInfo (
 
   P ("ComponentName", s, DtIo->ComponentName);
   P ("Name", a, DtIo->Name);
-  P ("DeviceType", a, DtIo->DeviceType);
+  P ("DeviceType", a, AsciiStrLen (DtIo->DeviceType) == 0 ?
+     NoneValue : DtIo->DeviceType);
   P ("DeviceStatus", a, DtStatusString (DtIo->DeviceStatus));
   P ("AddressCells", u, DtIo->AddressCells);
   P ("SizeCells", u, DtIo->SizeCells);
@@ -140,7 +141,7 @@ DtInfo (
   P ("ChildSizeCells", u, DtIo->ChildSizeCells);
   P ("IsDmaCoherent", a, DtIo->IsDmaCoherent ? "yes" : "no");
   if (DtIo->ParentDevice == NULL) {
-    P ("ParentDevice", a, "N/A");
+    P ("ParentDevice", a, NoneValue);
   } else {
     P ("ParentDevice", lx, DtIo->ParentDevice);
   }

@@ -123,7 +123,7 @@ Here's an example of output:
 ```
      ComponentName: 'DT(serial@10000000)'
               Name: 'serial@10000000'
-        DeviceType: ''
+        DeviceType: '[NONE]'
       DeviceStatus: 'OKAY'
       AddressCells: '2'
          SizeCells: '2'

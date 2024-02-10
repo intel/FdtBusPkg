@@ -82,7 +82,7 @@ typedef struct {
   EFI_DT_BUS_ADDRESS    TranslatedBase;
   EFI_DT_SIZE           Length;
   //
-  // BusDevice == NULL means TranslatedBase is a
+  // BusDtIo == NULL means TranslatedBase is a
   // CPU address.
   //
   EFI_DT_IO_PROTOCOL    *BusDtIo;

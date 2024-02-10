@@ -86,20 +86,53 @@ DtStatusString (
 }
 
 STATIC
+VOID
+PrintDtReg (
+  IN EFI_DT_REG  *Reg
+  )
+{
+  UINTN  Pad;
+
+  Print (
+    L"via %s 0x",
+    Reg->BusDtIo == NULL ? L"CPU" : Reg->BusDtIo->ComponentName
+    );
+
+  Pad = 0;
+  if ((Reg->TranslatedBase >> 64) > 0) {
+    Print (L"%lx", (UINT64)(Reg->TranslatedBase >> 64));
+    Pad = 16;
+  }
+
+  Print (L"%0*lx(", Pad, (UINT64)Reg->TranslatedBase);
+
+  Pad = 0;
+  if ((Reg->Length >> 64) > 0) {
+    Print (L"%lx", (UINT64)(Reg->Length >> 64));
+    Pad = 16;
+  }
+
+  Print (L"%0*lx)\n", Pad, (UINT64)Reg->Length);
+}
+
+STATIC
 EFI_STATUS
 DtInfo (
   IN EFI_DT_IO_PROTOCOL  *DtIo
   )
 {
-  UINTN        Index;
-  EFI_STATUS   Status;
-  CONST CHAR8  *AsciiValue;
+  UINTN               Index;
+  EFI_STATUS          Status;
+  CONST CHAR8         *AsciiValue;
+  STATIC CONST CHAR8  *ErrorValue = "[ERROR]";
+  STATIC CONST CHAR8  *NoneValue  = "[NONE]";
 
-  #define P(x, y, z)  Print (L"%18a: '%" #y "'\n", x, (z))
+  #define PP(x)        Print (L"%18a: ", (x))
+  #define P(x, ty, y)  PP(x); Print (L"'%" #ty "'\n", (y))
 
   P ("ComponentName", s, DtIo->ComponentName);
   P ("Name", a, DtIo->Name);
-  P ("DeviceType", a, DtIo->Name);
+  P ("DeviceType", a, DtIo->DeviceType);
   P ("DeviceStatus", a, DtStatusString (DtIo->DeviceStatus));
   P ("AddressCells", u, DtIo->AddressCells);
   P ("SizeCells", u, DtIo->SizeCells);
@@ -107,7 +140,7 @@ DtInfo (
   P ("ChildSizeCells", u, DtIo->ChildSizeCells);
   P ("IsDmaCoherent", a, DtIo->IsDmaCoherent ? "yes" : "no");
   if (DtIo->ParentDevice == NULL) {
-    P ("ParentDevice", a, "none");
+    P ("ParentDevice", a, "N/A");
   } else {
     P ("ParentDevice", lx, DtIo->ParentDevice);
   }
@@ -117,17 +150,59 @@ DtInfo (
     Status = DtIo->GetString (
                      DtIo,
                      "compatible",
-                     Index++,
+                     Index,
                      &AsciiValue
                      );
-    if ((Status != EFI_SUCCESS) && (Status != EFI_NOT_FOUND)) {
-      Print (L"Couldn't get 'compatible'\n");
-      return Status;
+    if (EFI_ERROR (Status)) {
+      if (Status == EFI_NOT_FOUND) {
+        if (Index != 0) {
+          break;
+        }
+
+        AsciiValue = NoneValue;
+      } else {
+        AsciiValue = ErrorValue;
+      }
     }
 
-    if (!EFI_ERROR (Status)) {
-      P ("Compatible", a, AsciiValue);
+    P ("Compatible", a, AsciiValue);
+
+    Index++;
+  } while (!EFI_ERROR (Status));
+
+  Index = 0;
+  do {
+    CONST CHAR8  *Name;
+    EFI_DT_REG   Reg;
+
+    Name = NULL;
+    DtIo->GetString (DtIo, "reg-names", Index, &Name);
+
+    Status = DtIo->GetReg (DtIo, Index, &Reg);
+    if (EFI_ERROR (Status)) {
+      if (Status == EFI_NOT_FOUND) {
+        if (Index != 0) {
+          break;
+        }
+
+        AsciiValue = NoneValue;
+      } else {
+        AsciiValue = ErrorValue;
+      }
+
+      P ("Reg", a, AsciiValue);
+    } else {
+      PP ("Reg");
+      if (Name != NULL) {
+        Print (L"%a ", Name);
+      } else {
+        Print (L"#%u ", Index);
+      }
+
+      PrintDtReg (&Reg);
     }
+
+    Index++;
   } while (!EFI_ERROR (Status));
 
   #undef P

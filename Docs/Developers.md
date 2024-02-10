@@ -123,15 +123,16 @@ Here's an example of output:
 ```
      ComponentName: 'DT(serial@10000000)'
               Name: 'serial@10000000'
-        DeviceType: 'serial@10000000'
+        DeviceType: ''
       DeviceStatus: 'OKAY'
       AddressCells: '2'
          SizeCells: '2'
  ChildAddressCells: '0'
     ChildSizeCells: '0'
      IsDmaCoherent: 'no'
-      ParentDevice: '17F44B918'
+      ParentDevice: '17F447E18'
         Compatible: 'ns16550a'
+               Reg: #0 via CPU 0x10000000(100)
 ```
 
 ## FAQ
@@ -306,13 +307,5 @@ device handle, including the FdtBusDxe component name:
 Shell> FS0:\DtInfo.EFI 99
      ComponentName: 'DT(serial@10000000)'
               Name: 'serial@10000000'
-        DeviceType: 'serial@10000000'
-      DeviceStatus: 'OKAY'
-      AddressCells: '2'
-         SizeCells: '2'
- ChildAddressCells: '0'
-    ChildSizeCells: '0'
-     IsDmaCoherent: 'no'
-      ParentDevice: '17F44B918'
-        Compatible: 'ns16550a'
+...
 ```

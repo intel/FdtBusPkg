@@ -1,4 +1,4 @@
-From f5845eda5223890125050757a4d5fa05357ad0f4 Mon Sep 17 00:00:00 2001
+From f7df95a36940e7864277d3a031a360890e4bfad0 Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Thu, 16 Mar 2023 15:46:04 -0500
 Subject: [PATCH 1/1] RiscVVirt: Patches to enable FdtBusPkg components
@@ -21,8 +21,8 @@ Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
  OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc           | 25 ++++--
  OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf           | 11 ++-
  .../PlatformBootManagerLib.inf                |  3 +
- .../PlatformBootManagerLib/PlatformBm.c       | 76 +++++++++++--------
- 4 files changed, 74 insertions(+), 41 deletions(-)
+ .../PlatformBootManagerLib/PlatformBm.c       | 77 +++++++++++--------
+ 4 files changed, 75 insertions(+), 41 deletions(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 index f8b9479345d7..85c3dbfc427d 100644
@@ -146,7 +146,7 @@ index 9d66c8110c53..d9dd7391f547 100644
 +  gEfiDtIoProtocolGuid
 +  gEfiDevicePathProtocolGuid
 diff --git a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
-index 44fd21f74fcf..74ab93aeec1d 100644
+index 44fd21f74fcf..e60a149407f3 100644
 --- a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
 +++ b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
 @@ -18,6 +18,7 @@
@@ -225,7 +225,7 @@ index 44fd21f74fcf..74ab93aeec1d 100644
  
    //
    // Signal EndOfDxe PI Event
-@@ -840,23 +843,30 @@ PlatformBootManagerBeforeConsole (
+@@ -840,23 +843,31 @@ PlatformBootManagerBeforeConsole (
    //
    // Add the hardcoded serial console device path to ConIn, ConOut, ErrOut.
    //
@@ -269,10 +269,11 @@ index 44fd21f74fcf..74ab93aeec1d 100644
 +  EfiBootManagerUpdateConsoleVariable (ConIn, NewDp, NULL);
 +  EfiBootManagerUpdateConsoleVariable (ConOut, NewDp, NULL);
 +  EfiBootManagerUpdateConsoleVariable (ErrOut, NewDp, NULL);
++  FreePool (NewDp);
  
    //
    // Set the front page timeout from the QEMU configuration.
-@@ -954,6 +964,12 @@ PlatformBootManagerAfterConsole (
+@@ -954,6 +965,12 @@ PlatformBootManagerAfterConsole (
      // Connect the rest of the devices.
      //
      EfiBootManagerConnectAll ();

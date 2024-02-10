@@ -102,7 +102,7 @@ Shell> FS0:\DtInfo.EFI [-c] handle|handle index|path
 ```
 
 You can pass it a device `EFI_HANDLE`, a device handle index (from
-`devtree`) or an absolute DT path:
+`devtree`), an alias or an absolute DT path:
 
 Options:
 * `-c`: connect controller to driver. If a handle or handle index is provided, this performs a recursive connect. If DT path is passed, performs a non-recursive connect on all components of the path, creating any missing DT I/O Protocol EFI handles along the way.

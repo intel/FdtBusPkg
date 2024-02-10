@@ -74,6 +74,7 @@
   DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
   UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
   UefiLib|MdePkg/Library/UefiLib/UefiLib.inf
+  FbpUtilsLib|FdtBusPkg/Library/FbpUtilsLib/FbpUtilsLib.inf
   FbpAppUtilsLib|FdtBusPkg/Library/FbpAppUtilsLib/FbpAppUtilsLib.inf
 
 [LibraryClasses.AARCH64]

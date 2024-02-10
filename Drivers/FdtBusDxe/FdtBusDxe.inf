@@ -46,6 +46,7 @@
   FdtLib
   DevicePathLib
   TimerLib
+  FbpUtilsLib
 
 [Protocols]
   gEfiDtIoProtocolGuid

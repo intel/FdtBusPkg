@@ -144,7 +144,7 @@ FdtGetAddressCells (
   }
 
   Value = fdt32_to_cpu (*Buf);
-  if ((Value <= 0) || (Value > FDT_MAX_NCELLS)) {
+  if (Value > FDT_MAX_NCELLS) {
     return EFI_DEVICE_ERROR;
   }
 

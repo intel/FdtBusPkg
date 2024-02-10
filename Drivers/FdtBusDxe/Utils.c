@@ -234,11 +234,14 @@ DtPathToHandle (
     }
   } while (!EFI_ERROR (Status) && !IsDevicePathEnd (RemainingDevicePath));
 
-  if (!EFI_ERROR (Status)) {
-    ASSERT (IsDevicePathEnd (RemainingDevicePath));
+  if (IsDevicePathEnd (RemainingDevicePath)) {
     if (FoundHandle != NULL) {
       *FoundHandle = Handle;
     }
+    //
+    // Ignore ConnectController failures on the last component.
+    //
+    Status = EFI_SUCCESS;
   }
 
   return Status;

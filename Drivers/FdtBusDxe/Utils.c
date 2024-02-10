@@ -49,7 +49,7 @@ GetDtRootNameFromDeviceFlags (
   CONST CHAR8  *Name;
 
   Name = (DeviceFlags & DT_DEVICE_TEST) != 0 ?
-    FBP_DT_TEST_ROOT_NAME : FBP_DT_ROOT_NAME;
+         FBP_DT_TEST_ROOT_NAME : FBP_DT_ROOT_NAME;
 
   ASSERT (Name != NULL);
   return Name;
@@ -238,6 +238,7 @@ DtPathToHandle (
     if (FoundHandle != NULL) {
       *FoundHandle = Handle;
     }
+
     //
     // Ignore ConnectController failures on the last component.
     //

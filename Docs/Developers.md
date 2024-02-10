@@ -316,10 +316,3 @@ Shell> FS0:\DtInfo.EFI 99
       ParentDevice: '17F44B918'
         Compatible: 'ns16550a'
 ```
-
-### Help, my DT controller driver is skipped before OS load!
-
-Or, it's only loaded when the UEFI Setup is entered (because of full enumeration).
-
-If your device is not a boot device, and it must be initialized
-prior to OS load, you must [mark it as critical](UefiDtBindings.md#ueficritical) in your Devicetree.

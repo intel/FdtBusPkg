@@ -392,3 +392,119 @@ context of the ancestor DT controller referenced by `BusDtIo`, and you
 can only perform I/O using the DT I/O Protocol functions (`ReadReg()` and
 friends, and [only if the ancestor device driver implements the I/O
 callbacks](../Drivers/FdtBusDxe/DtIo.c#L438)).
+
+## Critical Device Drivers
+
+Typically, a UEFI environment only initializes the devices required to
+boot an OS. Here we are, of course, only talking about device drives
+that comply to the UEFI Driver Model. UEFI firmware usually
+initializes every possible device (e.g. connects drivers to
+controllers)  only in situations, when there is no known OS to boot
+(e.g. when there is a need to enumerate every possible boot device, or
+when entering a setup utility).
+
+What about the devices that are not in the boot path?
+
+### Manually Connecting
+
+A good example here are console devices - the actual devices required to connect
+are usually well known ahead of time. A Tiano implementation using MdeModulePkg/Universal/BdsDxe
+typically sets these up in the PlatformBootManagerLib component.
+
+Here is an example of a `PlatformBootManagerBeforeConsole ()` excerpt,
+that sets up a serial console (backed by [PciSioSerialDxe](../Drivers/PciSioSerialDxe)):
+
+```
+  //
+  // Add the hardcoded serial console device path to ConIn, ConOut, ErrOut.
+  //
+  CopyGuid (&mSerialConsoleSuffix.TermType.Guid, &gEfiTtyTermGuid);
+
+  Status = gBS->LocateProtocol (
+                  &gEfiDtIoProtocolGuid,
+                  NULL,
+                  (VOID **)&DtIo
+                  );
+  ASSERT_EFI_ERROR (Status);
+
+  Status = DtIo->Lookup (DtIo, "/soc/serial@10000000", TRUE, &Handle);
+  ASSERT_EFI_ERROR (Status);
+
+  Status = gBS->HandleProtocol (
+                  Handle,
+                  &gEfiDevicePathProtocolGuid,
+                  (VOID **)&DtDp
+                  );
+  ASSERT_EFI_ERROR (Status);
+
+  NewDp = AppendDevicePath (DtDp, (VOID *)&mSerialConsoleSuffix);
+
+  EfiBootManagerUpdateConsoleVariable (ConIn, NewDp, NULL);
+  EfiBootManagerUpdateConsoleVariable (ConOut, NewDp, NULL);
+  EfiBootManagerUpdateConsoleVariable (ErrOut, NewDp, NULL)
+```
+
+The example first looks up an `EFI_DT_IO_PROTOCOL` handle. It doesn't
+matter which, since the code then does a lookup by an absolute path
+of a UART device. This path, of course, is dependent on the actual
+Devicetree being used.
+
+> [!NOTE]
+> The `LocateHandle` is guaranteed to succeed. When FdtBusDxe loads,
+> at least the Devicetree root controller is enumerated.
+
+The third parameter to `Lookup ()` is `Connect == TRUE`:
+as the path is parsed and resolved, any missing drivers
+are bound to devices and any missing DT controllers are
+enumerated. This accomplishes initializing the bare minimum required -
+a much better alternative to enumerating every devices (via
+`EfiBootManagerConnectAll ()`) and connecting every console (via
+`EfiBootManagerConnectAllConsoles ()`).
+
+> [!NOTE]
+> Prior to the `Lookup ()` with `Connect == TRUE`, the DT controller
+> for the UART may not even be enumerated, meaning that manually
+> iterating over all possible EFI handles matching the UART device
+> would come up short.
+
+The code then grabs the `EFI_DEVICE_PATH_PROTOCOL` for the
+`EFI_HANDLE` matching the UART. This is required by
+`EfiBootManagerUpdateConsoleVariable ()`. It also appends a few
+configuration nodes to the EFI device path, required to correctly
+configure the UART and console drivers.
+
+> [!NOTE]
+> You don't have to use the DT I/O Protocol `Lookup ()` function. It
+> just makes things much more convenient than manually hardcoding
+> an `EFI_DEVICE_PATH_PROTOCOL` to a device, especially since the DT
+> controller components have a variable-length structure (see
+> `EFI_DT_DEVICE_PATH_NODE` definition).
+
+### Automatically Connecting
+
+Sometimes it's awkward to programmatically lookup and connect
+devices. _memory_ devices are a good example - there may be multiple
+of these, so programmatic lookup would involve connecting the parent
+and then enumerating and connecting all the children.
+
+The alternative is to tag the devices with the [_uefi,critical_
+property](UefiDtBindings.md#ueficritical). FdtBusDxe will connect all
+such devices when End-of-DXE event is signalled during the BDS phase.
+
+> [!NOTE]
+> DT controllers of _device_type_ _memory_ are implicitly treated as
+> having _uefi,critical_.
+
+HighMemDxe, when [compiled](../Drivers/HighMemDxe/HighMemDxe.inf) as a
+UEFI Driver Model driver, is an example of a driver used with DT
+controllers that are marked as critical.
+
+### Legacy Drivers
+
+Another alternative may be to implement a legacy device driver, but
+this is usually not a good idea, given the additional complexity and
+fragility involved.
+
+HighMemDxe, when
+[compiled](../Drivers/HighMemDxe/HighMemDxeNoBinding.inf) as a
+legacy driver, is an example of this approach.

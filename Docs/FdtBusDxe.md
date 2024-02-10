@@ -22,7 +22,8 @@ Devicetree to the OS" signal. The callback installs the managed
 Devicetree in the EFI Configuration Table, which matches FdtClientDxe behavior.
 - Registers an End-of-DXE notification callback. The callback ensures
 that controllers [marked as critical](UefiDtBindings.md#ueficritical)
-are connected to their drivers and initialized.
+are connected to their drivers and initialized when End-of-DXE is signalled
+during the BDS phase.
 - Registers as a bus driver, by:
   - Creating the device handle for the Devicetree root.
   - On debug builds, creating the device handle for the test Devicetree root (used for regression testing).

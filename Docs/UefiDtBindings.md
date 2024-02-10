@@ -18,3 +18,6 @@ These apply on top of [Devicetree Specification, Chapter 4](https://devicetree-s
 > controllers. Thus, a DT device with _uefi,critical_ must be a child
 > of a controller supported by an existing driver, and this controller
 > needs to have a _uefi,critical_ property as well.
+
+> [!NOTE]
+> Devices of type _memory_ are implicitly treated as having _uefi,critical_.

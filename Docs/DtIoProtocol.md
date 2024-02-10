@@ -422,6 +422,27 @@ ASSERT (ChildDtIo->GetRegByName (ChildDtIo, "banana", &Reg) == EFI_SUCCESS);
 > an `EFI_DT_BUS_ADDRESS` and an `EFI_DT_SIZE`. `GetReg()` and related
 > calls perform translation of bus addresses to CPU addresses.
 
+### Unit Address
+
+There is no `EFI_DT_IO_PROTOCOL` field for the unit address.
+
+According to the Devicetree Specification, the unit address is
+optional. When it is present, it must match the first address in
+the _reg_ property. Consequently, you can get at the unit address
+with something like:
+
+```
+EFI_DT_REG Reg;
+EFI_DT_BUS_ADDRESS UnitAddress;
+
+if (DtIo->GetReg (DtIo, 0, &Reg) == EFI_SUCCESS) {
+  //
+  // Have unit address.
+  //
+  UnitAddress = Reg.BusBase;
+}
+```
+
 ### Register Access
 
 The facilities provided mirror those available in

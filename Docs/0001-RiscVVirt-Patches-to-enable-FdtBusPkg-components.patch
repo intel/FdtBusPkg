@@ -1,4 +1,4 @@
-From f7df95a36940e7864277d3a031a360890e4bfad0 Mon Sep 17 00:00:00 2001
+From 901383a9d8ab9a2a2ff733e7abe14f2e71fe3c60 Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Thu, 16 Mar 2023 15:46:04 -0500
 Subject: [PATCH 1/1] RiscVVirt: Patches to enable FdtBusPkg components
@@ -18,17 +18,17 @@ the UART by alias or /chosen/stdout-path.
 
 Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
 ---
- OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc           | 25 ++++--
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc           | 26 +++++--
  OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf           | 11 ++-
- .../PlatformBootManagerLib.inf                |  3 +
- .../PlatformBootManagerLib/PlatformBm.c       | 77 +++++++++++--------
- 4 files changed, 75 insertions(+), 41 deletions(-)
+ .../PlatformBootManagerLib.inf                |  4 +
+ .../PlatformBootManagerLib/PlatformBm.c       | 74 +++++++++++--------
+ 4 files changed, 74 insertions(+), 41 deletions(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-index f8b9479345d7..85c3dbfc427d 100644
+index f8b9479345d7..122b7464846a 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-@@ -95,9 +95,10 @@ [LibraryClasses.common]
+@@ -95,13 +95,15 @@ [LibraryClasses.common]
    FrameBufferBltLib|MdeModulePkg/Library/FrameBufferBltLib/FrameBufferBltLib.inf
    QemuBootOrderLib|OvmfPkg/Library/QemuBootOrderLib/QemuBootOrderLib.inf
    FileExplorerLib|MdeModulePkg/Library/FileExplorerLib/FileExplorerLib.inf
@@ -41,7 +41,12 @@ index f8b9479345d7..85c3dbfc427d 100644
    PciHostBridgeUtilityLib|OvmfPkg/Library/PciHostBridgeUtilityLib/PciHostBridgeUtilityLib.inf
    PeiHardwareInfoLib|OvmfPkg/Library/HardwareInfoLib/PeiHardwareInfoLib.inf
    PlatformHookLib|MdeModulePkg/Library/BasePlatformHookLibNull/BasePlatformHookLibNull.inf
-@@ -334,7 +335,8 @@ [Components]
+   ImagePropertiesRecordLib|MdeModulePkg/Library/ImagePropertiesRecordLib/ImagePropertiesRecordLib.inf
++  FbpUtilsLib|FdtBusPkg/Library/FbpUtilsLib/FbpUtilsLib.inf
+ 
+ !if $(TPM2_ENABLE) == TRUE
+   Tpm2CommandLib|SecurityPkg/Library/Tpm2CommandLib/Tpm2CommandLib.inf
+@@ -334,7 +336,8 @@ [Components]
    MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe.inf
    MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
    MdeModulePkg/Universal/Console/TerminalDxe/TerminalDxe.inf
@@ -51,7 +56,7 @@ index f8b9479345d7..85c3dbfc427d 100644
  
    MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
  
-@@ -351,14 +353,18 @@ [Components]
+@@ -351,14 +354,18 @@ [Components]
    #
    # Platform Driver
    #
@@ -72,7 +77,7 @@ index f8b9479345d7..85c3dbfc427d 100644
    OvmfPkg/VirtioBlkDxe/VirtioBlk.inf
    OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
    OvmfPkg/VirtioNetDxe/VirtioNet.inf
-@@ -448,12 +454,14 @@ [Components]
+@@ -448,12 +455,14 @@ [Components]
    #
    OvmfPkg/RiscVVirt/PciCpuIo2Dxe/PciCpuIo2Dxe.inf {
      <LibraryClasses>
@@ -89,7 +94,7 @@ index f8b9479345d7..85c3dbfc427d 100644
    }
    OvmfPkg/PciHotPlugInitDxe/PciHotPlugInit.inf
    OvmfPkg/VirtioPciDeviceDxe/VirtioPciDeviceDxe.inf
-@@ -503,5 +511,6 @@ [Components]
+@@ -503,5 +512,6 @@ [Components]
    MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
    OvmfPkg/AcpiPlatformDxe/AcpiPlatformDxe.inf {
      <LibraryClasses>
@@ -128,7 +133,7 @@ index 40d12e0f4c46..792144bfcab6 100644
  # RISC-V Core Drivers
  INF  UefiCpuPkg/CpuTimerDxeRiscV64/CpuTimerDxeRiscV64.inf
 diff --git a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBootManagerLib.inf b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBootManagerLib.inf
-index 9d66c8110c53..d9dd7391f547 100644
+index 9d66c8110c53..b62c2af15da1 100644
 --- a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBootManagerLib.inf
 +++ b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBootManagerLib.inf
 @@ -32,6 +32,7 @@ [Packages]
@@ -139,25 +144,34 @@ index 9d66c8110c53..d9dd7391f547 100644
  
  [LibraryClasses]
    BaseLib
-@@ -73,3 +74,5 @@ [Protocols]
+@@ -50,6 +51,7 @@ [LibraryClasses]
+   UefiBootServicesTableLib
+   UefiLib
+   UefiRuntimeServicesTableLib
++  FbpUtilsLib
+ 
+ [FixedPcd]
+   gEfiMdePkgTokenSpaceGuid.PcdUartDefaultBaudRate
+@@ -73,3 +75,5 @@ [Protocols]
    gEfiGraphicsOutputProtocolGuid
    gEfiPciRootBridgeIoProtocolGuid
    gVirtioDeviceProtocolGuid
 +  gEfiDtIoProtocolGuid
 +  gEfiDevicePathProtocolGuid
 diff --git a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
-index 44fd21f74fcf..e60a149407f3 100644
+index 44fd21f74fcf..54b95304722f 100644
 --- a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
 +++ b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
-@@ -18,6 +18,7 @@
+@@ -18,6 +18,8 @@
  #include <Library/QemuBootOrderLib.h>
  #include <Library/TpmPlatformHierarchyLib.h>
  #include <Library/UefiBootManagerLib.h>
 +#include <Library/DevicePathLib.h>
++#include <Library/FbpUtilsLib.h>
  #include <Protocol/DevicePath.h>
  #include <Protocol/FirmwareVolume2.h>
  #include <Protocol/GraphicsOutput.h>
-@@ -25,6 +26,7 @@
+@@ -25,6 +27,7 @@
  #include <Protocol/PciIo.h>
  #include <Protocol/PciRootBridgeIo.h>
  #include <Protocol/VirtioDevice.h>
@@ -165,7 +179,7 @@ index 44fd21f74fcf..e60a149407f3 100644
  #include <Guid/EventGroup.h>
  #include <Guid/GlobalVariable.h>
  #include <Guid/RootBridgesConnectedEventGroup.h>
-@@ -39,27 +41,18 @@
+@@ -39,27 +42,18 @@
  
  #pragma pack (1)
  typedef struct {
@@ -195,7 +209,7 @@ index 44fd21f74fcf..e60a149407f3 100644
      0,                                      // Reserved
      FixedPcdGet64 (PcdUartDefaultBaudRate), // BaudRate
      FixedPcdGet8 (PcdUartDefaultDataBits),  // DataBits
-@@ -767,6 +760,12 @@ PlatformRegisterOptionsAndKeys (
+@@ -767,6 +761,12 @@ PlatformRegisterOptionsAndKeys (
  // BDS Platform Functions
  //
  
@@ -208,7 +222,7 @@ index 44fd21f74fcf..e60a149407f3 100644
  /**
    Do the platform init, can be customized by OEM/IBV
    Possible things that can be done in PlatformBootManagerBeforeConsole:
-@@ -784,9 +783,13 @@ PlatformBootManagerBeforeConsole (
+@@ -784,9 +784,13 @@ PlatformBootManagerBeforeConsole (
    VOID
    )
  {
@@ -225,7 +239,7 @@ index 44fd21f74fcf..e60a149407f3 100644
  
    //
    // Signal EndOfDxe PI Event
-@@ -840,23 +843,31 @@ PlatformBootManagerBeforeConsole (
+@@ -840,23 +844,27 @@ PlatformBootManagerBeforeConsole (
    //
    // Add the hardcoded serial console device path to ConIn, ConOut, ErrOut.
    //
@@ -247,12 +261,8 @@ index 44fd21f74fcf..e60a149407f3 100644
 -    (EFI_DEVICE_PATH_PROTOCOL *)&mSerialConsole,
 -    NULL
 -    );
-+  Status = gBS->LocateProtocol (
-+                  &gEfiDtIoProtocolGuid,
-+                  NULL,
-+                  (VOID **)&DtIo
-+                  );
-+  ASSERT_EFI_ERROR (Status);
++  DtIo = FbpGetDtRoot ();
++  ASSERT (DtIo != NULL);
 +
 +  Status = DtIo->Lookup (DtIo, "/soc/serial@10000000", TRUE, &Handle);
 +  ASSERT_EFI_ERROR (Status);
@@ -273,7 +283,7 @@ index 44fd21f74fcf..e60a149407f3 100644
  
    //
    // Set the front page timeout from the QEMU configuration.
-@@ -954,6 +965,12 @@ PlatformBootManagerAfterConsole (
+@@ -954,6 +962,12 @@ PlatformBootManagerAfterConsole (
      // Connect the rest of the devices.
      //
      EfiBootManagerConnectAll ();

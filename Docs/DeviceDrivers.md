@@ -284,6 +284,43 @@ Shell> devtree
 ...
 ```
 
+### Another Simple Approach
+
+Instead of enumerating existing handles, a legacy driver could
+directly look up a device, if the path to the device is known.
+
+```
+  DtIo = FbpGetDtRoot ();
+  ASSERT (DtIo != NULL);
+
+  Status = DtIo->Lookup (DtIo, "/soc/serial@10000000", TRUE, &Handle);
+  ASSERT_EFI_ERROR (Status);
+
+  Status = gBS->HandleProtocol (
+                  Handle,
+                  &gEfiDtIoProtocol,
+                  (VOID **)&DtIo
+                  );
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Perform OpenProtocol (Handle, BY_DRIVER) and other steps
+  // as before.
+  //
+```
+
+The example first looks up the `EFI_DT_IO_PROTOCOL` for the root DT
+controller using the `FbpGetDtRoot ()` function provided by the
+convenience FbpUtilsLib library. The code then does a lookup by
+an absolute path or alias of a UART device, connecting any missing
+DT controllers along the way (provided they have UEFI Driver Model
+drivers!).
+
+This approach is more straighforward and can deal with the looked-up
+device not being enumerated at the time of invocation, but requires
+knowing the full path or alias to the device, which is highly
+hardware and platform specific.
+
 ### More Complex Example
 
 The following figure demonstrates supporting controllers enumerated after the legacy driver loads. Some controllers are handled immediately, while
@@ -405,14 +442,16 @@ when entering a setup utility).
 
 What about the devices that are not in the boot path?
 
-### Manually Connecting
+### Manually Connecting during the BDS Phase
 
-A good example here are console devices - the actual devices required to connect
-are usually well known ahead of time. A Tiano implementation using MdeModulePkg/Universal/BdsDxe
-typically sets these up in the PlatformBootManagerLib component.
+A good example here are console devices - the actual devices required
+to connect are usually well known ahead of time. A Tiano
+implementation using MdeModulePkg/Universal/BdsDxe typically sets
+these up in the PlatformBootManagerLib component.
 
 Here is an example of a `PlatformBootManagerBeforeConsole ()` excerpt,
-that sets up a serial console (backed by [PciSioSerialDxe](../Drivers/PciSioSerialDxe)):
+that sets up a serial console (backed by
+[PciSioSerialDxe](../Drivers/PciSioSerialDxe)).
 
 ```
   //
@@ -420,12 +459,8 @@ that sets up a serial console (backed by [PciSioSerialDxe](../Drivers/PciSioSeri
   //
   CopyGuid (&mSerialConsoleSuffix.TermType.Guid, &gEfiTtyTermGuid);
 
-  Status = gBS->LocateProtocol (
-                  &gEfiDtIoProtocolGuid,
-                  NULL,
-                  (VOID **)&DtIo
-                  );
-  ASSERT_EFI_ERROR (Status);
+  DtIo = FbpGetDtRoot ();
+  ASSERT (DtIo != NULL);
 
   Status = DtIo->Lookup (DtIo, "/soc/serial@10000000", TRUE, &Handle);
   ASSERT_EFI_ERROR (Status);
@@ -444,19 +479,12 @@ that sets up a serial console (backed by [PciSioSerialDxe](../Drivers/PciSioSeri
   EfiBootManagerUpdateConsoleVariable (ErrOut, NewDp, NULL)
 ```
 
-The example first looks up an `EFI_DT_IO_PROTOCOL` handle. It doesn't
-matter which, since the code then does a lookup by an absolute path
-of a UART device. This path, of course, is dependent on the actual
-Devicetree being used.
-
-> [!NOTE]
-> The `LocateHandle` is guaranteed to succeed. When FdtBusDxe loads,
-> at least the Devicetree root controller is enumerated.
+This is quite similar to [directly looking up devices in a legacy driver](#another-simple-approach).
 
 The third parameter to `Lookup ()` is `Connect == TRUE`:
-as the path is parsed and resolved, any missing drivers
-are bound to devices and any missing DT controllers are
-enumerated. This accomplishes initializing the bare minimum required -
+as we want the path to be parsed and resolved, with all missing drivers
+bound to devices and all missing DT controllers enumerated. This
+accomplishes initializing the bare minimum required -
 a much better alternative to enumerating every devices (via
 `EfiBootManagerConnectAll ()`) and connecting every console (via
 `EfiBootManagerConnectAllConsoles ()`).

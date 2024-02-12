@@ -8,47 +8,11 @@
 **/
 
 #include <Uefi.h>
-#include <Protocol/DtIo.h>
 #include <Library/UefiLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiApplicationEntryPoint.h>
-#include <Library/HandleParsingLib.h>
-#include <Library/MemoryAllocationLib.h>
 #include <Library/FbpAppUtilsLib.h>
-#include <Library/FbpUtilsLib.h>
 #include <Library/DebugLib.h>
-
-/**
-  Converts the Unicode string to ASCII string to a new allocated buffer.
-
-  @param[in]       String       Unicode string to be converted.
-
-  @return     Buffer points to ASCII string, or NULL if error happens.
-
-**/
-STATIC
-CHAR8 *
-UnicodeStrDupToAsciiStr (
-  CONST CHAR16  *String
-  )
-{
-  CHAR8       *AsciiStr;
-  UINTN       BufLen;
-  EFI_STATUS  Status;
-
-  BufLen   = StrLen (String) + 1;
-  AsciiStr = AllocatePool (BufLen);
-  if (AsciiStr == NULL) {
-    return NULL;
-  }
-
-  Status = UnicodeStrToAsciiStrS (String, AsciiStr, BufLen);
-  if (EFI_ERROR (Status)) {
-    return NULL;
-  }
-
-  return AsciiStr;
-}
 
 STATIC
 EFI_STATUS
@@ -56,7 +20,7 @@ Usage (
   IN CHAR16  *Name
   )
 {
-  Print (L"Usage: %s [-c] handle|handle index|path\n", Name);
+  Print (L"Usage: %s handle|handle index|alias|path\n", Name);
   return EFI_INVALID_PARAMETER;
 }
 
@@ -227,20 +191,14 @@ EntryPoint (
   CHAR16              **Argv;
   EFI_STATUS          Status;
   GET_OPT_CONTEXT     GetOptContext;
-  UINTN               ArgValue;
-  EFI_HANDLE          Handle;
   EFI_DT_IO_PROTOCOL  *DtIo;
-  EFI_DT_IO_PROTOCOL  *RootDtIo;
-  BOOLEAN             Connect;
 
-  Connect = FALSE;
-  Status  = GetShellArgcArgv (ImageHandle, &Argc, &Argv);
-  if ((Status != EFI_SUCCESS) || (Argc < 1)) {
-    Print (
-      L"This program requires Microsoft Windows.\n"
-      "Just kidding...only the UEFI Shell!\n"
-      );
-    return EFI_ABORTED;
+  Status = GetShellArgcArgv (ImageHandle, &Argc, &Argv);
+  if (EFI_ERROR (Status)) {
+    //
+    // Already logged error.
+    //
+    return Status;
   }
 
   INIT_GET_OPT_CONTEXT (&GetOptContext);
@@ -252,9 +210,6 @@ EntryPoint (
                      )) == EFI_SUCCESS)
   {
     switch (GetOptContext.Opt) {
-      case L'c':
-        Connect = TRUE;
-        break;
       default:
         Print (L"Unknown option '%c'\n", GetOptContext.Opt);
         return Usage (Argv[0]);
@@ -265,70 +220,16 @@ EntryPoint (
     return Usage (Argv[0]);
   }
 
-  RootDtIo = FbpGetDtRoot ();
-  if (RootDtIo == NULL) {
-    Print (L"No EFI_DT_IO_PROTOCOL devices present!\n");
-    return EFI_UNSUPPORTED;
-  }
-
-  ArgValue = StrHexToUintn (Argv[GetOptContext.OptIndex]);
-  Handle   = ConvertHandleIndexToHandle (ArgValue);
-  if (Handle == NULL) {
-    Handle = (EFI_HANDLE)ArgValue;
-  }
-
-  Status = gBS->HandleProtocol (
-                  Handle,
-                  &gEfiDtIoProtocolGuid,
-                  (VOID **)&DtIo
-                  );
+  Status = FbpAppLookup (
+             Argv[GetOptContext.OptIndex],
+             &DtIo,
+             NULL
+             );
   if (EFI_ERROR (Status)) {
-    CHAR8  *AsciiArg;
-
-    AsciiArg = UnicodeStrDupToAsciiStr (Argv[GetOptContext.OptIndex]);
-    if (AsciiArg == NULL) {
-      Print (
-        L"Couldn't convert '%s' to ASCII\n",
-        Argv[GetOptContext.OptIndex]
-        );
-      return EFI_OUT_OF_RESOURCES;
-    }
-
-    Status = RootDtIo->Lookup (RootDtIo, AsciiArg, Connect, &Handle);
-    if (Status == EFI_NOT_FOUND) {
-      //
-      // Allow path/alias lookups of test devicetree nodes (the ones
-      // used by the FdtBusDxe unit tests on DEBUG builds).
-      //
-      RootDtIo = FbpGetDtTestRoot ();
-      if (RootDtIo != NULL) {
-        Status = RootDtIo->Lookup (RootDtIo, AsciiArg, Connect, &Handle);
-      }
-    }
-
-    FreePool (AsciiArg);
-
-    if (EFI_ERROR (Status)) {
-      Print (L"Bad parameter '%s'\n", Argv[GetOptContext.OptIndex]);
-      return Status;
-    }
-
-    Status = gBS->HandleProtocol (
-                    Handle,
-                    &gEfiDtIoProtocolGuid,
-                    (VOID **)&DtIo
-                    );
-    ASSERT_EFI_ERROR (Status);
-  } else if (Connect) {
-    Status = gBS->ConnectController (Handle, NULL, NULL, TRUE);
-    if (EFI_ERROR (Status)) {
-      Print (
-        L"ConnectController '%s' failed: %r\n",
-        Argv[GetOptContext.OptIndex],
-        Status
-        );
-      return Status;
-    }
+    //
+    // Already logged the error in FbpAppLookup.
+    //
+    return Status;
   }
 
   Status = DtInfo (DtIo);

@@ -16,6 +16,9 @@
 #include <Protocol/LoadedImage.h>
 #include <Protocol/EfiShellInterface.h>
 #include <Protocol/ShellParameters.h>
+#include <Library/FbpUtilsLib.h>
+#include <Library/DebugLib.h>
+#include <Library/HandleParsingLib.h>
 
 EFI_STATUS
 GetOpt (
@@ -129,5 +132,137 @@ GetShellArgcArgv (
     return EFI_SUCCESS;
   }
 
+  if ((Status != EFI_SUCCESS) || (*Argcp < 1)) {
+    Print (
+      L"This program requires Microsoft Windows. "
+      "Just kidding...only the UEFI Shell!\n"
+      );
+  }
+
   return EFI_NOT_FOUND;
+}
+
+/**
+  Converts the Unicode string to ASCII string to a new allocated buffer.
+
+  @param[in]  String  Unicode string to be converted.
+
+  @return  Buffer points to ASCII string, or NULL if error happens.
+
+**/
+STATIC
+CHAR8 *
+UnicodeStrDupToAsciiStr (
+  CONST CHAR16  *String
+  )
+{
+  CHAR8       *AsciiStr;
+  UINTN       BufLen;
+  EFI_STATUS  Status;
+
+  BufLen   = StrLen (String) + 1;
+  AsciiStr = AllocatePool (BufLen);
+  if (AsciiStr == NULL) {
+    return NULL;
+  }
+
+  Status = UnicodeStrToAsciiStrS (String, AsciiStr, BufLen);
+  if (EFI_ERROR (Status)) {
+    return NULL;
+  }
+
+  return AsciiStr;
+}
+
+/**
+  Looks up a DT I/O Protocol given a string, which encodes a handle
+  or DT alias/path.
+
+  Logs error conditions.
+
+  @param[in]   String     Encodes handle or DT alias/path.
+  @param[out]  OutDtIo    Where to return the looked up protocol.
+  @param[out]  OutHandle  Where to return the looked up handle.
+
+  @return  EFI_STATUS.
+
+**/
+EFI_STATUS
+FbpAppLookup (
+  IN  CONST CHAR16        *String,
+  OUT EFI_DT_IO_PROTOCOL  **OutDtIo,
+  OUT EFI_HANDLE          *OutHandle OPTIONAL
+  )
+{
+  EFI_STATUS          Status;
+  UINTN               ArgValue;
+  EFI_HANDLE          Handle;
+  EFI_DT_IO_PROTOCOL  *DtIo;
+  EFI_DT_IO_PROTOCOL  *RootDtIo;
+
+  ASSERT (String != NULL);
+  ASSERT (OutDtIo != NULL);
+
+  RootDtIo = FbpGetDtRoot ();
+  if (RootDtIo == NULL) {
+    Print (L"No EFI_DT_IO_PROTOCOL devices present!\n");
+    return EFI_NOT_FOUND;
+  }
+
+  ArgValue = StrHexToUintn (String);
+  Handle   = ConvertHandleIndexToHandle (ArgValue);
+  if (Handle == NULL) {
+    Handle = (EFI_HANDLE)ArgValue;
+  }
+
+  Status = gBS->HandleProtocol (
+                  Handle,
+                  &gEfiDtIoProtocolGuid,
+                  (VOID **)&DtIo
+                  );
+  if (EFI_ERROR (Status)) {
+    CHAR8  *AsciiArg;
+
+    AsciiArg = UnicodeStrDupToAsciiStr (String);
+    if (AsciiArg == NULL) {
+      Print (
+        L"Couldn't convert '%s' to ASCII\n",
+        String
+        );
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    Status = RootDtIo->Lookup (RootDtIo, AsciiArg, TRUE, &Handle);
+    if (Status == EFI_NOT_FOUND) {
+      //
+      // Allow path/alias lookups of test devicetree nodes (the ones
+      // used by the FdtBusDxe unit tests on DEBUG builds).
+      //
+      RootDtIo = FbpGetDtTestRoot ();
+      if (RootDtIo != NULL) {
+        Status = RootDtIo->Lookup (RootDtIo, AsciiArg, TRUE, &Handle);
+      }
+    }
+
+    FreePool (AsciiArg);
+
+    if (EFI_ERROR (Status)) {
+      Print (L"Bad parameter '%s': %r\n", String, Status);
+      return Status;
+    }
+
+    Status = gBS->HandleProtocol (
+                    Handle,
+                    &gEfiDtIoProtocolGuid,
+                    (VOID **)&DtIo
+                    );
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  if (OutHandle != NULL) {
+    *OutHandle = Handle;
+  }
+
+  *OutDtIo = DtIo;
+  return EFI_SUCCESS;
 }

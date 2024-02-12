@@ -98,23 +98,23 @@ Dumps `EFI_DT_IO_PROTOCOL` info for a DT controller.
 #### Usage
 
 ```
-Shell> FS0:\DtInfo.EFI [-c] handle|handle index|path
+Shell> FS0:\DtInfo.EFI handle|handle index|alias|path
 ```
 
 You can pass it a device `EFI_HANDLE`, a device handle index (from
 `devtree`), an alias or an absolute DT path:
-
-Options:
-* `-c`: connect controller to driver. If a handle or handle index is provided, this performs a recursive connect. If DT path is passed, performs a non-recursive connect on all components of the path, creating any missing DT I/O Protocol EFI handles along the way.
 
 Examples:
 
 ```
 Shell> FS0:\DtInfo.EFI 17F44B918
 Shell> FS0:\DtInfo.EFI 99
-Shell> FS0:\DtInfo -c soc/pci@30000000
-Shell> FS0:\DtInfo -c /soc/pci@30000000
+Shell> FS0:\DtInfo soc/pci@30000000
+Shell> FS0:\DtInfo /soc/pci@30000000
 ```
+
+> [!NOTE]
+> A lookup by path will connect any missing drivers and enumerate missing devices along the path.
 
 > [!CAUTION]
 > The unit address portion of the DT path may not be omitted under any circumstances. Passing "/soc/pci@30000000" is okay but "/soc/pci" is not. This is a restriction in the current implementation and a difference in behavior, when compared to the [Devicetree Specification, Section 2.2.3](https://devicetree-specification.readthedocs.io/en/stable/devicetree-basics.html#path-names).

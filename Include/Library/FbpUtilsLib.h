@@ -18,8 +18,8 @@
 // build has a second tree used for unit testing, there
 // are real names assigned for these.
 //
-#define FBP_DT_ROOT_NAME      "DtRoot"
-#define FBP_DT_TEST_ROOT_NAME "DtTestRoot"
+#define FBP_DT_ROOT_NAME       "DtRoot"
+#define FBP_DT_TEST_ROOT_NAME  "DtTestRoot"
 
 EFI_DT_IO_PROTOCOL *
 FbpGetDtRoot (

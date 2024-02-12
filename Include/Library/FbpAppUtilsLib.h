@@ -11,6 +11,7 @@
 #define __FBP_APP_UTILS_LIB_H__
 
 #include <Uefi.h>
+#include <Protocol/DtIo.h>
 
 typedef struct GET_OPT_CONTEXT {
   CHAR16    Opt;
@@ -37,6 +38,13 @@ GetShellArgcArgv (
   IN  EFI_HANDLE  ImageHandle,
   OUT UINTN       *Argcp,
   OUT CHAR16      ***Argvp
+  );
+
+EFI_STATUS
+FbpAppLookup (
+  IN  CONST CHAR16        *String,
+  OUT EFI_DT_IO_PROTOCOL  **OutDtIo,
+  OUT EFI_HANDLE          *OutHandle OPTIONAL
   );
 
 #endif /* __FBP_APP_UTILS_LIB_H__ */

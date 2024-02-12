@@ -60,7 +60,8 @@ PrintDtU128 (
 
 VOID
 PrintDtReg (
-  IN EFI_DT_REG  *Reg
+  IN EFI_DT_REG  *Reg,
+  IN BOOLEAN     NewLine
   );
 
 #endif /* __FBP_APP_UTILS_LIB_H__ */

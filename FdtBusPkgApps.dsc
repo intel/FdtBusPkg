@@ -91,4 +91,5 @@
 [Components]
   FdtBusPkg/Application/DtInfo/DtInfo.inf
   FdtBusPkg/Application/DtProp/DtProp.inf
+  FdtBusPkg/Application/DtReg/DtReg.inf
 

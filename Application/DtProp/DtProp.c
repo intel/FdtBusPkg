@@ -69,7 +69,7 @@ Usage (
   IN  CHAR16  *Name
   )
 {
-  Print (L"Usage: %s handle|handle index|path property [parse string]\n", Name);
+  Print (L"Usage: %s controller property [parse string]\n", Name);
   return EFI_INVALID_PARAMETER;
 }
 
@@ -248,7 +248,7 @@ EntryPoint (
           PrintDtU128 (Value.Size, TRUE);
           break;
         case L'r':
-          PrintDtReg (&Value.Reg);
+          PrintDtReg (&Value.Reg, TRUE);
           break;
         case L'R':
           PrintDtU128 (Value.Range.ChildBase, FALSE);

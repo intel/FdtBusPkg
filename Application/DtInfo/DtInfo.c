@@ -20,7 +20,7 @@ Usage (
   IN CHAR16  *Name
   )
 {
-  Print (L"Usage: %s handle|handle index|alias|path\n", Name);
+  Print (L"Usage: %s controller\n", Name);
   return EFI_INVALID_PARAMETER;
 }
 
@@ -139,7 +139,7 @@ DtInfo (
         Print (L"#%u ", Index);
       }
 
-      PrintDtReg (&Reg);
+      PrintDtReg (&Reg, TRUE);
     }
 
     Index++;

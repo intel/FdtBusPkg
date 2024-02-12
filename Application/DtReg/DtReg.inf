@@ -1,0 +1,44 @@
+## @file
+#
+#  Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010019
+  BASE_NAME                      = DtReg
+  FILE_GUID                      = E6717A5E-CBCD-4418-B17F-781C310D4321
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = EntryPoint
+
+#
+#  VALID_ARCHITECTURES           = X64 AARCH64 RISCV64
+#
+
+[Sources]
+  DtReg.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  FdtBusPkg/FdtBusPkg.dec
+  ShellPkg/ShellPkg.dec
+
+[LibraryClasses]
+  UefiLib
+  FbpAppUtilsLib
+  UefiApplicationEntryPoint
+  MemoryAllocationLib
+  DebugLib
+
+[Guids]
+
+[Protocols]
+  gEfiDtIoProtocolGuid
+
+[Depex]
+
+[BuildOptions]

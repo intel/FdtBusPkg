@@ -46,6 +46,7 @@ See the [presentation video](https://www.youtube.com/watch?v=2w9iQE8jA1w) and [s
 
 | When | What |
 | :-: | ------------ |
+| February 2024 | Docs complete. DtInfo, DtProp and DtReg tools added. |
 | January 2024 | Open sourced. Work on documentation. |
 | October 2023 | Presented at the UEFI Fall 2023 Developers Conference and Plugfest. See the [presentation slides](Docs/Uefi2023/slides.pdf). |
 | 2023 | Reported to RISE as a 2024 priority. |

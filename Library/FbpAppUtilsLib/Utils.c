@@ -290,7 +290,8 @@ PrintDtU128 (
 
 VOID
 PrintDtReg (
-  IN EFI_DT_REG  *Reg
+  IN EFI_DT_REG  *Reg,
+  IN BOOLEAN     NewLine
   )
 {
   Print (
@@ -301,5 +302,5 @@ PrintDtReg (
   PrintDtU128 (Reg->TranslatedBase, FALSE);
   Print (L"(");
   PrintDtU128 (Reg->Length, FALSE);
-  Print (L")\n");
+  Print (L")%a", NewLine ? "\n" : "");
 }

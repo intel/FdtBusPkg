@@ -98,11 +98,21 @@ Dumps `EFI_DT_IO_PROTOCOL` info for a DT controller.
 #### Usage
 
 ```
-Shell> FS0:\DtInfo handle|handle index|alias|path
+Shell> FS0:\DtInfo controller
 ```
 
-You can pass it a device `EFI_HANDLE`, a device handle index (from
-`devtree`), an alias or an absolute DT path:
+#### Parameters
+
+* `controller`: a hex `EFI_HANDLE`, a hex device handle index (from
+`devtree`), an alias or absolute DT path.
+
+> [!NOTE]
+> A lookup by path will connect any missing drivers and enumerate missing devices along the path.
+
+> [!CAUTION]
+> The unit address portion of the DT path may not be omitted under any circumstances. Passing "/soc/pci@30000000" is okay but "/soc/pci" is not. This is a restriction in the current implementation and a difference in behavior, when compared to the [Devicetree Specification, Section 2.2.3](https://devicetree-specification.readthedocs.io/en/stable/devicetree-basics.html#path-names).
+
+#### Examples
 
 ```
 Shell> FS0:\DtInfo 17F44B918
@@ -110,12 +120,6 @@ Shell> FS0:\DtInfo 99
 Shell> FS0:\DtInfo soc/pci@30000000
 Shell> FS0:\DtInfo /soc/pci@30000000
 ```
-
-> [!NOTE]
-> A lookup by path will connect any missing drivers and enumerate missing devices along the path.
-
-> [!CAUTION]
-> The unit address portion of the DT path may not be omitted under any circumstances. Passing "/soc/pci@30000000" is okay but "/soc/pci" is not. This is a restriction in the current implementation and a difference in behavior, when compared to the [Devicetree Specification, Section 2.2.3](https://devicetree-specification.readthedocs.io/en/stable/devicetree-basics.html#path-names).
 
 Here's an example of output:
 ```
@@ -140,24 +144,21 @@ Dumps a property value for a DT controller.
 #### Usage
 
 ```
-Shell> FS0:\DtInfo handle|handle index|alias|path property [parse string]
+Shell> FS0:\DtProp controller property [parse string]
 ```
 
-You can pass it a device `EFI_HANDLE`, a device handle index (from
-`devtree`), an alias or an absolute DT path. Just like [DtInfo.efi](#dtinfoefi).
+#### Parameters
 
-If the optional parse string is not provided, the tool simply performs
-a hex dump of the property data:
+* `controller`: a hex `EFI_HANDLE`, a hex device handle index (from
+`devtree`), an alias or absolute DT path. Just like [DtInfo.efi](#dtinfoefi).
+* `property`: property name to dump.
+* `parse string`: commands to parse the property data.
 
-```
-Shell> FS0:\DtProp /soc/pci@30000000 compatible
-Dumping 22 bytes of 'compatible':
-  00000000: 70 63 69 2D 68 6F 73 74-2D 65 63 61 6D 2D 67 65  *pci-host-ecam-ge*
-  00000010: 6E 65 72 69 63 00                                *neric.*
-```
+If the optional `parse string` is not provided, the tool performs
+a hex dump of the `property` data.
 
-The parse string, when provided, contains single-character commands to
-parse the property data. This enables parsing complex and arbitrary
+The `parse string`, when provided, contains single-character commands to
+parse the `property` data. This enables parsing complex and arbitrary
 formats.
 
 | Command | Parse Type |
@@ -174,11 +175,24 @@ formats.
 | `s`     | `EFI_DT_VALUE_STRING` |
 | `d`     | `EFI_DT_VALUE_DEVICE` |
 
-Examples:
+#### Examples
 
+Hex dump of a property:
+```
+Shell> FS0:\DtProp /soc/pci@30000000 compatible
+Dumping 22 bytes of 'compatible':
+  00000000: 70 63 69 2D 68 6F 73 74-2D 65 63 61 6D 2D 67 65  *pci-host-ecam-ge*
+  00000010: 6E 65 72 69 63 00                                *neric.*
+```
+
+An empty property:
 ```
 Shell> FS0:\DtProp /soc/pci@30000000 dma-coherent
 Property 'dma-coherent' exists but is EMPTY
+````
+
+Formatting property data using the parse string parameter:
+```
 Shell> FS0:\DtProp /soc/pci@30000000 reg 1111
 Parsing 'reg' with command string '1111':
   00000000: 0x0
@@ -196,6 +210,60 @@ Parsing 'reg' with command string 'r':
 
 The first column in the output is the offset of the parsed element within the
 property data.
+
+### DtReg.efi
+
+Reads and writes DT controller register regions.
+
+#### Usage
+
+```
+Shell> FS0:\DtReg [-i reg index|name] [-n count] [-w access width] controller offset [set value]
+```
+
+#### Parameters
+
+* `-i`: _reg_ index or name. When not provided, the first (index 0) region is used.
+* `-n`: number of reads or writes to perform. When not provided, 1 is used.
+* `-w`: access width (1, 2, 4 or 8). When not provded, 1 is used.
+* `controller`: a hex `EFI_HANDLE`, a hex device handle index (from
+`devtree`), an alias or absolute DT path. Just like [DtInfo.efi](#dtinfoefi).
+* `offset`: a region offset (decimal).
+* `set value`: when provided, the value to write to register region.
+
+If the optional `set value` parameter is not provided, the tool reads
+from a register region. If the `set value` parameter is provided, to
+tool writes to a register region. The accesses begin at the specified
+`offset`, with the address incrementing `count` times.
+
+#### Examples
+
+16 reads of 2 bytes each at offset 0:
+```
+Shell> FS0:\DtReg -n 16 -w 2 soc/pci@30000000 0
+Dumping 32 bytes at offset 0x0 of reg via CPU 0x30000000(10000000):
+  00000000: 1B36
+  00000002: 0008
+  00000004: 0000
+  00000006: 0000
+  00000008: 0000
+  0000000A: 0600
+  0000000C: 0000
+  0000000E: 0000
+  00000010: 0000
+  00000012: 0000
+  00000014: 0000
+  00000016: 0000
+  00000018: 0000
+  0000001A: 0000
+  0000001C: 0000
+  0000001E: 0000
+```
+
+Write 1 byte at offset 0:
+```
+Shell> FS0:\DtReg soc/serial@10000000 0 41
+```
 
 ## FAQ
 

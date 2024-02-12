@@ -98,15 +98,15 @@ Dumps `EFI_DT_IO_PROTOCOL` info for a DT controller.
 #### Usage
 
 ```
-Shell> FS0:\DtInfo.EFI handle|handle index|alias|path
+Shell> FS0:\DtInfo handle|handle index|alias|path
 ```
 
 You can pass it a device `EFI_HANDLE`, a device handle index (from
 `devtree`), an alias or an absolute DT path:
 
 ```
-Shell> FS0:\DtInfo.EFI 17F44B918
-Shell> FS0:\DtInfo.EFI 99
+Shell> FS0:\DtInfo 17F44B918
+Shell> FS0:\DtInfo 99
 Shell> FS0:\DtInfo soc/pci@30000000
 Shell> FS0:\DtInfo /soc/pci@30000000
 ```
@@ -140,7 +140,7 @@ Dumps a property value for a DT controller.
 #### Usage
 
 ```
-Shell> FS0:\DtInfo.EFI handle|handle index|alias|path property [parse string]
+Shell> FS0:\DtInfo handle|handle index|alias|path property [parse string]
 ```
 
 You can pass it a device `EFI_HANDLE`, a device handle index (from
@@ -181,17 +181,17 @@ Shell> FS0:\DtProp /soc/pci@30000000 dma-coherent
 Property 'dma-coherent' exists but is EMPTY
 Shell> FS0:\DtProp /soc/pci@30000000 reg 1111
 Parsing 'reg' with command string '1111':
-  0x0000 | 0x0
-  0x0004 | 0x30000000
-  0x0008 | 0x0
-  0x000C | 0x10000000
+  00000000: 0x0
+  00000004: 0x30000000
+  00000008: 0x0
+  0000000C: 0x10000000
 Shell> FS0:\DtProp /soc/pci@30000000 reg bz
 Parsing 'reg' with command string 'bz':
-  0x0000 | 30000000
-  0x0008 | 10000000
+  00000000: 30000000
+  00000008: 10000000
 Shell> FS0:\DtProp /soc/pci@30000000 reg r
 Parsing 'reg' with command string 'r':
-  0x0000 | via CPU 0x30000000(10000000)
+  00000000: via CPU 0x30000000(10000000)
 ```
 
 The first column in the output is the offset of the parsed element within the
@@ -366,7 +366,7 @@ The [DtInfo.efi](#dtinfoefi) tool will list more info about this
 device handle, including the FdtBusDxe component name:
 
 ```
-Shell> FS0:\DtInfo.EFI 99
+Shell> FS0:\DtInfo 99
      ComponentName: 'DT(serial@10000000)'
               Name: 'serial@10000000'
 ...

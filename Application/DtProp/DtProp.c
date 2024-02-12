@@ -158,206 +158,114 @@ EntryPoint (
       Argv[GetOptContext.OptIndex + 2]
       );
     for (Index = 0; Argv[GetOptContext.OptIndex + 2][Index] != L'\0'; Index++) {
-      CHAR16  Command;
+      CHAR16             Command;
+      EFI_DT_VALUE_TYPE  Type;
+      CONST CHAR8        *Desc;
+      union {
+        UINT32                U32;
+        UINT64                U64;
+        EFI_DT_U128           U128;
+        EFI_DT_BUS_ADDRESS    Address;
+        EFI_DT_SIZE           Size;
+        EFI_DT_REG            Reg;
+        EFI_DT_RANGE          Range;
+        EFI_HANDLE            Handle;
+        CHAR8                 *String;
+      } Value;
 
-      Print (L"  0x%04x | ", Prop.Iter - Prop.Begin);
+      #define P(x)  Type = x; Desc = #x;
+
+      Print (L"  %08x: ", Prop.Iter - Prop.Begin);
       Command = Argv[GetOptContext.OptIndex + 2][Index];
       switch (Command) {
         case L'1':
-        {
-          UINT32  Value;
-
-          Status = DtIo->ParseProp (DtIo, &Prop, EFI_DT_VALUE_U32, 0, &Value);
-          if (EFI_ERROR (Status)) {
-            Print (
-              L"\nError parsing EFI_DT_VALUE_U32 at offset 0x%x: %r\n",
-              Prop.Iter - Prop.Begin,
-              Status
-              );
-            goto out;
-          }
-
-          Print (L"0x%x\n", Value);
+          P (EFI_DT_VALUE_U32);
           break;
-        }
         case L'2':
-        {
-          UINT64  Value;
-
-          Status = DtIo->ParseProp (DtIo, &Prop, EFI_DT_VALUE_U64, 0, &Value);
-          if (EFI_ERROR (Status)) {
-            Print (
-              L"\nError parsing EFI_DT_VALUE_U64 at offset 0x%x: %r\n",
-              Prop.Iter - Prop.Begin,
-              Status
-              );
-            goto out;
-          }
-
-          Print (L"0x%lx\n", Value);
+          P (EFI_DT_VALUE_U64);
           break;
-        }
         case L'4':
-        {
-          EFI_DT_U128  Value;
-
-          Status = DtIo->ParseProp (DtIo, &Prop, EFI_DT_VALUE_U128, 0, &Value);
-          if (EFI_ERROR (Status)) {
-            Print (
-              L"\nError parsing EFI_DT_VALUE_U128 at offset 0x%x: %r\n",
-              Prop.Iter - Prop.Begin,
-              Status
-              );
-            goto out;
-          }
-
-          PrintDtU128 (Value, TRUE);
+          P (EFI_DT_VALUE_U128);
           break;
-        }
         case L'b':
-        {
-          EFI_DT_BUS_ADDRESS  Value;
-
-          Status = DtIo->ParseProp (DtIo, &Prop, EFI_DT_VALUE_BUS_ADDRESS, 0, &Value);
-          if (EFI_ERROR (Status)) {
-            Print (
-              L"\nError parsing EFI_DT_VALUE_BUS_ADDRESS at offset 0x%x: %r\n",
-              Prop.Iter - Prop.Begin,
-              Status
-              );
-            goto out;
-          }
-
-          PrintDtU128 (Value, TRUE);
+          P (EFI_DT_VALUE_BUS_ADDRESS);
           break;
-        }
         case L'B':
-        {
-          EFI_DT_BUS_ADDRESS  Value;
-
-          Status = DtIo->ParseProp (DtIo, &Prop, EFI_DT_VALUE_CHILD_BUS_ADDRESS, 0, &Value);
-          if (EFI_ERROR (Status)) {
-            Print (
-              L"\nError parsing EFI_DT_VALUE_CHILD_BUS_ADDRESS at offset 0x%x: %r\n",
-              Prop.Iter - Prop.Begin,
-              Status
-              );
-            goto out;
-          }
-
-          PrintDtU128 (Value, TRUE);
+          P (EFI_DT_VALUE_CHILD_BUS_ADDRESS);
           break;
-        }
         case L'z':
-        {
-          EFI_DT_SIZE  Value;
-
-          Status = DtIo->ParseProp (DtIo, &Prop, EFI_DT_VALUE_SIZE, 0, &Value);
-          if (EFI_ERROR (Status)) {
-            Print (
-              L"\nError parsing EFI_DT_VALUE_SIZE at offset 0x%x: %r\n",
-              Prop.Iter - Prop.Begin,
-              Status
-              );
-            goto out;
-          }
-
-          PrintDtU128 (Value, TRUE);
+          P (EFI_DT_VALUE_SIZE);
           break;
-        }
         case L'Z':
-        {
-          EFI_DT_SIZE  Value;
-
-          Status = DtIo->ParseProp (DtIo, &Prop, EFI_DT_VALUE_CHILD_SIZE, 0, &Value);
-          if (EFI_ERROR (Status)) {
-            Print (
-              L"\nError parsing EFI_DT_VALUE_CHILD_SIZE at offset 0x%x: %r\n",
-              Prop.Iter - Prop.Begin,
-              Status
-              );
-            goto out;
-          }
-
-          PrintDtU128 (Value, TRUE);
+          P (EFI_DT_VALUE_CHILD_SIZE);
           break;
-        }
         case L'r':
-        {
-          EFI_DT_REG  Value;
-
-          Status = DtIo->ParseProp (DtIo, &Prop, EFI_DT_VALUE_REG, 0, &Value);
-          if (EFI_ERROR (Status)) {
-            Print (
-              L"\nError parsing EFI_DT_VALUE_REG at offset 0x%x: %r\n",
-              Prop.Iter - Prop.Begin,
-              Status
-              );
-            goto out;
-          }
-
-          PrintDtReg (&Value);
+          P (EFI_DT_VALUE_REG);
           break;
-        }
         case L'R':
-        {
-          EFI_DT_RANGE  Value;
-
-          Status = DtIo->ParseProp (DtIo, &Prop, EFI_DT_VALUE_RANGE, 0, &Value);
-          if (EFI_ERROR (Status)) {
-            Print (
-              L"\nError parsing EFI_DT_VALUE_RANGE at offset 0x%x: %r\n",
-              Prop.Iter - Prop.Begin,
-              Status
-              );
-            goto out;
-          }
-
-          PrintDtU128 (Value.ChildBase, FALSE);
-          Print (L"->");
-          PrintDtU128 (Value.ParentBase, FALSE);
-          Print (L"(");
-          PrintDtU128 (Value.Size, FALSE);
-          Print (L")\n");
+          P (EFI_DT_VALUE_RANGE);
           break;
-        }
         case L's':
-        {
-          CHAR8  *String;
-
-          Status = DtIo->ParseProp (DtIo, &Prop, EFI_DT_VALUE_STRING, 0, &String);
-          if (EFI_ERROR (Status)) {
-            Print (
-              L"\nError parsing EFI_DT_VALUE_STRING at offset 0x%x: %r\n",
-              Prop.Iter - Prop.Begin,
-              Status
-              );
-            goto out;
-          }
-
-          Print (L"%a\n", String);
+          P (EFI_DT_VALUE_STRING);
           break;
-        }
         case L'd':
-        {
-          EFI_HANDLE  Handle;
-
-          Status = DtIo->ParseProp (DtIo, &Prop, EFI_DT_VALUE_DEVICE, 0, &Handle);
-          if (EFI_ERROR (Status)) {
-            Print (
-              L"\nError parsing EFI_DT_VALUE_STRING at offset 0x%x: %r\n",
-              Prop.Iter - Prop.Begin,
-              Status
-              );
-            goto out;
-          }
-
-          Print (L"%lx\n", Handle);
+          P (EFI_DT_VALUE_DEVICE);
           break;
-        }
         default:
           Print (L"Unknown parsing commmand '%c'\n", Command);
           goto out;
+      }
+
+      #undef P
+
+      Status = DtIo->ParseProp (DtIo, &Prop, Type, 0, &Value);
+      if (EFI_ERROR (Status)) {
+        Print (
+          L"\nError parsing %a at offset 0x%x: %r\n",
+          Desc,
+          Prop.Iter - Prop.Begin,
+          Status
+          );
+        goto out;
+      }
+
+      switch (Command) {
+        case L'1':
+          Print (L"0x%x\n", Value.U32);
+          break;
+        case L'2':
+          Print (L"0x%lx\n", Value.U64);
+          break;
+        case L'4':
+          PrintDtU128 (Value.U128, TRUE);
+          break;
+        case L'b':
+        case L'B':
+          PrintDtU128 (Value.Address, TRUE);
+          break;
+        case L'z':
+        case L'Z':
+          PrintDtU128 (Value.Size, TRUE);
+          break;
+        case L'r':
+          PrintDtReg (&Value.Reg);
+          break;
+        case L'R':
+          PrintDtU128 (Value.Range.ChildBase, FALSE);
+          Print (L"->");
+          PrintDtU128 (Value.Range.ParentBase, FALSE);
+          Print (L"(");
+          PrintDtU128 (Value.Range.Size, FALSE);
+          Print (L")\n");
+          break;
+        case L's':
+          Print (L"%a\n", Value.String);
+          break;
+        case L'd':
+          Print (L"%lx\n", Value.Handle);
+          break;
+        default:
+          ASSERT (0);
       }
     }
   }

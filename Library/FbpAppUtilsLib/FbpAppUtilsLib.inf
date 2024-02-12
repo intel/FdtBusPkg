@@ -28,6 +28,8 @@
   BaseMemoryLib
   MemoryAllocationLib
   UefiBootServicesTableLib
+  HandleParsingLib
+  FbpUtilsLib
 
 [Guids]
 

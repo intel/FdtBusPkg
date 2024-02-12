@@ -51,36 +51,6 @@ DtStatusString (
 }
 
 STATIC
-VOID
-PrintDtReg (
-  IN EFI_DT_REG  *Reg
-  )
-{
-  UINTN  Pad;
-
-  Print (
-    L"via %s 0x",
-    Reg->BusDtIo == NULL ? L"CPU" : Reg->BusDtIo->ComponentName
-    );
-
-  Pad = 0;
-  if ((Reg->TranslatedBase >> 64) > 0) {
-    Print (L"%lx", (UINT64)(Reg->TranslatedBase >> 64));
-    Pad = 16;
-  }
-
-  Print (L"%0*lx(", Pad, (UINT64)Reg->TranslatedBase);
-
-  Pad = 0;
-  if ((Reg->Length >> 64) > 0) {
-    Print (L"%lx", (UINT64)(Reg->Length >> 64));
-    Pad = 16;
-  }
-
-  Print (L"%0*lx)\n", Pad, (UINT64)Reg->Length);
-}
-
-STATIC
 EFI_STATUS
 DtInfo (
   IN EFI_DT_IO_PROTOCOL  *DtIo

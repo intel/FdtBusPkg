@@ -104,8 +104,6 @@ Shell> FS0:\DtInfo.EFI handle|handle index|alias|path
 You can pass it a device `EFI_HANDLE`, a device handle index (from
 `devtree`), an alias or an absolute DT path:
 
-Examples:
-
 ```
 Shell> FS0:\DtInfo.EFI 17F44B918
 Shell> FS0:\DtInfo.EFI 99
@@ -134,6 +132,70 @@ Here's an example of output:
         Compatible: 'ns16550a'
                Reg: #0 via CPU 0x10000000(100)
 ```
+
+### DtProp.efi
+
+Dumps a property value for a DT controller.
+
+#### Usage
+
+```
+Shell> FS0:\DtInfo.EFI handle|handle index|alias|path property [parse string]
+```
+
+You can pass it a device `EFI_HANDLE`, a device handle index (from
+`devtree`), an alias or an absolute DT path. Just like [DtInfo.efi](#dtinfoefi).
+
+If the optional parse string is not provided, the tool simply performs
+a hex dump of the property data:
+
+```
+Shell> FS0:\DtProp /soc/pci@30000000 compatible
+Dumping 22 bytes of 'compatible':
+  00000000: 70 63 69 2D 68 6F 73 74-2D 65 63 61 6D 2D 67 65  *pci-host-ecam-ge*
+  00000010: 6E 65 72 69 63 00                                *neric.*
+```
+
+The parse string, when provided, contains single-character commands to
+parse the property data. This enables parsing complex and arbitrary
+formats.
+
+| Command | Parse Type |
+| --------| ----------- |
+| `1`     | `EFI_DT_VALUE_U32` |
+| `2`     | `EFI_DT_VALUE_U64` |
+| `4`     | `EFI_DT_VALUE_U128` |
+| `b`     | `EFI_DT_VALUE_BUS_ADDRESS` |
+| `B`     | `EFI_DT_VALUE_CHILD_BUS_ADDRESS` |
+| `z`     | `EFI_DT_VALUE_SIZE` |
+| `Z`     | `EFI_DT_VALUE_CHILD_SIZE` |
+| `r`     | `EFI_DT_VALUE_REG` |
+| `R`     | `EFI_DT_VALUE_RANGE` |
+| `s`     | `EFI_DT_VALUE_STRING` |
+| `d`     | `EFI_DT_VALUE_DEVICE` |
+
+Examples:
+
+```
+Shell> FS0:\DtProp /soc/pci@30000000 dma-coherent
+Property 'dma-coherent' exists but is EMPTY
+Shell> FS0:\DtProp /soc/pci@30000000 reg 1111
+Parsing 'reg' with command string '1111':
+  0x0000 | 0x0
+  0x0004 | 0x30000000
+  0x0008 | 0x0
+  0x000C | 0x10000000
+Shell> FS0:\DtProp /soc/pci@30000000 reg bz
+Parsing 'reg' with command string 'bz':
+  0x0000 | 30000000
+  0x0008 | 10000000
+Shell> FS0:\DtProp /soc/pci@30000000 reg r
+Parsing 'reg' with command string 'r':
+  0x0000 | via CPU 0x30000000(10000000)
+```
+
+The first column in the output is the offset of the parsed element within the
+property data.
 
 ## FAQ
 

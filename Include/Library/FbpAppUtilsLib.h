@@ -40,11 +40,27 @@ GetShellArgcArgv (
   OUT CHAR16      ***Argvp
   );
 
+CHAR8 *
+UnicodeStrDupToAsciiStr (
+  CONST CHAR16  *String
+  );
+
 EFI_STATUS
 FbpAppLookup (
   IN  CONST CHAR16        *String,
   OUT EFI_DT_IO_PROTOCOL  **OutDtIo,
   OUT EFI_HANDLE          *OutHandle OPTIONAL
+  );
+
+VOID
+PrintDtU128 (
+  IN  EFI_DT_U128  Value,
+  IN BOOLEAN       NewLine
+  );
+
+VOID
+PrintDtReg (
+  IN EFI_DT_REG  *Reg
   );
 
 #endif /* __FBP_APP_UTILS_LIB_H__ */

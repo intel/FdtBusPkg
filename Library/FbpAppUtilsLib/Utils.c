@@ -150,7 +150,6 @@ GetShellArgcArgv (
   @return  Buffer points to ASCII string, or NULL if error happens.
 
 **/
-STATIC
 CHAR8 *
 UnicodeStrDupToAsciiStr (
   CONST CHAR16  *String
@@ -265,4 +264,42 @@ FbpAppLookup (
 
   *OutDtIo = DtIo;
   return EFI_SUCCESS;
+}
+
+VOID
+PrintDtU128 (
+  IN  EFI_DT_U128  Value,
+  IN BOOLEAN       NewLine
+  )
+{
+  UINTN  Pad;
+
+  Pad = 0;
+  if ((Value >> 64) > 0) {
+    Print (L"%lx", (UINT64)(Value >> 64));
+    Pad = 16;
+  }
+
+  Print (
+    L"%0*lx%a",
+    Pad,
+    (UINT64)Value,
+    NewLine ? "\n" : ""
+    );
+}
+
+VOID
+PrintDtReg (
+  IN EFI_DT_REG  *Reg
+  )
+{
+  Print (
+    L"via %s 0x",
+    Reg->BusDtIo == NULL ? L"CPU" : Reg->BusDtIo->ComponentName
+    );
+
+  PrintDtU128 (Reg->TranslatedBase, FALSE);
+  Print (L"(");
+  PrintDtU128 (Reg->Length, FALSE);
+  Print (L")\n");
 }

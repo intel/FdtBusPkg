@@ -82,7 +82,7 @@ DriverSupported (
 
   DtDevice = DT_DEV_FROM_THIS (DtIo);
 
-  if (((DtDevice->Flags & DT_DEVICE_TEST) != 0) ||
+  if (((DtDevice->Flags & DT_DEVICE_TEST_UNIT) != 0) ||
       (AsciiStrCmp (
          DtIo->Name,
          GetDtRootNameFromDeviceFlags (DtDevice->Flags)
@@ -188,7 +188,7 @@ DriverStart (
   // DtDeviceScan above may have created some handles.
   //
 
-  if ((DtDevice->Flags & DT_DEVICE_TEST) != 0) {
+  if ((DtDevice->Flags & DT_DEVICE_TEST_UNIT) != 0) {
     TestsInvoke (DtDevice);
   }
 

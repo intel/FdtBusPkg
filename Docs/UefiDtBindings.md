@@ -11,7 +11,9 @@ These apply on top of [Devicetree Specification, Chapter 4](https://devicetree-s
 
 | Property | Value Type | Description |
 | -------- | :--------: | ----------- |
-| _uefi,critical_ | - | Marks a DT controller as critical. A critical controller is always connected at End-of-DXE event (`gEfiEndOfDxeEventGroupGuid`). This facility allows device to be always initialized, even under rapid boot conditions. |
+| _uefi,critical_ | - | Marks a DT controller as critical. |
+
+A critical controller is always connected at End-of-DXE event (`gEfiEndOfDxeEventGroupGuid`). This facility allows device to be always initialized, even under rapid boot conditions.
 
 > [!NOTE]
 > This property is parsed by FdtBusDxe during processing of child DT
@@ -21,3 +23,12 @@ These apply on top of [Devicetree Specification, Chapter 4](https://devicetree-s
 
 > [!NOTE]
 > Devices of type _memory_ are implicitly treated as having _uefi,critical_.
+
+###  _uefi,unit-test-device_
+
+| Property | Value Type | Description |
+| -------- | :--------: | ----------- |
+| _uefi,unit-test-device_ | - | Marks a DT controller as being used by internal unit tests. |
+
+> [!NOTE]
+> Only supported in the special testing Devicetree with a DEBUG build of FdtBusDxe. Don't use it.

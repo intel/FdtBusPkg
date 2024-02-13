@@ -147,6 +147,12 @@ DtDeviceCreate (
     DtDevice->Flags |= DT_DEVICE_CRITICAL;
   }
 
+  if (((DtDevice->Flags & DT_DEVICE_TEST) != 0) &&
+      FdtIsUnitTestDevice (TreeBase, FdtNode))
+  {
+    DtDevice->Flags |= DT_DEVICE_TEST_UNIT;
+  }
+
   if ((DtDevice->Flags & DT_DEVICE_CRITICAL) != 0) {
     InsertTailList (&gCriticalDevices, &DtDevice->Link);
   }

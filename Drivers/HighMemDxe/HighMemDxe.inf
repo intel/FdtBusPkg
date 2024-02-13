@@ -29,7 +29,7 @@
   FdtBusPkg/FdtBusPkg.dec
 
 [LibraryClasses]
-  BaseLib
+  UefiLib
   DebugLib
   DxeServicesTableLib
   PcdLib

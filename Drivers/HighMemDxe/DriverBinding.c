@@ -134,18 +134,8 @@ DriverStart (
 {
   EFI_STATUS                Status;
   EFI_DT_IO_PROTOCOL        *DtIo;
-  BOOLEAN                   MyOpen;
-  EFI_DEVICE_PATH_PROTOCOL  *ControllerPath;
 
   DtIo   = NULL;
-  MyOpen = TRUE;
-
-  ControllerPath = DevicePathFromHandle (ControllerHandle);
-  if (ControllerPath == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a: DevicePathFromHandle\n"));
-    return EFI_NOT_FOUND;
-  }
-
   Status = gBS->OpenProtocol (
                   ControllerHandle,
                   &gEfiDtIoProtocolGuid,

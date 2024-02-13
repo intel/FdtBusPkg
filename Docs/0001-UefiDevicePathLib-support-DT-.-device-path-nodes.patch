@@ -1,0 +1,205 @@
+From 5f722e8e5cbb054cdcb86744591e4014a5600099 Mon Sep 17 00:00:00 2001
+From: Andrei Warkentin <andrei.warkentin@intel.com>
+Date: Tue, 13 Feb 2024 14:36:42 -0600
+Subject: [PATCH 1/1] UefiDevicePathLib: support DT(...) device path nodes
+
+This patch is entirely optional, it just gives a nicer experience
+within UEFI Shell and setup, e.g.:
+
+Shell> map -r
+Mapping table
+      FS0: Alias(s):HD0b:;BLK1:
+          DT(DtRoot)/DT(soc)/DT(virtio_mmio@10008000)/VenHw(837DCA9E-E874-4D82-B
+29A-23FE0E23D1E2,0080001000000000)/HD(1,MBR,0xBE1AFDFA,0x3F,0xFBFC1)
+
+Note: Ignores AllowShortcuts for converting to text. It is IMHO
+never useful to know that a DT(..) DP node is a VenHw, and long
+term (e.g. when upstreamed to Tiano and spec) - DT would be its own
+type like ACPI_DEVICE_PATH.
+
+Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
+---
+ .../UefiDevicePathLib/UefiDevicePathLib.inf   |  4 ++-
+ .../UefiDevicePathLibBase.inf                 |  3 ++
+ ...evicePathLibOptionalDevicePathProtocol.inf |  4 ++-
+ .../UefiDevicePathLibStandaloneMm.inf         |  3 ++
+ .../UefiDevicePathLib/UefiDevicePathLib.h     |  1 +
+ .../UefiDevicePathLib/DevicePathFromText.c    | 33 +++++++++++++++++++
+ .../UefiDevicePathLib/DevicePathToText.c      | 12 +++++++
+ 7 files changed, 58 insertions(+), 2 deletions(-)
+
+diff --git a/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf b/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
+index eb85a54a74c3..5022a91933df 100644
+--- a/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
++++ b/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
+@@ -34,7 +34,7 @@ [Sources]
+ 
+ [Packages]
+   MdePkg/MdePkg.dec
+-
++  FdtBusPkg/FdtBusPkg.dec
+ 
+ [LibraryClasses]
+   BaseLib
+@@ -65,6 +65,8 @@ [Guids]
+   gEfiPersistentVirtualDiskGuid
+   ## SOMETIMES_CONSUMES  ## GUID
+   gEfiPersistentVirtualCdGuid
++  ## SOMETIMES_CONSUMES  ## GUID
++  gEfiDtDevicePathGuid
+ 
+ [Protocols]
+   gEfiDevicePathProtocolGuid                    ## SOMETIMES_CONSUMES
+diff --git a/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibBase.inf b/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibBase.inf
+index 323043033f1a..ff0541e52f66 100644
+--- a/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibBase.inf
++++ b/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibBase.inf
+@@ -36,6 +36,7 @@ [Sources]
+ 
+ [Packages]
+   MdePkg/MdePkg.dec
++  FdtBusPkg/FdtBusPkg.dec
+ 
+ [LibraryClasses]
+   BaseLib
+@@ -66,6 +67,8 @@ [Guids]
+   gEfiPersistentVirtualDiskGuid
+   ## SOMETIMES_CONSUMES  ## GUID
+   gEfiPersistentVirtualCdGuid
++  ## SOMETIMES_CONSUMES  ## GUID
++  gEfiDtDevicePathGuid
+ 
+ [Protocols]
+   gEfiDevicePathProtocolGuid                    ## SOMETIMES_CONSUMES
+diff --git a/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibOptionalDevicePathProtocol.inf b/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibOptionalDevicePathProtocol.inf
+index 81323bc70061..693d90fa344a 100644
+--- a/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibOptionalDevicePathProtocol.inf
++++ b/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibOptionalDevicePathProtocol.inf
+@@ -37,7 +37,7 @@ [Sources]
+ 
+ [Packages]
+   MdePkg/MdePkg.dec
+-
++  FdtBusPkg/FdtBusPkg.dec
+ 
+ [LibraryClasses]
+   BaseLib
+@@ -69,6 +69,8 @@ [Guids]
+   gEfiPersistentVirtualDiskGuid
+   ## SOMETIMES_CONSUMES  ## GUID
+   gEfiPersistentVirtualCdGuid
++  ## SOMETIMES_CONSUMES  ## GUID
++  gEfiDtDevicePathGuid
+ 
+ [Protocols]
+   gEfiDevicePathProtocolGuid                    ## SOMETIMES_CONSUMES
+diff --git a/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibStandaloneMm.inf b/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibStandaloneMm.inf
+index 97db485e23f8..10bd85c28884 100644
+--- a/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibStandaloneMm.inf
++++ b/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibStandaloneMm.inf
+@@ -39,6 +39,7 @@ [Sources]
+ 
+ [Packages]
+   MdePkg/MdePkg.dec
++  FdtBusPkg/FdtBusPkg.dec
+ 
+ [LibraryClasses]
+   BaseLib
+@@ -69,6 +70,8 @@ [Guids]
+   gEfiPersistentVirtualDiskGuid
+   ## SOMETIMES_CONSUMES  ## GUID
+   gEfiPersistentVirtualCdGuid
++  ## SOMETIMES_CONSUMES  ## GUID
++  gEfiDtDevicePathGuid
+ 
+ [Protocols]
+   gEfiDevicePathProtocolGuid                    ## SOMETIMES_CONSUMES
+diff --git a/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.h b/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.h
+index 8f759f18facb..3fc1114cf10f 100644
+--- a/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.h
++++ b/MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.h
+@@ -13,6 +13,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
+ #include <Protocol/DebugPort.h>
+ #include <Protocol/DevicePathToText.h>
+ #include <Protocol/DevicePathFromText.h>
++#include <Protocol/DtIo.h>
+ #include <Guid/PcAnsi.h>
+ #include <Library/DebugLib.h>
+ #include <Library/PrintLib.h>
+diff --git a/MdePkg/Library/UefiDevicePathLib/DevicePathFromText.c b/MdePkg/Library/UefiDevicePathLib/DevicePathFromText.c
+index 1aaa968d6fb5..ec84bbdad572 100644
+--- a/MdePkg/Library/UefiDevicePathLib/DevicePathFromText.c
++++ b/MdePkg/Library/UefiDevicePathLib/DevicePathFromText.c
+@@ -1311,6 +1311,38 @@ DevPathFromTextVenMsg (
+            );
+ }
+ 
++/**
++  Converts a text device path node to Vendor defined Decicetree device path structure.
++
++  @param TextDeviceNode  The input Text device path node.
++
++  @return A pointer to the newly-created Vendor defined Devicetree device path structure.
++
++**/
++EFI_DEVICE_PATH_PROTOCOL *
++DevPathFromTextVenDT (
++  IN CHAR16  *TextDeviceNode
++  )
++{
++  CHAR16                   *Name;
++  UINTN                    NameLen;
++  EFI_DT_DEVICE_PATH_NODE  *Node;
++  EFI_STATUS               Status;
++
++  Name    = GetNextParamStr (&TextDeviceNode);
++  NameLen = StrLen (Name) + 1;
++  Node    = (EFI_DT_DEVICE_PATH_NODE *)CreateDeviceNode (
++                                         HARDWARE_DEVICE_PATH,
++                                         HW_VENDOR_DP,
++                                         (UINT16)sizeof (EFI_DT_DEVICE_PATH_NODE) + NameLen
++                                         );
++  CopyGuid (&Node->VendorDevicePath.Guid, &gEfiDtDevicePathGuid);
++  Status = UnicodeStrToAsciiStrS (Name, Node->Name, NameLen);
++  ASSERT_EFI_ERROR (Status);
++
++  return (EFI_DEVICE_PATH_PROTOCOL *)Node;
++}
++
+ /**
+   Converts a text device path node to Vendor defined PC-ANSI device path structure.
+ 
+@@ -3503,6 +3535,7 @@ GLOBAL_REMOVE_IF_UNREFERENCED DEVICE_PATH_FROM_TEXT_TABLE  mUefiDevicePathLibDev
+   { L"USB",                     DevPathFromTextUsb                     },
+   { L"I2O",                     DevPathFromTextI2O                     },
+   { L"Infiniband",              DevPathFromTextInfiniband              },
++  { L"DT",                      DevPathFromTextVenDT                   },
+   { L"VenMsg",                  DevPathFromTextVenMsg                  },
+   { L"VenPcAnsi",               DevPathFromTextVenPcAnsi               },
+   { L"VenVt100",                DevPathFromTextVenVt100                },
+diff --git a/MdePkg/Library/UefiDevicePathLib/DevicePathToText.c b/MdePkg/Library/UefiDevicePathLib/DevicePathToText.c
+index 468baa5a7626..f06786d5d7f4 100644
+--- a/MdePkg/Library/UefiDevicePathLib/DevicePathToText.c
++++ b/MdePkg/Library/UefiDevicePathLib/DevicePathToText.c
+@@ -175,6 +175,18 @@ DevPathToTextVendor (
+   switch (DevicePathType (&Vendor->Header)) {
+     case HARDWARE_DEVICE_PATH:
+       Type = L"Hw";
++      if (CompareGuid (&Vendor->Guid, &gEfiDtDevicePathGuid)) {
++        //
++        // Ignore AllowShortcuts here. It is never useful to know
++        // that a DT(..) DP node is a VenHw, and long term (e.g. when
++        // upstreamed to Tiano and spec) - it would be its own
++        // type like ACPI_DEVICE_PATH.
++        //
++        CHAR8  *Name = ((EFI_DT_DEVICE_PATH_NODE *)Vendor)->Name;
++        UefiDevicePathLibCatPrint (Str, L"DT(%a)", Name);
++        return;
++      }
++
+       break;
+ 
+     case MESSAGING_DEVICE_PATH:
+-- 
+2.34.1
+

@@ -125,7 +125,7 @@ FbpPathNodeCreate (
     (UINT8)(sizeof (EFI_DT_DEVICE_PATH_NODE) + Size);
   Node->VendorDevicePath.Header.Length[1] =
     (UINT8)((sizeof (EFI_DT_DEVICE_PATH_NODE) + Size) >> 8);
-  CopyGuid (&Node->VendorDevicePath.Guid, &gEfiDtIoProtocolGuid);
+  CopyGuid (&Node->VendorDevicePath.Guid, &gEfiDtDevicePathGuid);
 
   Status = AsciiStrCpyS (Node->Name, Size, Name);
   if (EFI_ERROR (Status)) {

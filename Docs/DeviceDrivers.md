@@ -12,6 +12,9 @@ mechanism is to follow the UEFI Driver Model by implementing
 driver binding. The alternative approach (called legacy in this
 document) may be suitable under some circumstances.
 
+See [SampleDeviceDxe](../Drivers/SampleDeviceDxe) for a basic template
+of a UEFI Driver Model driver.
+
 See [HighMemDxe](../Drivers/HighMemDxe) for an example of a driver
 that can be compiled as either a UEFI Driver Model driver or a legacy driver.
 
@@ -70,10 +73,6 @@ manage device handles that contain the Device Path Protocol and the
 Devicetree I/O Protocol, so a DT device driver must look for these two
 protocols on the device handle that is being tested.
 
-> [!WARNING]
-> Keep it mind that `OpenProtocol()` Boot Service may return
-> `EFI_ALREADY_STARTED`, which should be handled like `EFI_SUCCESS`.
-
 In addition, the `Supported()` function needs to check if the DT controller
 can be managed. This is typically done by using Devicetree I/O Protocol
 functions to check against supported _compatible_ (identification) and
@@ -93,11 +92,6 @@ DT controller. First, the `Start()` function needs to use the `OpenProtocol()`
 Boot Service with `BY_DRIVER` to open the relevant protocols, like the DT
  I/O Protocol.
 
-> [!WARNING]
-> Keep it mind that `OpenProtocol()` may return `EFI_ALREADY_STARTED`,
-> which should be handled like `EFI_SUCCESS` with some caveats.
-> See [VirtioFdtDxe](../Drivers/VirtioFdtDxe/DriverBinding.c#L416) for a simple example.
-
 A DT device driver typically does not create any new
 device handles. Instead, it installs one or more additional protocol
 instances on the device handle for the DT controller.
@@ -112,6 +106,7 @@ and removes the protocol interfaces that were installed in
 ### DT Controllers with Children
 
 Some DT device drivers may need to create new device handles.
+Such a driver acts like a bus driver.
 
 [VirtioFdtDxe](../Drivers/VirtioFdtDxe) is a good example of a DT
 controller device driver creating a new device handle that is NOT
@@ -164,6 +159,15 @@ Binding Protocol functions.
 > prevent any other driver from starting on the created DT handles!
 > FdtBusDxe binds to a very small set of DT controller types.
 
+#### `Supported()`
+
+The `Supported()` call may need to check if the child controller
+specified by  `RemainingDevicePath` is supported.
+
+> [!WARNING]
+> Keep it mind that `OpenProtocol()` Boot Service may return
+> `EFI_ALREADY_STARTED`, which should be handled like `EFI_SUCCESS`.
+
 #### `Start()`
 
 DT device drivers that need to enumerate further child DT controllers
@@ -176,6 +180,11 @@ device), it should do so to support the rapid boot capability in the
 UEFI Driver  Model. DT device drivers enumerating child DT controllers
 may also register callback via the `SetCallbacks()` Devicetree I/O
 Protocol function, to directly handle child register reads and writes.
+
+> [!WARNING]
+> Keep it mind that `OpenProtocol()` may return `EFI_ALREADY_STARTED`,
+> which should be handled like `EFI_SUCCESS` with some caveats.
+> See [VirtioFdtDxe](../Drivers/VirtioFdtDxe/DriverBinding.c#L416) for a simple example.
 
 #### `Stop()`
 

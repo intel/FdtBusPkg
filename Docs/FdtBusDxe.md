@@ -43,7 +43,7 @@ FdtBusDxe manages the following Devicetree nodes:
 
 - Devicetree root.
 - _simple-bus_ (a simple container for devices).
-- Regression testing nodes.
+- Regression (unit) testing nodes.
 
 Every enumerated node is tracked via a `DT_DEVICE` structure.
 
@@ -67,9 +67,10 @@ Stopping is supported.
 ## Testing
 
 Debug builds come with automatic regression testing. This uses an
-[entirely separate Devicetree](../Drivers/FdtBusDxe/TestDt.dts), and is managed separately - there is a
-separate test Devicetree root, and the code can easy differentiate
-a testing `DT_DEVICE` from a regular one.
+[entirely separate Devicetree](../Drivers/FdtBusDxe/TestDt.dts), and
+is managed separately - there is a separate test Devicetree root, and
+FdtBusDxe can easy differentiate a testing `DT_DEVICE` from a regular
+one.
 
 The test Devicetree [is built](../Drivers/FdtBusDxe/TestDt.sh) as part
 of building `FdtBusPkg.dsc`. Both the source and the resulting TestDt.dtbi
@@ -77,7 +78,11 @@ file should be checked in, as the regular use of FdtBusPkg shouldn't
 involve adding new regression tests. The test Devicetree is embedded
 into the FdtBusDxe driver.
 
-The regression tests for each test device are invoked from
-`DriverStart()` and are contained in
-[Tests.c](../Drivers/FdtBusDxe/Tests.c). Every test node added to
-TestDt.dts must be declared in the `TestDescs[]` array.
+The nodes under `/unit-test-devices` are used for unit tests.
+Others (like `/sample-device`) are for playing around with [sample
+driver code](../Drivers/SampleDeviceDxe).
+
+The regression test for each unit test device is invoked from
+`DriverStart()`. The tests are contained in
+[Tests.c](../Drivers/FdtBusDxe/Tests.c). Every unit test node
+added to TestDt.dts must be declared in the `TestDescs[]` array.

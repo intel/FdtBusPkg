@@ -50,12 +50,14 @@ extern LIST_ENTRY                    gCriticalDevices;
 #define DT_DEVICE_HAS_SIZE_CELLS     (1UL << 1)
 #define DT_DEVICE_HAS_ADDRESS_CELLS  (1UL << 2)
 #ifndef MDEPKG_NDEBUG
-#define DT_DEVICE_TEST      (1UL << 3)
-#define DT_DEVICE_TEST_RAN  (1UL << 4)
+#define DT_DEVICE_TEST           (1UL << 3)
+#define DT_DEVICE_TEST_UNIT      (1UL << 4)
+#define DT_DEVICE_TEST_UNIT_RAN  (1UL << 5)
 #else
-#define DT_DEVICE_TEST  0
+#define DT_DEVICE_TEST       0
+#define DT_DEVICE_TEST_UNIT  0
 #endif /* MDEPKG_NDEBUG */
-#define DT_DEVICE_INHERITED  DT_DEVICE_TEST
+#define DT_DEVICE_INHERITED  (DT_DEVICE_TEST | DT_DEVICE_TEST_UNIT)
 
 struct _DT_DEVICE {
   UINTN                      Signature;
@@ -78,17 +80,17 @@ struct _DT_DEVICE {
 
 VOID *
 GetTreeBaseFromDeviceFlags (
-  IN UINTN  DeviceFlags
+  IN  UINTN  DeviceFlags
   );
 
 CONST CHAR8 *
 GetDtRootNameFromDeviceFlags (
-  IN UINTN  DeviceFlags
+  IN  UINTN  DeviceFlags
   );
 
 CONST DT_DEVICE *
 GetDtRootFromDeviceFlags (
-  IN UINTN  DeviceFlags
+  IN  UINTN  DeviceFlags
   );
 
 BOOLEAN
@@ -163,39 +165,39 @@ DtDeviceTranslateRangeToCpu (
 
 CONST CHAR8 *
 FdtGetDeviceType (
-  IN VOID  *TreeBase,
-  IN INTN  FdtNode
+  IN  VOID  *TreeBase,
+  IN  INTN  FdtNode
   );
 
 EFI_DT_STATUS
 FdtGetStatus (
-  IN VOID  *TreeBase,
-  IN INTN  FdtNode
+  IN  VOID  *TreeBase,
+  IN  INTN  FdtNode
   );
 
 EFI_STATUS
 FdtGetAddressCells (
-  IN VOID    *TreeBase,
+  IN  VOID   *TreeBase,
   IN  INTN   FdtNode,
   OUT UINT8  *Cells
   );
 
 EFI_STATUS
 FdtGetSizeCells (
-  IN VOID    *TreeBase,
-  IN INTN    FdtNode,
+  IN  VOID   *TreeBase,
+  IN  INTN   FdtNode,
   OUT UINT8  *Cells
   );
 
 BOOLEAN
 FdtGetDmaCoherency (
-  IN VOID  *TreeBase,
-  IN INTN  FdtNode
+  IN  VOID  *TreeBase,
+  IN  INTN  FdtNode
   );
 
 BOOLEAN
 FdtIsDeviceCritical (
-  IN VOID   *TreeBase,
+  IN  VOID  *TreeBase,
   IN  INTN  FdtNode
   );
 
@@ -446,6 +448,12 @@ AsciiStrChr (
   );
 
 #ifndef MDEPKG_NDEBUG
+BOOLEAN
+FdtIsUnitTestDevice (
+  IN  VOID  *TreeBase,
+  IN  INTN  FdtNode
+  );
+
 EFI_STATUS
 TestsInit (
   VOID
@@ -462,7 +470,8 @@ TestsInvoke (
   );
 
 #else
-#define TestsInit()  EFI_SUCCESS
+#define FdtIsUnitTestDevice(TreeBase, FdtNode)  FALSE
+#define TestsInit()                             EFI_SUCCESS
 #define TestsCleanup()
 #define TestsInvoke(x)
 #endif /* MDEPKG_NDEBUG */

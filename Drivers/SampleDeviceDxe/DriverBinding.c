@@ -1,12 +1,13 @@
 /** @file
+    Sample DT controller device driver code.
 
-    Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
+    Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
 
     SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#include "FdtBusDxe.h"
+#include "Driver.h"
 
 /**
   Tests to see if this driver supports a given controller. If a child device is provided,
@@ -61,7 +62,6 @@ DriverSupported (
 {
   EFI_STATUS          Status;
   EFI_DT_IO_PROTOCOL  *DtIo;
-  DT_DEVICE           *DtDevice;
 
   DtIo   = NULL;
   Status = gBS->OpenProtocol (
@@ -73,32 +73,20 @@ DriverSupported (
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
-    if (Status == EFI_ALREADY_STARTED) {
-      return EFI_SUCCESS;
-    }
-
-    return EFI_UNSUPPORTED;
+    return Status;
   }
 
-  DtDevice = DT_DEV_FROM_THIS (DtIo);
+  Status = DtIo->IsCompatible (DtIo, "uefi,sample-device");
+  if (EFI_ERROR (Status)) {
+    goto out;
+  }
 
-  if (((DtDevice->Flags & DT_DEVICE_TEST_UNIT) != 0) ||
-      (AsciiStrCmp (
-         DtIo->Name,
-         GetDtRootNameFromDeviceFlags (DtDevice->Flags)
-         ) == 0) ||
-      (DtIo->IsCompatible (DtIo, "simple-bus") == EFI_SUCCESS))
-  {
-    Status = EFI_SUCCESS;
-  } else {
-    //
-    // A client driver should use DtIo->ScanChildren to make
-    // FdtBusDxe discover handles under nodes it doesn't directly
-    // support.
-    //
+  if (DtIo->DeviceStatus != EFI_DT_STATUS_OKAY) {
     Status = EFI_UNSUPPORTED;
+    goto out;
   }
 
+out:
   gBS->CloseProtocol (
          ControllerHandle,
          &gEfiDtIoProtocolGuid,
@@ -139,7 +127,7 @@ DriverSupported (
                                    driver.
 
   @retval EFI_SUCCESS              The device was started.
-  @retval EFI_DEVICE_ERROR         The device could not be started due to a device error.Currently not implemented.
+  @retval EFI_DEVICE_ERROR         The device could not be started due to a device error.
   @retval EFI_OUT_OF_RESOURCES     The request could not be completed due to a lack of resources.
   @retval Others                   The driver failed to start the device.
 
@@ -155,11 +143,8 @@ DriverStart (
 {
   EFI_STATUS          Status;
   EFI_DT_IO_PROTOCOL  *DtIo;
-  DT_DEVICE           *DtDevice;
 
-  DtIo     = NULL;
-  DtDevice = NULL;
-
+  DtIo   = NULL;
   Status = gBS->OpenProtocol (
                   ControllerHandle,
                   &gEfiDtIoProtocolGuid,
@@ -168,31 +153,26 @@ DriverStart (
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
-  if (EFI_ERROR (Status) && (Status != EFI_ALREADY_STARTED)) {
+  ASSERT (Status != EFI_ALREADY_STARTED);
+
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  Status   = EFI_SUCCESS;
-  DtDevice = DT_DEV_FROM_THIS (DtIo);
+  //
+  // Do stuff here.
+  //
 
-  Status = DtDeviceScan (
-             DtDevice,
-             (VOID *)RemainingDevicePath,
-             This->DriverBindingHandle
-             );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: DtDeviceEnumerate: %r\n", __func__, Status));
+    gBS->CloseProtocol (
+           ControllerHandle,
+           &gEfiDtIoProtocolGuid,
+           This->DriverBindingHandle,
+           ControllerHandle
+           );
   }
 
-  //
-  // DtDeviceScan above may have created some handles.
-  //
-
-  if ((DtDevice->Flags & DT_DEVICE_TEST_UNIT) != 0) {
-    TestsInvoke (DtDevice);
-  }
-
-  return EFI_SUCCESS;
+  return Status;
 }
 
 /**
@@ -231,47 +211,14 @@ DriverStop (
   IN  EFI_HANDLE                   *ChildHandleBuffer OPTIONAL
   )
 {
-  UINTN       Index;
-  EFI_STATUS  Status;
-  BOOLEAN     AllChildrenStopped;
+  ASSERT (NumberOfChildren == 0);
 
-  if (NumberOfChildren == 0) {
-    gBS->CloseProtocol (
-           ControllerHandle,
-           &gEfiDtIoProtocolGuid,
-           This->DriverBindingHandle,
-           ControllerHandle
-           );
-
-    return EFI_SUCCESS;
-  }
-
-  AllChildrenStopped = TRUE;
-
-  for (Index = 0; Index < NumberOfChildren; Index++) {
-    Status = DtDeviceRemove (
-               ChildHandleBuffer[Index],
-               ControllerHandle,
-               This->DriverBindingHandle
-               );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((
-        DEBUG_ERROR,
-        "%a: DtDeviceRemove(%p): %r\n",
-        __func__,
-        ChildHandleBuffer[Index],
-        Status
-        ));
-      AllChildrenStopped = FALSE;
-      continue;
-    }
-  }
-
-  if (!AllChildrenStopped) {
-    return EFI_DEVICE_ERROR;
-  }
-
-  return EFI_SUCCESS;
+  return gBS->CloseProtocol (
+                ControllerHandle,
+                &gEfiDtIoProtocolGuid,
+                This->DriverBindingHandle,
+                ControllerHandle
+                );
 }
 
 GLOBAL_REMOVE_IF_UNREFERENCED EFI_DRIVER_BINDING_PROTOCOL  gDriverBinding = {

@@ -19,8 +19,8 @@
 **/
 CONST CHAR8 *
 FdtGetDeviceType (
-  IN VOID  *TreeBase,
-  IN INTN  FdtNode
+  IN  VOID  *TreeBase,
+  IN  INTN  FdtNode
   )
 {
   CONST CHAR8  *Buf;
@@ -44,8 +44,8 @@ FdtGetDeviceType (
 **/
 EFI_DT_STATUS
 FdtGetStatus (
-  IN VOID  *TreeBase,
-  IN INTN  FdtNode
+  IN  VOID  *TreeBase,
+  IN  INTN  FdtNode
   )
 {
   CONST CHAR8  *Buf;
@@ -84,7 +84,7 @@ FdtGetStatus (
 **/
 EFI_STATUS
 FdtGetSizeCells (
-  IN VOID    *TreeBase,
+  IN  VOID   *TreeBase,
   IN  INTN   FdtNode,
   OUT UINT8  *Cells
   )
@@ -164,7 +164,7 @@ FdtGetAddressCells (
 **/
 BOOLEAN
 FdtGetDmaCoherency (
-  IN VOID   *TreeBase,
+  IN  VOID  *TreeBase,
   IN  INTN  FdtNode
   )
 {
@@ -184,9 +184,32 @@ FdtGetDmaCoherency (
 **/
 BOOLEAN
 FdtIsDeviceCritical (
-  IN VOID   *TreeBase,
+  IN  VOID  *TreeBase,
   IN  INTN  FdtNode
   )
 {
   return fdt_getprop (TreeBase, FdtNode, "uefi,critical", NULL) != NULL;
 }
+
+#ifndef MDEPKG_NDEBUG
+
+/**
+  Given an FdtNode, return whether this device is a unit test device.
+
+  @param[in]    TreeBase         Devicetree blob base
+  @param[in]    FdtNode          INTN
+
+  @retval TRUE                   Device is critical.
+  @retval FALSE                  Device is not critical.
+
+**/
+BOOLEAN
+FdtIsUnitTestDevice (
+  IN  VOID  *TreeBase,
+  IN  INTN  FdtNode
+  )
+{
+  return fdt_getprop (TreeBase, FdtNode, "uefi,unit-test-device", NULL) != NULL;
+}
+
+#endif /* MDEPKG_NDEBUG */

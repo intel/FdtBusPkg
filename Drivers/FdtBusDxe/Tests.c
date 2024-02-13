@@ -121,15 +121,15 @@ TEST_DEF (G1) {
   ASSERT (DtIo->IsDmaCoherent);
   ASSERT (AsciiStrCmp (DtIo->DeviceType, "bar") == 0);
 
-  ASSERT (DtIo->Lookup (NULL, "/G0", FALSE, &FoundHandle) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->Lookup (NULL, "/unit-test-devices/G0", FALSE, &FoundHandle) == EFI_INVALID_PARAMETER);
   ASSERT (DtIo->Lookup (DtIo, NULL, FALSE, &FoundHandle) == EFI_INVALID_PARAMETER);
-  ASSERT (DtIo->Lookup (DtIo, "/G0", FALSE, NULL) == EFI_INVALID_PARAMETER);
-  ASSERT (DtIo->Lookup (DtIo, "/G0", FALSE, &FoundHandle) == EFI_SUCCESS);
-  ASSERT (DtIo->Lookup (DtIo, "/somethinginvalid", FALSE, &FoundHandle) == EFI_NOT_FOUND);
+  ASSERT (DtIo->Lookup (DtIo, "/unit-test-devices/G0", FALSE, NULL) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->Lookup (DtIo, "/unit-test-devices/G0", FALSE, &FoundHandle) == EFI_SUCCESS);
+  ASSERT (DtIo->Lookup (DtIo, "/unit-test-devices/somethinginvalid", FALSE, &FoundHandle) == EFI_NOT_FOUND);
   //
   // Should return NOT_FOUND as it's not connected yet.
   //
-  ASSERT (DtIo->Lookup (DtIo, "/G2/G2P1", FALSE, &FoundHandle) == EFI_NOT_FOUND);
+  ASSERT (DtIo->Lookup (DtIo, "/unit-test-devices/G2/G2P1", FALSE, &FoundHandle) == EFI_NOT_FOUND);
 
   return TRUE;
 }
@@ -702,7 +702,7 @@ TestsInvoke (
 {
   UINTN  Index;
 
-  if ((DtDevice->Flags & DT_DEVICE_TEST_RAN) != 0) {
+  if ((DtDevice->Flags & DT_DEVICE_TEST_UNIT_RAN) != 0) {
     //
     // Only run tests once.
     //
@@ -714,7 +714,7 @@ TestsInvoke (
     if (AsciiStrCmp (DtDevice->DtIo.Name, Test->Name) == 0) {
       DEBUG ((DEBUG_ERROR, "%a: running unit test\n", DtDevice->DtIo.Name));
       ASSERT (Test->Fn (DtDevice));
-      DtDevice->Flags |= DT_DEVICE_TEST_RAN;
+      DtDevice->Flags |= DT_DEVICE_TEST_UNIT_RAN;
       break;
     }
   }

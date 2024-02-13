@@ -32,6 +32,7 @@
   DevicePathLib
 
 [Guids]
+  gEfiDtDevicePathGuid
 
 [Protocols]
   gEfiDtIoProtocolGuid

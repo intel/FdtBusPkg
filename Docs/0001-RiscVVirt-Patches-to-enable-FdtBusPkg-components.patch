@@ -1,4 +1,4 @@
-From 901383a9d8ab9a2a2ff733e7abe14f2e71fe3c60 Mon Sep 17 00:00:00 2001
+From ab8b40555d03f57dbec8b757ba02265ae11ebdca Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Thu, 16 Mar 2023 15:46:04 -0500
 Subject: [PATCH 1/1] RiscVVirt: Patches to enable FdtBusPkg components
@@ -13,16 +13,16 @@ and driver binding where possible.
 - PciSioSerialDxe (which supports the FDT UART device),
   instead of SerialDxe.
 
-The changes to PlatformBm are a bit suboptimal. Need to lookup
-the UART by alias or /chosen/stdout-path.
+PlatformBootManagerLib is modified to set ConOut/ConIn/StdErr
+to the UART described by /chosen/stdout-path.
 
 Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
 ---
- OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc           | 26 +++++--
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc           | 26 ++++--
  OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf           | 11 ++-
  .../PlatformBootManagerLib.inf                |  4 +
- .../PlatformBootManagerLib/PlatformBm.c       | 74 +++++++++++--------
- 4 files changed, 74 insertions(+), 41 deletions(-)
+ .../PlatformBootManagerLib/PlatformBm.c       | 92 ++++++++++++-------
+ 4 files changed, 91 insertions(+), 42 deletions(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 index f8b9479345d7..122b7464846a 100644
@@ -159,7 +159,7 @@ index 9d66c8110c53..b62c2af15da1 100644
 +  gEfiDtIoProtocolGuid
 +  gEfiDevicePathProtocolGuid
 diff --git a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
-index 44fd21f74fcf..54b95304722f 100644
+index 44fd21f74fcf..3b7157b7a73e 100644
 --- a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
 +++ b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
 @@ -18,6 +18,8 @@
@@ -222,7 +222,7 @@ index 44fd21f74fcf..54b95304722f 100644
  /**
    Do the platform init, can be customized by OEM/IBV
    Possible things that can be done in PlatformBootManagerBeforeConsole:
-@@ -784,9 +784,13 @@ PlatformBootManagerBeforeConsole (
+@@ -784,9 +784,14 @@ PlatformBootManagerBeforeConsole (
    VOID
    )
  {
@@ -236,16 +236,16 @@ index 44fd21f74fcf..54b95304722f 100644
 +  EFI_DT_IO_PROTOCOL        *DtIo;
 +  EFI_DEVICE_PATH_PROTOCOL  *DtDp;
 +  EFI_DEVICE_PATH_PROTOCOL  *NewDp;
++  CONST CHAR8               *DtStdOutPath;
  
    //
    // Signal EndOfDxe PI Event
-@@ -840,23 +844,27 @@ PlatformBootManagerBeforeConsole (
+@@ -840,23 +845,42 @@ PlatformBootManagerBeforeConsole (
    //
    // Add the hardcoded serial console device path to ConIn, ConOut, ErrOut.
    //
 -  CopyGuid (&mSerialConsole.TermType.Guid, &gEfiTtyTermGuid);
-+  CopyGuid (&mSerialConsoleSuffix.TermType.Guid, &gEfiTtyTermGuid);
- 
+-
 -  EfiBootManagerUpdateConsoleVariable (
 -    ConIn,
 -    (EFI_DEVICE_PATH_PROTOCOL *)&mSerialConsole,
@@ -261,10 +261,27 @@ index 44fd21f74fcf..54b95304722f 100644
 -    (EFI_DEVICE_PATH_PROTOCOL *)&mSerialConsole,
 -    NULL
 -    );
++  CopyGuid (&mSerialConsoleSuffix.TermType.Guid, &gEfiTtyTermGuid);
++
 +  DtIo = FbpGetDtRoot ();
 +  ASSERT (DtIo != NULL);
 +
-+  Status = DtIo->Lookup (DtIo, "/soc/serial@10000000", TRUE, &Handle);
++  Status = DtIo->Lookup (DtIo, "/chosen", TRUE, &Handle);
++  ASSERT_EFI_ERROR (Status);
++
++  Status = gBS->HandleProtocol (
++                  Handle,
++                  &gEfiDtIoProtocolGuid,
++                  (VOID **)&DtIo
++                  );
++  ASSERT_EFI_ERROR (Status);
++
++  DtStdOutPath = NULL;
++  Status       = DtIo->GetString (DtIo, "stdout-path", 0, &DtStdOutPath);
++  ASSERT_EFI_ERROR (Status);
++  ASSERT (DtStdOutPath != NULL);
++
++  Status = DtIo->Lookup (DtIo, DtStdOutPath, TRUE, &Handle);
 +  ASSERT_EFI_ERROR (Status);
 +
 +  Status = gBS->HandleProtocol (
@@ -283,13 +300,13 @@ index 44fd21f74fcf..54b95304722f 100644
  
    //
    // Set the front page timeout from the QEMU configuration.
-@@ -954,6 +962,12 @@ PlatformBootManagerAfterConsole (
+@@ -954,6 +978,12 @@ PlatformBootManagerAfterConsole (
      // Connect the rest of the devices.
      //
      EfiBootManagerConnectAll ();
 +    //
-+    // Uncomment if you want to use an alternate console instead of
-+    // the /soc/serial@10000000 one.
++    // Uncomment if you want to use an alternate serial console
++    // instead of the one specified by /chosen/stdout-path.
 +    //
 +    // EfiBootManagerConnectAllConsoles ();
 +    //

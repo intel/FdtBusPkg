@@ -207,10 +207,10 @@ ProcessMemoryRanges (
   IN  EFI_DT_IO_PROTOCOL  *DtIo
   )
 {
-  UINTN       Index;
-  EFI_DT_REG  Reg;
-  EFI_STATUS  Status;
-  EFI_PHYSICAL_ADDRESS RegBase;
+  UINTN                 Index;
+  EFI_DT_REG            Reg;
+  EFI_STATUS            Status;
+  EFI_PHYSICAL_ADDRESS  RegBase;
 
   ASSERT (DtIo != NULL);
 
@@ -239,7 +239,7 @@ ProcessMemoryRanges (
         DEBUG_ERROR,
         "%a: couldn't translate range to CPU addresses: %r\n",
         __func__,
-	Status
+        Status
         ));
       ASSERT_EFI_ERROR (Status);
       break;

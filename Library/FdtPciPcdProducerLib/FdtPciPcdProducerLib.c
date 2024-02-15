@@ -61,13 +61,13 @@ ProcessHandle (
   IN EFI_HANDLE  Handle
   )
 {
-  EFI_DT_REG          Reg;
-  EFI_DT_RANGE        Range;
-  EFI_DT_IO_PROTOCOL  *DtIo;
-  EFI_STATUS          Status;
-  BOOLEAN             FoundIoTranslation;
-  EFI_PHYSICAL_ADDRESS RegBase;
-  UINTN               Index;
+  EFI_DT_REG            Reg;
+  EFI_DT_RANGE          Range;
+  EFI_DT_IO_PROTOCOL    *DtIo;
+  EFI_STATUS            Status;
+  BOOLEAN               FoundIoTranslation;
+  EFI_PHYSICAL_ADDRESS  RegBase;
+  UINTN                 Index;
 
   //
   // Use HandleProtocol here. The main user of the device is

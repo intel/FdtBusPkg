@@ -64,4 +64,10 @@ PrintDtReg (
   IN BOOLEAN     NewLine
   );
 
+VOID
+PrintDtRange (
+  IN EFI_DT_RANGE  *Range,
+  IN BOOLEAN       NewLine
+  );
+
 #endif /* __FBP_APP_UTILS_LIB_H__ */

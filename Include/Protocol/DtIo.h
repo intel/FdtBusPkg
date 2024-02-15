@@ -91,7 +91,13 @@ typedef struct {
 typedef struct {
   EFI_DT_BUS_ADDRESS    ChildBase;
   EFI_DT_BUS_ADDRESS    ParentBase;
-  EFI_DT_SIZE           Size;
+  EFI_DT_BUS_ADDRESS    TranslatedParentBase;
+  EFI_DT_SIZE           Length;
+  //
+  // BusDtIo == NULL means TranslatedParentBase is a
+  // CPU address.
+  //
+  EFI_DT_IO_PROTOCOL    *BusDtIo;
 } EFI_DT_RANGE;
 
 typedef enum {

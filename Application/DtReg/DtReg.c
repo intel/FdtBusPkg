@@ -184,7 +184,7 @@ EntryPoint (
         break;
       }
 
-      Print (L"  %08x: %0*lx\n", Offset, AccessWidth * 2, Value);
+      Print (L"%08x: %0*lx\n", Offset, AccessWidth * 2, Value);
     }
 
     Offset += AccessWidth;

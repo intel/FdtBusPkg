@@ -398,13 +398,15 @@ TEST_DEF (G4) {
   ASSERT ((Range.ChildBase & (UINT64)-1UL) == 0x200000003);
   ASSERT (((Range.ChildBase >> 32) & (UINT64)-1UL) == 0x100000002);
   ASSERT (Range.ParentBase == 0x500000006);
-  ASSERT (Range.Size == 0x700000008);
+  ASSERT (Range.ParentBase == Range.TranslatedParentBase);
+  ASSERT (Range.Length == 0x700000008);
 
   ASSERT (DtIo->GetRange (DtIo, "ranges", 1, &Range) == EFI_SUCCESS);
   ASSERT ((Range.ChildBase & (UINT64)-1UL) == 0xb0000000c);
   ASSERT (((Range.ChildBase >> 32) & (UINT64)-1UL) == 0xa0000000b);
   ASSERT (Range.ParentBase == 0xd0000000e);
-  ASSERT (Range.Size == 0xf00000001);
+  ASSERT (Range.ParentBase == Range.TranslatedParentBase);
+  ASSERT (Range.Length == 0xf00000001);
 
   return TRUE;
 }

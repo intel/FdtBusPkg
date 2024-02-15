@@ -50,8 +50,8 @@ STATIC
 inline
 EFI_STATUS
 FbpRegToPhysicalAddress (
-  IN  CONST EFI_DT_REG *Reg,
-  OUT EFI_PHYSICAL_ADDRESS *Address			 
+  IN  CONST EFI_DT_REG      *Reg,
+  OUT EFI_PHYSICAL_ADDRESS  *Address
   )
 {
   if (Reg->BusDtIo != NULL) {
@@ -59,6 +59,32 @@ FbpRegToPhysicalAddress (
   }
 
   *Address = Reg->TranslatedBase;
+  return EFI_SUCCESS;
+}
+
+/**
+  Return the EFI_PHYSICAL_ADDRESS corresponding to an EFI_DT_RANGE,
+  if one exists.
+
+  @param[in]  Range            EFI_DuT_RANGE *.
+  @param[out] Address          EFI_PHYSICAL_ADDRESS *.
+
+  @retval EFI_STATUS           EFI_SUCCESS or error.
+
+**/
+STATIC
+inline
+EFI_STATUS
+FbpRangeToPhysicalAddress (
+  IN  CONST EFI_DT_RANGE    *Range,
+  OUT EFI_PHYSICAL_ADDRESS  *Address
+  )
+{
+  if (Range->BusDtIo != NULL) {
+    return EFI_UNSUPPORTED;
+  }
+
+  *Address = Range->TranslatedParentBase;
   return EFI_SUCCESS;
 }
 

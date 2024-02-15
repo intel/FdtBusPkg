@@ -505,7 +505,6 @@ DtIoParsePropReg (
                EFI_MEMORY_UC,
                TRUE
                );
-    ASSERT_EFI_ERROR (Status);
     if (EFI_ERROR (Status)) {
       DEBUG ((
         DEBUG_ERROR,
@@ -513,7 +512,6 @@ DtIoParsePropReg (
         __func__,
         Status
         ));
-      ASSERT_EFI_ERROR (Status);
       goto Out;
     }
   }
@@ -555,6 +553,7 @@ DtIoParsePropRange (
   UINTN       ElemCells;
   UINTN       Cells;
   EFI_STATUS  Status;
+  DT_DEVICE   *BusDevice;
   UINT8       AddressCells;
   UINT8       ChildAddressCells;
   UINT8       ChildSizeCells;
@@ -563,6 +562,8 @@ DtIoParsePropRange (
   AddressCells      = DtDevice->DtIo.AddressCells;
   ChildAddressCells = DtDevice->DtIo.ChildAddressCells;
   ChildSizeCells    = DtDevice->DtIo.ChildSizeCells;
+
+  SetMem (Range, sizeof (EFI_DT_RANGE), 0);
 
   //
   // Enforced in FdtGetAddressCells/FdtGetSizeCells.
@@ -596,9 +597,48 @@ DtIoParsePropRange (
     goto Out;
   }
 
-  Status = DtIoParsePropChildSize (DtDevice, Prop, 0, &Range->Size);
+  Status = DtIoParsePropChildSize (DtDevice, Prop, 0, &Range->Length);
   if (EFI_ERROR (Status)) {
     goto Out;
+  }
+
+  BusDevice = NULL;
+  Status    = DtDeviceTranslateRangeToCpu (
+                DtDevice,
+                &Range->ParentBase,
+                &Range->Length,
+                &Range->TranslatedParentBase,
+                &BusDevice
+                );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: DtDeviceTranslateRangeToCpu: %r\n",
+      __func__,
+      Status
+      ));
+    goto Out;
+  }
+
+  if (BusDevice != NULL) {
+    Range->BusDtIo = &BusDevice->DtIo;
+  } else {
+    Status = ApplyGcdTypeAndAttrs (
+               Range->TranslatedParentBase,
+               Range->Length,
+               EfiGcdMemoryTypeMemoryMappedIo,
+               EFI_MEMORY_UC,
+               TRUE
+               );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: ApplyGcdTypeAndAttrs: %r\n",
+        __func__,
+        Status
+        ));
+      goto Out;
+    }
   }
 
 Out:

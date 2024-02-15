@@ -19,6 +19,8 @@
   Return the DT I/O protocol corresponding to the root DT controller
   with the passed name.
 
+  @param[in]  Name             FBP_DT_ROOT_NAME or FBP_DT_TEST_ROOT_NAME.
+
   @retval NULL                 Failed to find controller or allocate memory.
   @retval Other                DT I/O Protocol.
 
@@ -26,7 +28,7 @@
 STATIC
 EFI_DT_IO_PROTOCOL *
 FbpGetRootByName (
-  CONST CHAR8  *Name
+  IN  CONST CHAR8  *Name
   )
 {
   EFI_DT_DEVICE_PATH_NODE   *DevicePathNode;

@@ -35,6 +35,7 @@
   PcdLib
   UefiBootServicesTableLib
   UefiDriverEntryPoint
+  FbpUtilsLib
 
 [Protocols]
   gEfiCpuArchProtocolGuid                 ## CONSUMES

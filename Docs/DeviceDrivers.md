@@ -439,13 +439,7 @@ can only perform I/O using the DT I/O Protocol functions (`ReadReg()` and
 friends, and [only if the ancestor device driver implements the I/O
 callbacks](../Drivers/FdtBusDxe/DtIo.c#L438)).
 
-> [!NOTE]
-> When the `EFI_DT_REG` describes a CPU-accessible region, `GetReg()` and
-> related calls ensure the region is accessible (e.g. mapped for
-> access). If the region is not present in the GCD, it is added
-> as a region of type `EfiGcdMemoryTypeMemoryMappedIo` with attributes
-> `EFI_MEMORY_UC`. If a `EfiGcdMemoryTypeMemoryMappedIo` region
-> already exists with different attributes, it is left unchanged.
+See notes on [register access API](DtIoProtocol.md#register-access).
 
 ## Critical Device Drivers
 

@@ -457,9 +457,20 @@ ApplyGcdTypeAndAttrs (
       (GcdDescriptor.BaseAddress + GcdDescriptor.Length - 1))
   {
     //
-    // Reg straddles multiple regions. This is bad because it implies
-    // a conflict with some other component.
+    // Reg straddles multiple regions. This implies it is already
+    // mapped / in-use.
     //
+    if (OnConflictDoNothing) {
+      return EFI_SUCCESS;
+    }
+
+    //
+    // We could hypothetically support a situation where multiple
+    // GCD regions are to be replaced, but this points to an
+    // active conflict with some other component that is probably
+    // easier to resolve.
+    //
+
     DEBUG ((
       DEBUG_ERROR,
       "%a: [0x%lx, 0x%lx) straddles multiple GCD entries\n",

@@ -147,7 +147,7 @@ EntryPoint (
       Print (L"Property '%a' exists but is EMPTY\n");
     } else {
       Print (L"Dumping %u bytes of '%a':\n", Prop.End - Prop.Begin, PropName);
-      DumpHex (2, 0, Prop.End - Prop.Begin, Prop.Begin);
+      DumpHex (0, 0, Prop.End - Prop.Begin, Prop.Begin);
     }
   } else {
     UINTN  Index;
@@ -175,7 +175,7 @@ EntryPoint (
 
       #define P(x)  Type = x; Desc = #x;
 
-      Print (L"  %08x: ", Prop.Iter - Prop.Begin);
+      Print (L"%08x: ", Prop.Iter - Prop.Begin);
       Command = Argv[GetOptContext.OptIndex + 2][Index];
       switch (Command) {
         case L'1':
@@ -251,12 +251,8 @@ EntryPoint (
           PrintDtReg (&Value.Reg, TRUE);
           break;
         case L'R':
-          PrintDtU128 (Value.Range.ChildBase, FALSE);
-          Print (L"->");
-          PrintDtU128 (Value.Range.ParentBase, FALSE);
-          Print (L"(");
-          PrintDtU128 (Value.Range.Size, FALSE);
-          Print (L")\n");
+          Print (L"\n  ");
+          PrintDtRange (&Value.Range, TRUE);
           break;
         case L's':
           Print (L"%a\n", Value.String);

@@ -304,3 +304,21 @@ PrintDtReg (
   PrintDtU128 (Reg->Length, FALSE);
   Print (L")%a", NewLine ? "\n" : "");
 }
+
+VOID
+PrintDtRange (
+  IN EFI_DT_RANGE  *Range,
+  IN BOOLEAN       NewLine
+  )
+{
+  Print (L"0x");
+  PrintDtU128 (Range->ChildBase, FALSE);
+  Print (L"(");
+  PrintDtU128 (Range->Length, FALSE);
+  Print (
+    L") via %s 0x",
+    Range->BusDtIo == NULL ? L"CPU" : Range->BusDtIo->ComponentName
+    );
+
+  PrintDtU128 (Range->TranslatedParentBase, NewLine);
+}

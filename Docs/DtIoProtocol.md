@@ -212,7 +212,13 @@ typedef struct {
 typedef struct {
   EFI_DT_BUS_ADDRESS    ChildBase;
   EFI_DT_BUS_ADDRESS    ParentBase;
-  EFI_DT_SIZE           Size;
+  EFI_DT_BUS_ADDRESS    TranslatedParentBase;
+  EFI_DT_SIZE           Length;
+  //
+  // BusDtIo == NULL means TranslatedParentBase is a
+  // CPU address.
+  //
+  EFI_DT_IO_PROTOCOL    *BusDtIo;
 } EFI_DT_RANGE;
 
 typedef enum {
@@ -417,11 +423,6 @@ EFI_DT_REG Reg;
 ASSERT (ChildDtIo->GetRegByName (ChildDtIo, "banana", &Reg) == EFI_SUCCESS);
 ```
 
-> [!NOTE]
-> Looking up an `EFI_DT_REG` does a bit more than parsing out
-> an `EFI_DT_BUS_ADDRESS` and an `EFI_DT_SIZE`. `GetReg()` and related
-> calls perform translation of bus addresses to CPU addresses.
-
 ### Unit Address
 
 There is no `EFI_DT_IO_PROTOCOL` field for the unit address.
@@ -467,13 +468,8 @@ controller device driver set child register read and write callbacks
 via `SetCallbacks()`, calls to read, write, poll and copy registers
 will fail with `EFI_UNSUPPORTED`.
 
-> [!NOTE]
-> When the `EFI_DT_REG` describes a CPU-accessible region, `GetReg()` and
-> related calls ensure the region is accessible (e.g. mapped for
-> access). If the region is not present in the GCD, it is added
-> as a region of type `EfiGcdMemoryTypeMemoryMappedIo` with attributes
-> `EFI_MEMORY_UC`. If a `EfiGcdMemoryTypeMemoryMappedIo` region
-> already exists with different attributes, it is left unchanged.
+See [`ParseProp()`](#efi_dt_io_protocolparseprop) notes on
+`EFI_DT_REG` behavior.
 
 ### DMA
 
@@ -742,10 +738,29 @@ EFI_STATUS
 ### `EFI_DT_IO_PROTOCOL.ParseProp()`
 #### Description
 
-Parses out a property field, advancing the `EFI_DT_PROPERTY` iterator.
+Parses out a property field as the specified `Type`, advancing the `EFI_DT_PROPERTY` iterator.
 
-> [!CAUTION]
-> Parsing `EFI_DT_VALUE_U128` and `EFI_DT_VALUE_DEVICE` types is not implemented today.
+| Type | Notes |
+| ---- | ----- |
+| `EFI_DT_VALUE_U32` | |
+| `EFI_DT_VALUE_U64` | |
+| `EFI_DT_VALUE_U128` | Not implemented. |
+| `EFI_DT_VALUE_BUS_ADDRESS` | |
+| `EFI_DT_VALUE_CHILD_BUS_ADDRESS` | |
+| `EFI_DT_VALUE_SIZE` | |
+| `EFI_DT_VALUE_CHILD_SIZE` | |
+| `EFI_DT_VALUE_REG` | Performs translation of bus addresses. Support direct translation only today (parent _ranges_ is empty). |
+| `EFI_DT_VALUE_RANGE` | Performs translation of parent bus addresses. Support direct translation only today (parent _ranges_ is empty). |
+| `EFI_DT_VALUE_STRING` | |
+| `EFI_DT_VALUE_DEVICE` | Not implemented. |
+
+> [!NOTE]
+> When a `EFI_DT_REG` or `EFI_DT_RANGE` describe a CPU-accessible region,
+> `ParseProp ()` ensures the region is accessible (e.g. mapped for
+> access). If the region is not present in the GCD, it is added
+> as a region of type `EfiGcdMemoryTypeMemoryMappedIo` with attributes
+> `EFI_MEMORY_UC`. If a `EfiGcdMemoryTypeMemoryMappedIo` region
+> already exists with different attributes, it is left unchanged.
 
 #### Prototype
 
@@ -823,6 +838,8 @@ typedef EFI_STATUS (EFIAPI *EFI_DT_IO_PROTOCOL_GET_STRING_INDEX)(
 
 Looks up a `UINT32` property value by index.
 
+See [`ParseProp()`](#efi_dt_io_protocolparseprop) notes.
+
 #### Prototype
 
 ```
@@ -858,6 +875,8 @@ EFI_STATUS
 #### Description
 
 Looks up a `UINT64` property value by index.
+
+See [`ParseProp()`](#efi_dt_io_protocolparseprop) notes.
 
 #### Prototype
 
@@ -895,8 +914,7 @@ EFI_STATUS
 
 Looks up an `EFI_DT_U128` property value by index.
 
-> [!CAUTION]
-> Not implemented at the moment.
+See [`ParseProp()`](#efi_dt_io_protocolparseprop) notes.
 
 #### Prototype
 
@@ -935,8 +953,7 @@ EFI_STATUS
 Looks up a _reg_ property value by index, returning an
 `EFI_DT_REG`. The latter can be passed to the [register access API](#register-access).
 
-> [!CAUTION]
-> Only support for direct translation is implemented today (CPU == bus addresses).
+See [`ParseProp()`](#efi_dt_io_protocolparseprop) notes.
 
 #### Prototype
 
@@ -973,11 +990,10 @@ EFI_STATUS
 Looks up a _reg_ property value by name, returning an
 `EFI_DT_REG`. The latter can be passed to the [register access API](#register-access).
 
+See [`ParseProp()`](#efi_dt_io_protocolparseprop) notes.
+
 > [!NOTE]
 > Lookup by name involves examining the _reg-names_ property.
-
-> [!CAUTION]
-> Only support for direct translation is implemented today (CPU == bus addresses).
 
 #### Prototype
 
@@ -1012,6 +1028,8 @@ EFI_STATUS
 #### Description
 
 Looks up a ranges property value by index.
+
+See [`ParseProp()`](#efi_dt_io_protocolparseprop) notes.
 
 #### Prototype
 
@@ -1048,6 +1066,8 @@ EFI_STATUS
 #### Description
 
 Looks up a string property value by index.
+
+See [`ParseProp()`](#efi_dt_io_protocolparseprop) notes.
 
 #### Prototype
 
@@ -1086,8 +1106,7 @@ EFI_STATUS
 Looks up a DT controller `EFI_HANDLE` from property value by
 index.
 
-> [!CAUTION]
-> Not implemented at the moment.
+See [`ParseProp()`](#efi_dt_io_protocolparseprop) notes.
 
 #### Prototype
 

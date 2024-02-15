@@ -7,7 +7,7 @@
     SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
-
+#include <Uefi.h>
 #include <IndustryStandard/Pci22.h>
 #include <Library/DebugLib.h>
 #include <Library/DevicePathLib.h>
@@ -20,7 +20,7 @@
 #include <Protocol/DtIo.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/BaseMemoryLib.h>
-#include <Library/DxeServicesTableLib.h>
+#include <Library/FbpUtilsLib.h>
 
 #pragma pack(1)
 typedef struct {
@@ -93,56 +93,6 @@ GetRangeAttribute (
 }
 
 /**
-  Apply EFI_MEMORY_UC attributees to the range [Base, Base + Size).
-
-  @param  Base                  Range base.
-  @param  Size                  Range size.
-
-  @return EFI_STATUS            EFI_SUCCESS or others.
-**/
-STATIC
-EFI_STATUS
-EFIAPI
-MapGcdMmioSpace (
-  IN    UINT64  Base,
-  IN    UINT64  Size
-  )
-{
-  EFI_STATUS  Status;
-
-  Status = gDS->AddMemorySpace (
-                  EfiGcdMemoryTypeMemoryMappedIo,
-                  Base,
-                  Size,
-                  EFI_MEMORY_UC
-                  );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: failed to add GCD memory space for region [0x%Lx+0x%Lx)\n",
-      __func__,
-      Base,
-      Size
-      ));
-    ASSERT_EFI_ERROR (Status);
-    return Status;
-  }
-
-  Status = gDS->SetMemorySpaceAttributes (Base, Size, EFI_MEMORY_UC);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: failed to set memory space attributes for region [0x%Lx+0x%Lx)\n",
-      __func__,
-      Base,
-      Size
-      ));
-  }
-
-  return Status;
-}
-
-/**
   Process a compatible DtIo into a PCI_ROOT_BRIDGE.
 
   @param  DtIo                  For a pci-host-ecam-generic node.
@@ -170,9 +120,9 @@ ProcessPciHost (
   UINTN                     Index;
   EFI_DT_RANGE              DmaRanges;
   EFI_DT_REG                Reg;
-  EFI_DT_CELL               SpaceCode;
   UINT64                    Attributes;
   UINT64                    AllocationAttributes;
+  EFI_PHYSICAL_ADDRESS      EcamBase;
 
   //
   // Have a DT node that looks like:
@@ -209,18 +159,44 @@ ProcessPciHost (
        !EFI_ERROR (Status);
        Status = DtIo->GetRange (DtIo, "ranges", ++Index, &Range))
   {
+    EFI_DT_CELL           SpaceCode;
+    EFI_PHYSICAL_ADDRESS  RangeCpuBase;
+
+    Status = FbpRangeToPhysicalAddress (&Range, &RangeCpuBase);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: couldn't translate range[%lu] to CPU addresses: %r\n",
+        __func__,
+        Index,
+        Status
+        ));
+      DEBUG ((
+        DEBUG_ERROR,
+        "BusDtIo is %p vs %p -> addy 0x%lx vs 0x%lx\n",
+        Range.BusDtIo,
+        DtIo,
+        (UINTN)Range.TranslatedParentBase,
+        (UINTN)Range.ParentBase
+        ));
+      ASSERT_EFI_ERROR (Status);
+      continue;
+    }
+
+    ASSERT (RangeCpuBase == Range.ParentBase);
+
     SpaceCode = GetRangeAttribute (DtIo, Range.ChildBase);
     switch (SpaceCode) {
       case EFI_DT_PCI_HOST_RANGE_IO:
         Io.Base        = Range.ChildBase;
-        Io.Limit       = Io.Base + Range.Size - 1;
-        Io.Translation = Io.Base - Range.ParentBase;
+        Io.Limit       = Io.Base + Range.Length - 1;
+        Io.Translation = Io.Base - RangeCpuBase;
         break;
 
       case EFI_DT_PCI_HOST_RANGE_MMIO32:
         Mem.Base        = Range.ChildBase;
-        Mem.Limit       = Mem.Base + Range.Size - 1;
-        Mem.Translation = Mem.Base - Range.ParentBase;
+        Mem.Limit       = Mem.Base + Range.Length - 1;
+        Mem.Translation = Mem.Base - RangeCpuBase;
 
         if ((Mem.Base > MAX_UINT32) || (Mem.Limit > MAX_UINT32)) {
           DEBUG ((
@@ -236,8 +212,8 @@ ProcessPciHost (
         break;
       case EFI_DT_PCI_HOST_RANGE_MMIO32 | EFI_DT_PCI_HOST_RANGE_PREFETCHABLE:
         PMem.Base        = Range.ChildBase;
-        PMem.Limit       = PMem.Base + Range.Size - 1;
-        PMem.Translation = PMem.Base - Range.ParentBase;
+        PMem.Limit       = PMem.Base + Range.Length - 1;
+        PMem.Translation = PMem.Base - RangeCpuBase;
 
         if ((PMem.Base > MAX_UINT32) || (PMem.Limit > MAX_UINT32)) {
           DEBUG ((
@@ -253,14 +229,14 @@ ProcessPciHost (
         break;
       case EFI_DT_PCI_HOST_RANGE_MMIO64:
         MemAbove4G.Base        = Range.ChildBase;
-        MemAbove4G.Limit       = MemAbove4G.Base + Range.Size - 1;
-        MemAbove4G.Translation = MemAbove4G.Base - Range.ParentBase;
+        MemAbove4G.Limit       = MemAbove4G.Base + Range.Length - 1;
+        MemAbove4G.Translation = MemAbove4G.Base - RangeCpuBase;
 
         break;
       case EFI_DT_PCI_HOST_RANGE_MMIO64 | EFI_DT_PCI_HOST_RANGE_PREFETCHABLE:
         PMemAbove4G.Base        = Range.ChildBase;
-        PMemAbove4G.Limit       = PMemAbove4G.Base + Range.Size - 1;
-        PMemAbove4G.Translation = PMemAbove4G.Base - Range.ParentBase;
+        PMemAbove4G.Limit       = PMemAbove4G.Base + Range.Length - 1;
+        PMemAbove4G.Translation = PMemAbove4G.Base - RangeCpuBase;
 
         break;
       default:
@@ -309,14 +285,16 @@ ProcessPciHost (
     return Status;
   }
 
-  ASSERT (Reg.BusDtIo == NULL);
-  if (Reg.BusDtIo != NULL) {
+  Status = FbpRegToPhysicalAddress (&Reg, &EcamBase);
+  if (EFI_ERROR (Status)) {
     DEBUG ((
       DEBUG_ERROR,
-      "%a: couldn't translate ECAM range to CPU addresses\n",
-      __func__
+      "%a: couldn't translate ECAM range to CPU addresses: %r\n",
+      __func__,
+      Status
       ));
-    return EFI_UNSUPPORTED;
+    ASSERT_EFI_ERROR (Status);
+    return Status;
   }
 
   //
@@ -342,29 +320,11 @@ ProcessPciHost (
 
   DEBUG ((
     DEBUG_INFO,
-    "%a: ECAM region is [0x%Lx+0x%Lx)\n",
+    "%a: ECAM region is [0x%Lx-0x%Lx]\n",
     __func__,
-    (UINTN)Reg.TranslatedBase,
-    (UINTN)Reg.Length
+    EcamBase,
+    EcamBase + (UINTN)Reg.Length - 1
     ));
-
-  if (Io.Base <= Io.Limit) {
-    //
-    // Map the MMIO window that provides I/O access - the PCI host bridge code
-    // is not aware of this translation and so it will only map the I/O view
-    // in the GCD I/O map.
-    //
-    Status = MapGcdMmioSpace (Io.Base - Io.Translation, Io.Limit - Io.Base + 1);
-    if ((Status != EFI_SUCCESS) && (Status != EFI_UNSUPPORTED)) {
-      DEBUG ((
-        DEBUG_ERROR,
-        "%a: MapGcdMmioSpace[0x%Lx-0x%Lx]: %r\n",
-        Status,
-        Io.Base - Io.Translation,
-        Io.Limit - Io.Base + 1
-        ));
-    }
-  }
 
   Attributes = EFI_PCI_ATTRIBUTE_ISA_IO_16 |
                EFI_PCI_ATTRIBUTE_ISA_MOTHERBOARD_IO |

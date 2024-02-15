@@ -380,3 +380,177 @@ AsciiStrChr (
 
   return (*Str == Chr) ? Str : NULL;
 }
+
+/**
+  Set particular EFI_GCD_MEMORY_TYPE and memory region attributes for a
+  physical memory address range.
+
+  @param  Address               Range base.
+  @param  Length                Range length.
+  @param  Type                  EFI_GCD_MEMORY_TYPE.
+  @param  Attributes            Memory region attributes.
+  @param  OnConflictDoNothing   TRUE if a conflicting region/attributes
+                                should be left alone. FALSE if it should
+                                be corrected.
+  @retval EFI_SUCCESS           Success.
+  @retval Other                 Error, conflict, etc.
+
+**/
+EFI_STATUS
+ApplyGcdTypeAndAttrs (
+  IN  EFI_PHYSICAL_ADDRESS  Address,
+  IN  UINTN                 Length,
+  IN  EFI_GCD_MEMORY_TYPE   Type,
+  IN  UINT64                Attributes,
+  IN  BOOLEAN               OnConflictDoNothing
+  )
+{
+  EFI_STATUS                       Status;
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  GcdDescriptor;
+  EFI_PHYSICAL_ADDRESS             AlignedAddress;
+  UINTN                            AlignedLength;
+
+  if (Length == 0) {
+    return EFI_SUCCESS;
+  }
+
+  //
+  // Attributes work on page-aligned mappings, so make sure
+  // to widen any requests that are smaller.
+  //
+  AlignedAddress = ROUND_DOWN (Address, EFI_PAGE_SIZE);
+  AlignedLength  = ROUND_UP (Address + Length, EFI_PAGE_SIZE) -
+                   AlignedAddress;
+
+  DEBUG ((
+    DEBUG_VERBOSE,
+    "%a: widening 0x%lx 0x%lx -> 0x%lx 0x%lx\n",
+    __func__,
+    Address,
+    Length,
+    AlignedAddress,
+    AlignedLength
+    ));
+
+  Status = gDS->GetMemorySpaceDescriptor (
+                  AlignedAddress,
+                  &GcdDescriptor
+                  );
+  if (EFI_ERROR (Status)) {
+    //
+    // This can happen if AlignedAddress exceeds the Gcd limits as set
+    // by the Cpu HOB. You'll get an EFI_NOT_FOUND and it's really
+    // a programmer error since the AlignedAddress is clearly invalid.
+    //
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: gDS->GetMemorySpaceDescriptor(0x%lx-0x%lx): %r\n",
+      __func__,
+      AlignedAddress,
+      AlignedAddress + AlignedLength - 1,
+      Status
+      ));
+    return Status;
+  }
+
+  if ((AlignedAddress + AlignedLength - 1) >
+      (GcdDescriptor.BaseAddress + GcdDescriptor.Length - 1))
+  {
+    //
+    // Reg straddles multiple regions. This is bad because it implies
+    // a conflict with some other component.
+    //
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: [0x%lx, 0x%lx) straddles multiple GCD entries\n",
+      __func__,
+      AlignedAddress,
+      AlignedAddress + AlignedLength - 1
+      ));
+    Status = EFI_UNSUPPORTED;
+    return Status;
+  }
+
+  if (GcdDescriptor.GcdMemoryType != Type) {
+    if (GcdDescriptor.GcdMemoryType != EfiGcdMemoryTypeNonExistent) {
+      if (OnConflictDoNothing) {
+        //
+        // Already part of the GCD. Expect it to be mapped already
+        // with appropriate attributes.
+        //
+        return EFI_SUCCESS;
+      }
+
+      Status = gDS->RemoveMemorySpace (AlignedAddress, AlignedLength);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((
+          DEBUG_ERROR,
+          "%a: couldn't remove stale [0x%lx, 0x%lx)\n",
+          __func__,
+          AlignedAddress,
+          AlignedAddress + AlignedLength - 1
+          ));
+        return Status;
+      }
+    }
+
+    Status = gDS->AddMemorySpace (
+                    Type,
+                    AlignedAddress,
+                    AlignedLength,
+                    Attributes
+                    );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: failed to add [0x%lx, 0x%lx) to GCD: %r\n",
+        __func__,
+        AlignedAddress,
+        AlignedAddress + AlignedLength - 1,
+        Status
+        ));
+      return Status;
+    }
+  } else if (GcdDescriptor.Attributes != 0) {
+    //
+    // Already part of the GCD. Expect actual attributes to
+    // be correct (if there any set).
+    //
+    // It looks like on some (RISC-V?) implementations the GCD
+    // entries set up via HOBS have attributes 0 with the MMU code
+    // setting real page protections (but not updating
+    // the GCD attributes). So, BaseRiscVMmuLib as of 02/2024 violates
+    // the PI spec, which states:
+    //
+    // "... the DXE driver that produces the EFI_CPU_ARCH_PROTOCOL must
+    // seed the GCD memory space map with the initial state of the
+    // attributes for all the memory regions visible to the processor."
+    //
+    // So if the attributes are 0 we don't know for sure - just assume
+    // it wasn't really mapped, which is resilient to this kind of
+    // violation.
+    //
+    ASSERT (!OnConflictDoNothing || GcdDescriptor.Attributes == Attributes);
+    if (OnConflictDoNothing) {
+      return EFI_SUCCESS;
+    }
+  }
+
+  Status = gDS->SetMemorySpaceAttributes (
+                  AlignedAddress,
+                  AlignedLength,
+                  Attributes
+                  );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: failed to set attributes for [0x%lx, 0x%lx): %r\n",
+      __func__,
+      AlignedAddress,
+      AlignedAddress + AlignedLength - 1,
+      Status
+      ));
+  }
+
+  return Status;
+}

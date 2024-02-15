@@ -124,6 +124,7 @@ MapGcdMmioSpace (
       Base,
       Size
       ));
+    ASSERT_EFI_ERROR (Status);
     return Status;
   }
 
@@ -157,8 +158,6 @@ ProcessPciHost (
   IN  PCI_ROOT_BRIDGE     *Bridge
   )
 {
-  UINT64                    ConfigBase;
-  UINT64                    ConfigSize;
   EFI_STATUS                Status;
   UINT32                    BusMin;
   UINT32                    BusMax;
@@ -289,7 +288,8 @@ ProcessPciHost (
   }
 
   //
-  // Locate 'config'.
+  // Locate 'config'. Getting the reg ensures it's mapped
+  // for access.
   //
   Status = DtIo->GetRegByName (DtIo, "config", &Reg);
   if (EFI_ERROR (Status)) {
@@ -303,7 +303,7 @@ ProcessPciHost (
   if (EFI_ERROR (Status)) {
     DEBUG ((
       DEBUG_ERROR,
-      "%a: couldn't find ECAM window\n",
+      "%a: couldn't get the ECAM window\n",
       __func__
       ));
     return Status;
@@ -318,12 +318,6 @@ ProcessPciHost (
       ));
     return EFI_UNSUPPORTED;
   }
-
-  //
-  // Fetch the ECAM window.
-  //
-  ConfigBase = Reg.TranslatedBase;
-  ConfigSize = Reg.Length;
 
   //
   // Locate 'bus-range'
@@ -348,25 +342,11 @@ ProcessPciHost (
 
   DEBUG ((
     DEBUG_INFO,
-    "%a: Config[0x%Lx+0x%Lx)\n",
+    "%a: ECAM region is [0x%Lx+0x%Lx)\n",
     __func__,
-    ConfigBase,
-    ConfigSize
+    (UINTN)Reg.TranslatedBase,
+    (UINTN)Reg.Length
     ));
-
-  //
-  // Map the ECAM space in the GCD memory map
-  //
-  Status = MapGcdMmioSpace (ConfigBase, ConfigSize);
-  if ((Status != EFI_SUCCESS) && (Status != EFI_UNSUPPORTED)) {
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: MapGcdMmioSpace[0x%Lx-0x%Lx]: %r\n",
-      ConfigBase,
-      ConfigSize,
-      Status
-      ));
-  }
 
   if (Io.Base <= Io.Limit) {
     //

@@ -76,21 +76,44 @@ ProcessMemoryRange (
       DEBUG_ERROR,
       "%a: gDS->GetMemorySpaceDescriptor(0x%lx-0x%lx): %r\n",
       __func__,
-      Reg->TranslatedBase,
-      Reg->TranslatedBase + Reg->Length - 1
+      (UINTN)Reg->TranslatedBase,
+      (UINTN)(Reg->TranslatedBase + Reg->Length - 1)
       ));
     return Status;
   }
 
-  if (GcdDescriptor.GcdMemoryType != EfiGcdMemoryTypeNonExistent) {
+  if (GcdDescriptor.GcdMemoryType == EfiGcdMemoryTypeSystemMemory) {
     DEBUG ((
       DEBUG_ERROR,
       "%a: Nothing to do for 0x%lx-0x%lx\n",
       __func__,
-      Reg->TranslatedBase,
-      Reg->TranslatedBase + Reg->Length - 1
+      (UINTN)Reg->TranslatedBase,
+      (UINTN)(Reg->TranslatedBase + Reg->Length - 1)
       ));
     return EFI_SUCCESS;
+  }
+
+  if (GcdDescriptor.GcdMemoryType != EfiGcdMemoryTypeNonExistent) {
+    //
+    // If the region is not present in the GCD, the DtIo GetReg
+    // will add it as MMIO with UC capabilities and attributes.
+    // So... need to undo that.
+    //
+    Status = gDS->RemoveMemorySpace (
+                    Reg->TranslatedBase,
+                    Reg->Length
+                    );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: Couldn't remove stale range 0x%lx-0x%lx\n",
+        __func__,
+        (UINTN)Reg->TranslatedBase,
+        (UINTN)(Reg->TranslatedBase + Reg->Length - 1)
+        ));
+      ASSERT_EFI_ERROR (Status);
+      return Status;
+    }
   }
 
   Status = gDS->AddMemorySpace (
@@ -104,8 +127,8 @@ ProcessMemoryRange (
       DEBUG_ERROR,
       "%a: gDS->AddMemorySpace(0x%lx-0x%lx): %r\n",
       __func__,
-      Reg->TranslatedBase,
-      Reg->TranslatedBase + Reg->Length - 1,
+      (UINTN)Reg->TranslatedBase,
+      (UINTN)(Reg->TranslatedBase + Reg->Length - 1),
       Status
       ));
     return Status;
@@ -121,8 +144,8 @@ ProcessMemoryRange (
       DEBUG_WARN,
       "%a: gDS->SetMemorySpaceAttributes(0x%lx-0x%lx): %r\n",
       __func__,
-      Reg->TranslatedBase,
-      Reg->TranslatedBase + Reg->Length - 1,
+      (UINTN)Reg->TranslatedBase,
+      (UINTN)(Reg->TranslatedBase + Reg->Length - 1),
       Status
       ));
     return Status;
@@ -153,8 +176,8 @@ ProcessMemoryRange (
       DEBUG_ERROR,
       "%a: mCpu->SetMemorySpaceAttributes(0x%lx-0x%lx): %r\n",
       __func__,
-      Reg->TranslatedBase,
-      Reg->TranslatedBase + Reg->Length - 1,
+      (UINTN)Reg->TranslatedBase,
+      (UINTN)(Reg->TranslatedBase + Reg->Length - 1),
       Status
       ));
   } else {
@@ -162,8 +185,8 @@ ProcessMemoryRange (
       DEBUG_INFO,
       "%a: Add System RAM @ 0x%lx - 0x%lx\n",
       __func__,
-      Reg->TranslatedBase,
-      Reg->TranslatedBase + Reg->Length - 1
+      (UINTN)Reg->TranslatedBase,
+      (UINTN)(Reg->TranslatedBase + Reg->Length - 1)
       ));
   }
 

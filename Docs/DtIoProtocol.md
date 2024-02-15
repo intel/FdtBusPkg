@@ -454,12 +454,26 @@ advanced operations, such as filling a range with the same value,
 or writing out a buffer into a single register. Ultimately
 the accesses are performed via `EFI_CPU_IO2_PROTOCOL`.
 
+It is also possible to perform I/O without using `PollReg()`, `ReadReg()`,
+`WriteReg()` and `CopyReg()`. The `EFI_DT_REG` `TranslatedBase` field
+contains an `EFI_PHYSICAL_ADDDRESS` (a valid CPU address), when
+the `BusDtIo` field is `NULL`, with the latter meaning there is a
+direct translation between the _reg_ (bus) and CPU addresses.
+
 It's possible there is no direct translation between bus
 and CPU addresses. For example, PHY register accesses might involve
 a custom mechanism only known to a NIC driver. Unless the parent DT
 controller device driver set child register read and write callbacks
 via `SetCallbacks()`, calls to read, write, poll and copy registers
 will fail with `EFI_UNSUPPORTED`.
+
+> [!NOTE]
+> When the `EFI_DT_REG` describes a CPU-accessible region, `GetReg()` and
+> related calls ensure the region is accessible (e.g. mapped for
+> access). If the region is not present in the GCD, it is added
+> as a region of type `EfiGcdMemoryTypeMemoryMappedIo` with attributes
+> `EFI_MEMORY_UC`. If a `EfiGcdMemoryTypeMemoryMappedIo` region
+> already exists with different attributes, it is left unchanged.
 
 ### DMA
 
@@ -921,12 +935,6 @@ EFI_STATUS
 Looks up a _reg_ property value by index, returning an
 `EFI_DT_REG`. The latter can be passed to the [register access API](#register-access).
 
-> [!NOTE]
-> The returned address is in CPU space, not bus space,
-> if these are different. That is, `GetReg()` performs
-> automatic address translation, and does not return
-> the raw values encoded in the Devicetree property.
-
 > [!CAUTION]
 > Only support for direct translation is implemented today (CPU == bus addresses).
 
@@ -967,12 +975,6 @@ Looks up a _reg_ property value by name, returning an
 
 > [!NOTE]
 > Lookup by name involves examining the _reg-names_ property.
-
-> [!NOTE]
-> The returned address is in CPU space, not bus space,
-> if these are different. That is, `GetRegByName()` performs
-> automatic address translation, and does not return
-> the raw values encoded in the Devicetree property.
 
 > [!CAUTION]
 > Only support for direct translation is implemented today (CPU == bus addresses).

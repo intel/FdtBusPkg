@@ -37,6 +37,7 @@
   MemoryAllocationLib
   PcdLib
   UefiBootServicesTableLib
+  FbpUtilsLib
 
 [Pcd]
 

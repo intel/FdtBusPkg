@@ -14,6 +14,7 @@
 #include <Library/PcdLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Protocol/DtIo.h>
+#include <Library/FbpUtilsLib.h>
 
 STATIC VOID       *mDtIoRegistration;
 STATIC EFI_EVENT  mDtIoEvent;
@@ -65,6 +66,7 @@ ProcessHandle (
   EFI_DT_IO_PROTOCOL  *DtIo;
   EFI_STATUS          Status;
   BOOLEAN             FoundIoTranslation;
+  EFI_PHYSICAL_ADDRESS RegBase;
   UINTN               Index;
 
   //
@@ -112,17 +114,19 @@ ProcessHandle (
     return Status;
   }
 
-  ASSERT (Reg.BusDtIo == NULL);
-  if (Reg.BusDtIo != NULL) {
+  Status = FbpRegToPhysicalAddress (&Reg, &RegBase);
+  if (EFI_ERROR (Status)) {
     DEBUG ((
       DEBUG_ERROR,
-      "%a: couldn't translate ECAM range to CPU addresses\n",
-      __func__
+      "%a: couldn't translate ECAM range to CPU addresses: %r\n",
+      __func__,
+      Status
       ));
-    return EFI_UNSUPPORTED;
+    ASSERT_EFI_ERROR (Status);
+    return Status;
   }
 
-  Status = PcdSet64S (PcdPciExpressBaseAddress, Reg.TranslatedBase);
+  Status = PcdSet64S (PcdPciExpressBaseAddress, RegBase);
   ASSERT_EFI_ERROR (Status);
 
   Status = PcdSetBoolS (PcdPciDisableBusEnumeration, FALSE);

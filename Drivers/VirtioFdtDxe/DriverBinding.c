@@ -395,6 +395,7 @@ DriverStart (
   EFI_DT_IO_PROTOCOL        *DtIo;
   BOOLEAN                   MyOpen;
   EFI_DEVICE_PATH_PROTOCOL  *ControllerPath;
+  EFI_PHYSICAL_ADDRESS      RegBase;
 
   DtIo   = NULL;
   MyOpen = TRUE;
@@ -438,19 +439,19 @@ DriverStart (
     goto out;
   }
 
-  ASSERT (Reg.BusDtIo == NULL);
-  if (Reg.BusDtIo != NULL) {
+  Status = FbpRegToPhysicalAddress (&Reg, &RegBase);
+  if (EFI_ERROR (Status)) {
     DEBUG ((
       DEBUG_ERROR,
-      "%a: couldn't translate range to CPU addresses\n",
+      "%a: couldn't translate range to CPU addresses: %r\n",
       __func__
       ));
-    Status = EFI_UNSUPPORTED;
+    ASSERT_EFI_ERROR (Status);
     goto out;
   }
 
   Status = ChildCreate (
-             Reg.TranslatedBase,
+             RegBase,
              ControllerHandle,
              This->DriverBindingHandle,
              ControllerPath

@@ -20,9 +20,8 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiDriverEntryPoint.h>
 #include <Library/VirtioMmioDeviceLib.h>
-
+#include <Library/FbpUtilsLib.h>
 #include <Guid/VirtioMmioTransport.h>
-
 #include <Protocol/DtIo.h>
 
 extern EFI_COMPONENT_NAME_PROTOCOL   gComponentName;

@@ -21,6 +21,7 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DxeServicesTableLib.h>
+#include <Library/FbpUtilsLib.h>
 
 #pragma pack(1)
 typedef struct {
@@ -173,6 +174,7 @@ ProcessPciHost (
   EFI_DT_CELL               SpaceCode;
   UINT64                    Attributes;
   UINT64                    AllocationAttributes;
+  EFI_PHYSICAL_ADDRESS      EcamBase;
 
   //
   // Have a DT node that looks like:
@@ -309,14 +311,16 @@ ProcessPciHost (
     return Status;
   }
 
-  ASSERT (Reg.BusDtIo == NULL);
-  if (Reg.BusDtIo != NULL) {
+  Status = FbpRegToPhysicalAddress (&Reg, &EcamBase);
+  if (EFI_ERROR (Status)) {
     DEBUG ((
       DEBUG_ERROR,
-      "%a: couldn't translate ECAM range to CPU addresses\n",
-      __func__
+      "%a: couldn't translate ECAM range to CPU addresses: %r\n",
+      __func__,
+      Status
       ));
-    return EFI_UNSUPPORTED;
+    ASSERT_EFI_ERROR (Status);
+    return Status;
   }
 
   //
@@ -342,10 +346,10 @@ ProcessPciHost (
 
   DEBUG ((
     DEBUG_INFO,
-    "%a: ECAM region is [0x%Lx+0x%Lx)\n",
+    "%a: ECAM region is [0x%Lx-0x%Lx]\n",
     __func__,
-    (UINTN)Reg.TranslatedBase,
-    (UINTN)Reg.Length
+    EcamBase,
+    EcamBase + (UINTN)Reg.Length - 1
     ));
 
   if (Io.Base <= Io.Limit) {
@@ -358,7 +362,7 @@ ProcessPciHost (
     if ((Status != EFI_SUCCESS) && (Status != EFI_UNSUPPORTED)) {
       DEBUG ((
         DEBUG_ERROR,
-        "%a: MapGcdMmioSpace[0x%Lx-0x%Lx]: %r\n",
+        "%a: MapGcdMmioSpace [0x%Lx-0x%Lx]: %r\n",
         Status,
         Io.Base - Io.Translation,
         Io.Limit - Io.Base + 1

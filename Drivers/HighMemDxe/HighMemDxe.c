@@ -210,6 +210,7 @@ ProcessMemoryRanges (
   UINTN       Index;
   EFI_DT_REG  Reg;
   EFI_STATUS  Status;
+  EFI_PHYSICAL_ADDRESS RegBase;
 
   ASSERT (DtIo != NULL);
 
@@ -232,14 +233,15 @@ ProcessMemoryRanges (
       break;
     }
 
-    ASSERT (Reg.BusDtIo == NULL);
-    if (Reg.BusDtIo != NULL) {
+    Status = FbpRegToPhysicalAddress (&Reg, &RegBase);
+    if (EFI_ERROR (Status)) {
       DEBUG ((
         DEBUG_ERROR,
-        "%a: couldn't translate range to CPU addresses\n",
-        __func__
+        "%a: couldn't translate range to CPU addresses: %r\n",
+        __func__,
+	Status
         ));
-      Status = EFI_UNSUPPORTED;
+      ASSERT_EFI_ERROR (Status);
       break;
     }
 

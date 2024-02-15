@@ -497,6 +497,25 @@ DtIoParsePropReg (
 
   if (BusDevice != NULL) {
     Reg->BusDtIo = &BusDevice->DtIo;
+  } else {
+    Status = ApplyGcdTypeAndAttrs (
+               Reg->TranslatedBase,
+               Reg->Length,
+               EfiGcdMemoryTypeMemoryMappedIo,
+               EFI_MEMORY_UC,
+               TRUE
+               );
+    ASSERT_EFI_ERROR (Status);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: ApplyGcdTypeAndAttrs: %r\n",
+        __func__,
+        Status
+        ));
+      ASSERT_EFI_ERROR (Status);
+      goto Out;
+    }
   }
 
 Out:

@@ -41,6 +41,7 @@
   BaseMemoryLib
   DebugLib
   UefiBootServicesTableLib
+  DxeServicesTableLib
   UefiDriverEntryPoint
   HobLib
   FdtLib

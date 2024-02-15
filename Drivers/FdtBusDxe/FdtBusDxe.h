@@ -18,6 +18,7 @@
 #include <Library/UefiLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
+#include <Library/DxeServicesTableLib.h>
 #include <Library/UefiDriverEntryPoint.h>
 #include <Library/HobLib.h>
 #include <Library/DevicePathLib.h>
@@ -29,6 +30,9 @@
 #define DT_DEV_SIGNATURE  SIGNATURE_32 ('d', 't', 'i', 'o')
 #define DT_DEV_FROM_THIS(a)  CR(a, DT_DEVICE, DtIo, DT_DEV_SIGNATURE)
 #define DT_DEV_FROM_LINK(a)  CR(a, DT_DEVICE, Link, DT_DEV_SIGNATURE)
+
+#define ROUND_UP(x, n)    (((x) + n - 1) & ~(n - 1))
+#define ROUND_DOWN(x, n)  ((x) & ~(n - 1))
 
 typedef struct _DT_DEVICE DT_DEVICE;
 
@@ -445,6 +449,15 @@ CHAR8 *
 AsciiStrChr (
   IN  CHAR8  *Str,
   IN  CHAR8  Chr
+  );
+
+EFI_STATUS
+ApplyGcdTypeAndAttrs (
+  IN  EFI_PHYSICAL_ADDRESS  Address,
+  IN  UINTN                 Length,
+  IN  EFI_GCD_MEMORY_TYPE   Type,
+  IN  UINT64                Attributes,
+  IN  BOOLEAN               OnConflictDoNothing
   );
 
 #ifndef MDEPKG_NDEBUG

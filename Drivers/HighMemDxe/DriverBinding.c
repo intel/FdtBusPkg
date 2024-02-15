@@ -132,8 +132,8 @@ DriverStart (
   IN  EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath OPTIONAL
   )
 {
-  EFI_STATUS                Status;
-  EFI_DT_IO_PROTOCOL        *DtIo;
+  EFI_STATUS          Status;
+  EFI_DT_IO_PROTOCOL  *DtIo;
 
   DtIo   = NULL;
   Status = gBS->OpenProtocol (

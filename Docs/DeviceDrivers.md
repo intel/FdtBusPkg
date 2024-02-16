@@ -162,11 +162,7 @@ Binding Protocol functions.
 #### `Supported()`
 
 The `Supported()` call may need to check if the child controller
-specified by  `RemainingDevicePath` is supported.
-
-> [!WARNING]
-> Keep it mind that `OpenProtocol()` Boot Service may return
-> `EFI_ALREADY_STARTED`, which should be handled like `EFI_SUCCESS`.
+specified by `RemainingDevicePath` is supported.
 
 #### `Start()`
 
@@ -180,11 +176,6 @@ device), it should do so to support the rapid boot capability in the
 UEFI Driver  Model. DT device drivers enumerating child DT controllers
 may also register callback via the `SetCallbacks()` Devicetree I/O
 Protocol function, to directly handle child register reads and writes.
-
-> [!WARNING]
-> Keep it mind that `OpenProtocol()` may return `EFI_ALREADY_STARTED`,
-> which should be handled like `EFI_SUCCESS` with some caveats.
-> See [VirtioFdtDxe](../Drivers/VirtioFdtDxe/DriverBinding.c#L416) for a simple example.
 
 #### `Stop()`
 

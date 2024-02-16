@@ -497,12 +497,14 @@ DtIoParsePropReg (
 
   if (BusDevice != NULL) {
     Reg->BusDtIo = &BusDevice->DtIo;
-  } else {
+  } else if (Reg->Length != 0) {
     Status = ApplyGcdTypeAndAttrs (
                Reg->TranslatedBase,
                Reg->Length,
                EfiGcdMemoryTypeMemoryMappedIo,
                EFI_MEMORY_UC,
+               NULL,
+               NULL,
                TRUE
                );
     if (EFI_ERROR (Status)) {
@@ -622,12 +624,14 @@ DtIoParsePropRange (
 
   if (BusDevice != NULL) {
     Range->BusDtIo = &BusDevice->DtIo;
-  } else {
+  } else if (Range->Length != 0) {
     Status = ApplyGcdTypeAndAttrs (
                Range->TranslatedParentBase,
                Range->Length,
                EfiGcdMemoryTypeMemoryMappedIo,
                EFI_MEMORY_UC,
+               NULL,
+               NULL,
                TRUE
                );
     if (EFI_ERROR (Status)) {

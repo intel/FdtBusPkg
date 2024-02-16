@@ -383,6 +383,17 @@ DtIoCopyReg (
 
 EFI_STATUS
 EFIAPI
+DtIoSetRegType (
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  EFI_DT_REG          *Reg,
+  IN  EFI_DT_IO_REG_TYPE  Type,
+  IN  UINT64              MemoryAttributes,
+  OUT EFI_DT_IO_REG_TYPE  *OldType OPTIONAL,
+  OUT UINT64              *OldAttributes OPTIONAL
+  );
+
+EFI_STATUS
+EFIAPI
 DtIoMap (
   IN      EFI_DT_IO_PROTOCOL                *This,
   IN      EFI_DT_IO_PROTOCOL_DMA_OPERATION  Operation,
@@ -457,6 +468,8 @@ ApplyGcdTypeAndAttrs (
   IN  UINTN                 Length,
   IN  EFI_GCD_MEMORY_TYPE   Type,
   IN  UINT64                Attributes,
+  OUT EFI_GCD_MEMORY_TYPE   *OutType OPTIONAL,
+  OUT UINT64                *OutAttributes OPTIONAL,
   IN  BOOLEAN               OnConflictDoNothing
   );
 

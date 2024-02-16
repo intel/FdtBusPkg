@@ -101,6 +101,7 @@ typedef struct _EFI_DT_IO_PROTOCOL {
   EFI_DT_IO_PROTOCOL_IO_REG              ReadReg;
   EFI_DT_IO_PROTOCOL_IO_REG              WriteReg;
   EFI_DT_IO_PROTOCOL_COPY_REG            CopyReg;
+  EFI_DT_IO_PROTOCOL_SET_REG_TYPE        SetRegType;
   //
   // DMA operations.
   //
@@ -145,6 +146,7 @@ typedef struct _EFI_DT_IO_PROTOCOL {
 | [`ReadReg`](#efi_dt_io_protocolreadreg) | Reads a device register. |
 | [`WriteReg`](#efi_dt_io_protocolwritereg) | Writes a device register. |
 | [`CopyReg`](#efi_dt_io_protocolcopyreg) | Copies a region of device register space to another region of device register space. |
+| [`SetRegType`](#efi_dt_io_protocolsetregtype) | Modify the type and UEFI memory attributes for a device register space region. |
 | [`Map`](#efi_dt_io_protocolmap) | Provides a DT controller-specific address needed to access system memory for DMA. |
 | [`Unmap`](#efi_dt_io_protocolunmap) | Completes the `Map()` operation and releases any corresponding resources. |
 | [`AllocateBuffer`](#efi_dt_io_protocolallocatebuffer) | Allocates pages that are suitable for a common buffer mapping. |
@@ -192,6 +194,50 @@ typedef enum {
   EfiDtIoDmaOperationBusMasterCommonBuffer,
   EfiDtIoDmaOperationMaximum
 } EFI_DT_IO_PROTOCOL_DMA_OPERATION;
+
+typedef enum {
+  EfiDtIoRegTypeInvalid,
+  //
+  // A memory region that is visible to the boot processor.
+  // This memory region is being decoded by a system component,
+  // but the memory region is not considered to be either system
+  // memory or memory-mapped I/O.
+  //
+  EfiDtIoRegTypeNonExistent,
+  //
+  // A memory region that is visible to the boot processor.
+  // This memory region is being decoded by a system component,
+  // but the memory region is not considered to be either system
+  // memory or memory-mapped I/O.
+  //
+  EfiDtIoRegTypeReserved,
+  //
+  // A memory region that is visible to the boot processor.
+  // A memory controller is currently decoding this memory region
+  // and the memory controller is producing a tested system memory
+  // region that is available to the memory services.
+  //
+  EfiDtIoRegTypeSystemMemory,
+  //
+  // A memory region that is visible to the boot processor. This
+  // memory region is currently being decoded by a component as
+  // memory-mapped I/O that can be used to access I/O devices
+  // in the platform.
+  //
+  EfiDtIoRegTypeMemoryMappedIo,
+  //
+  // A memory region that is visible to the boot processor. This
+  // memory supports byteaddressable non-volatility.
+  //
+  EfiDtIoRegTypePersistent,
+  //
+  // A memory region that provides higher reliability relative to
+  // other memory in the system. If all memory has the same
+  // reliability, then this bit is not used.
+  //
+  EfiDtIoRegTypeMoreReliable,
+  EfiDtIoRegTypeMaximum,
+} EFI_DT_IO_REG_TYPE;
 
 typedef unsigned __int128  EFI_DT_BUS_ADDRESS;
 typedef unsigned __int128  EFI_DT_SIZE;
@@ -757,10 +803,12 @@ Parses out a property field as the specified `Type`, advancing the `EFI_DT_PROPE
 > [!NOTE]
 > When a `EFI_DT_REG` or `EFI_DT_RANGE` describe a CPU-accessible region,
 > `ParseProp ()` ensures the region is accessible (e.g. mapped for
-> access). If the region is not present in the GCD, it is added
-> as a region of type `EfiGcdMemoryTypeMemoryMappedIo` with attributes
-> `EFI_MEMORY_UC`. If a `EfiGcdMemoryTypeMemoryMappedIo` region
+> access). If the region is not known to the UEFI implementation, it is added
+> as a region of type `EfiDtIoRegTypeMemoryMappedIo` with attributes
+> `EFI_MEMORY_UC`. If a `EfiDtIoRegTypeMemoryMappedIo` region
 > already exists with different attributes, it is left unchanged.
+> [`SetRegType ()`](#efi_dt_io_protocolsetregtype) can be used to set
+> a different type and attributes.
 
 #### Prototype
 
@@ -1369,6 +1417,47 @@ EFI_STATUS
 | `EFI_UNSUPPORTED` | The address range specified by `DestOffset`, `Width` and `Count` is not valid for `DestReg`, or the address range specified by `SrcOffset`, `Width` and `Count` is not valid for `SrcReg`. |
 | `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
 | `EFI_OUT_OF_RESOURCES` | The request could not be completed due to a lack of resources. |
+
+### `EFI_DT_IO_PROTOCOL.SetRegType()`
+#### Description
+
+Modify the type and UEFI memory attributes for a region described by
+an `EFI_DT_REG` register space descriptor.
+
+#### Prototype
+
+```
+typedef
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_SET_REG_TYPE)(
+  IN  EFI_DT_IO_PROTOCOL          *This,
+  IN  EFI_DT_REG                  *Reg,
+  IN  EFI_DT_IO_REG_TYPE          Type,
+  IN  UINT64                      MemoryAttributes,
+  OUT EFI_DT_IO_REG_TYPE          *OldType OPTIONAL,
+  OUT UINT64                      *OldAttributes OPTIONAL
+  );
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
+| `Reg` | Pointer to an `EFI_DT_REG`. |
+| `Type` | One of `EFI_DT_IO_REG_TYPE`. Cannot be `EfiDtIoRegTypeInvalid`, `EfiDtIoRegTypeNonExistent` or `EfiDtIoRegTypeMaximum`. |
+| `MemoryAttributes` | Defined in `GetMemoryMap()` in the UEFI spec. |
+| `OldType` | Where to store current type. |
+| `OldAttributes` | Where to store current attributes. |
+
+#### Status Codes Returned
+
+| Status Code | Description |
+| ----------- | ----------- |
+| `EFI_SUCCESS` | Success. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid: e.g. `Reg` length is zero, `Attributes` is zero. |
+| `EFI_ACCESS_DENIED` | Could not convert existing region due to a conflict or in-use condition. |
+| `EFI_UNSUPPORTED` | Not supported: e.g. `Reg` cannot be translated to a CPU address. |
 
 ### `EFI_DT_IO_PROTOCOL.Map()`
 #### Description

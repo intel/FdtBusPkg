@@ -18,7 +18,6 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiDriverEntryPoint.h>
-#include <Library/DxeServicesTableLib.h>
 #include <Library/FbpUtilsLib.h>
 
 #include <Protocol/Cpu.h>

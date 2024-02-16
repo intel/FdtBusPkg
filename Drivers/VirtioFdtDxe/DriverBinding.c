@@ -63,6 +63,26 @@ DriverSupported (
   EFI_STATUS          Status;
   EFI_DT_IO_PROTOCOL  *DtIo;
 
+  //
+  // Follows the logic described in "Bus Driver that creates
+  // all of its child handles on the first call to Start()".
+  //
+
+  if ((RemainingDevicePath != NULL) &&
+      !IsDevicePathEnd (RemainingDevicePath))
+  {
+    VIRTIO_TRANSPORT_DEVICE_PATH_NODE  *Node;
+
+    Node = (VOID *)RemainingDevicePath;
+    if ((DevicePathType (RemainingDevicePath) != HARDWARE_DEVICE_PATH) ||
+        (DevicePathSubType (RemainingDevicePath) != HW_VENDOR_DP) ||
+        (DevicePathNodeLength (RemainingDevicePath) != sizeof (VIRTIO_TRANSPORT_DEVICE_PATH_NODE)) ||
+        (!CompareGuid (&(Node->Vendor.Guid), &gVirtioMmioTransportGuid)))
+    {
+      return EFI_UNSUPPORTED;
+    }
+  }
+
   DtIo   = NULL;
   Status = gBS->OpenProtocol (
                   ControllerHandle,
@@ -73,10 +93,6 @@ DriverSupported (
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
-    if (Status == EFI_ALREADY_STARTED) {
-      return EFI_SUCCESS;
-    }
-
     return Status;
   }
 
@@ -393,19 +409,15 @@ DriverStart (
   EFI_DT_REG                Reg;
   EFI_STATUS                Status;
   EFI_DT_IO_PROTOCOL        *DtIo;
-  BOOLEAN                   MyOpen;
   EFI_DEVICE_PATH_PROTOCOL  *ControllerPath;
   EFI_PHYSICAL_ADDRESS      RegBase;
 
+  //
+  // Follows the logic described in "Bus Driver that
+  // creates all of its child handles on the first call to Start()".
+  //
+
   DtIo   = NULL;
-  MyOpen = TRUE;
-
-  ControllerPath = DevicePathFromHandle (ControllerHandle);
-  if (ControllerPath == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a: DevicePathFromHandle\n"));
-    return EFI_NOT_FOUND;
-  }
-
   Status = gBS->OpenProtocol (
                   ControllerHandle,
                   &gEfiDtIoProtocolGuid,
@@ -414,15 +426,6 @@ DriverStart (
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
-  if (Status == EFI_ALREADY_STARTED) {
-    //
-    // Don't accidentally close EFI_DT_IO_PROTOCOL if
-    // we didn't open it.
-    //
-    MyOpen = FALSE;
-    Status = EFI_SUCCESS;
-  }
-
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -431,6 +434,12 @@ DriverStart (
       IsDevicePathEndType (RemainingDevicePath))
   {
     goto out;
+  }
+
+  ControllerPath = DevicePathFromHandle (ControllerHandle);
+  if (ControllerPath == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: DevicePathFromHandle\n"));
+    return EFI_NOT_FOUND;
   }
 
   Status = DtIo->GetReg (DtIo, 0, &Reg);
@@ -457,25 +466,18 @@ DriverStart (
              ControllerPath
              );
   if (EFI_ERROR (Status)) {
-    if (Status != EFI_ALREADY_STARTED) {
-      DEBUG ((DEBUG_ERROR, "%a: ChildCreate: %r\n", __func__, Status));
-    } else {
-      Status = EFI_SUCCESS;
-    }
-
+    DEBUG ((DEBUG_ERROR, "%a: ChildCreate: %r\n", __func__, Status));
     goto out;
   }
 
 out:
   if (EFI_ERROR (Status)) {
-    if (MyOpen) {
-      gBS->CloseProtocol (
-             ControllerHandle,
-             &gEfiDtIoProtocolGuid,
-             This->DriverBindingHandle,
-             ControllerHandle
-             );
-    }
+    gBS->CloseProtocol (
+           ControllerHandle,
+           &gEfiDtIoProtocolGuid,
+           This->DriverBindingHandle,
+           ControllerHandle
+           );
   }
 
   return Status;

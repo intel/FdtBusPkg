@@ -1,4 +1,4 @@
-From ab8b40555d03f57dbec8b757ba02265ae11ebdca Mon Sep 17 00:00:00 2001
+From 1096088d78f9df88aaeacde68e0decde70b48f6e Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Thu, 16 Mar 2023 15:46:04 -0500
 Subject: [PATCH 1/1] RiscVVirt: Patches to enable FdtBusPkg components
@@ -22,7 +22,8 @@ Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
  OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf           | 11 ++-
  .../PlatformBootManagerLib.inf                |  4 +
  .../PlatformBootManagerLib/PlatformBm.c       | 92 ++++++++++++-------
- 4 files changed, 91 insertions(+), 42 deletions(-)
+ OvmfPkg/RiscVVirt/Sec/Platform.c              |  1 -
+ 5 files changed, 91 insertions(+), 43 deletions(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 index f8b9479345d7..122b7464846a 100644
@@ -313,6 +314,18 @@ index 44fd21f74fcf..3b7157b7a73e 100644
    }
  
    //
+diff --git a/OvmfPkg/RiscVVirt/Sec/Platform.c b/OvmfPkg/RiscVVirt/Sec/Platform.c
+index c66432473067..2fd84ef2bca4 100644
+--- a/OvmfPkg/RiscVVirt/Sec/Platform.c
++++ b/OvmfPkg/RiscVVirt/Sec/Platform.c
+@@ -140,7 +140,6 @@ PlatformPeimInitialization (
+ 
+   PopulateIoResources (Base, "ns16550a");
+   PopulateIoResources (Base, "qemu,fw-cfg-mmio");
+-  PopulateIoResources (Base, "virtio,mmio");
+ 
+   return EFI_SUCCESS;
+ }
 -- 
 2.34.1
 

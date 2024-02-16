@@ -1,4 +1,4 @@
-From 5f722e8e5cbb054cdcb86744591e4014a5600099 Mon Sep 17 00:00:00 2001
+From 7eab0d7833b9087d99d9c9f312714ff0a73a056f Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Tue, 13 Feb 2024 14:36:42 -0600
 Subject: [PATCH 1/1] UefiDevicePathLib: support DT(...) device path nodes

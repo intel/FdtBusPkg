@@ -213,6 +213,17 @@ an environment with DT controllers, they rely on libraries to
 fully encapsulate any discovery and interaction with
 `EFI_DT_IO_PROTOCOL`-bearing device handles.
 
+> [!TIP]
+> You may wonder if using DT I/O Protocol is warranted for a legacy driver,
+> compared to older approaches like FdtClientDxe or even manual Devicetree parsing.
+> Using DT I/O Protocol is always better and results in simpler, more correct
+> and more portable code. For example, the DT I/O layer handles proper
+> property parsing, translation of _reg_ and _ranges_ addresses, DMA and I/O
+> mechanics, etc. [PciHostBridgeLibEcam](../Library/PciHostBridgeLibEcam) and
+> [HighMemDxe](../Drivers/HighMemDxe) are great examples of code being
+> improved by moving to the DT I/O Protocol (compare to OvmfPkg/Fdt/HighMemDxe and
+> OvmfPkg/Library/PciHostBridgeUtilityLib).
+
 ### Simple Example
 
 The following figure demonstrates how a legacy driver or library can locate

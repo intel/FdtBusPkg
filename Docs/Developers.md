@@ -63,6 +63,8 @@ To build RISC-V OVMF firmware enabled with FdtBusPkg components:
 
 ```
 $ git am FdtBusPkg/Docs/0001-RiscVVirt-Patches-to-enable-FdtBusPkg-components.patch
+$ git am FdtBusPkg/Docs/0001-UefiDevicePathLib-support-DT-.-device-path-nodes.patch
+$ git am FdtBusPkg/Docs/0001-OvmfPkg-RiscVVirt-change-for-testing-HighMemDxe.patch
 $ export GCC_RISCV64_PREFIX=... (if you are on a non-RISCV64 system)
 $ build -a RISCV64  -p OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc -t GCC -b DEBUG
 ```

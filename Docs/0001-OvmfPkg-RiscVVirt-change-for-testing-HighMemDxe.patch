@@ -1,0 +1,65 @@
+From 01e1a122c55e49f25207b23db6f01c74998c47f0 Mon Sep 17 00:00:00 2001
+From: Andrei Warkentin <andrei.warkentin@intel.com>
+Date: Thu, 15 Feb 2024 23:25:47 -0600
+Subject: [PATCH 1/1] OvmfPkg/RiscVVirt: change for testing HighMemDxe
+
+Since MemoryPeimInitialization loops over all "memory"
+devices, HighMemDxe does nothing. Stop after the first
+entry to give HighMemDxe a chance.
+
+To test, run Qemu with NUMA, e.g:
+... -m 8192 -numa node,mem=4G -numa node,mem=4G ...
+
+Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
+---
+ OvmfPkg/RiscVVirt/Sec/Memory.c | 26 +++++++++++++++-----------
+ 1 file changed, 15 insertions(+), 11 deletions(-)
+
+diff --git a/OvmfPkg/RiscVVirt/Sec/Memory.c b/OvmfPkg/RiscVVirt/Sec/Memory.c
+index 7c6d920bd2a6..4bd4f88e15b8 100644
+--- a/OvmfPkg/RiscVVirt/Sec/Memory.c
++++ b/OvmfPkg/RiscVVirt/Sec/Memory.c
+@@ -253,6 +253,7 @@ MemoryPeimInitialization (
+   INT32                       Node, Prev;
+   INT32                       Len;
+   VOID                        *FdtPointer;
++  BOOLEAN                     Once = TRUE;
+ 
+   FirmwareContext = NULL;
+   GetFirmwareContextPointer (&FirmwareContext);
+@@ -285,18 +286,21 @@ MemoryPeimInitialization (
+         CurBase = fdt64_to_cpu (ReadUnaligned64 (RegProp));
+         CurSize = fdt64_to_cpu (ReadUnaligned64 (RegProp + 1));
+ 
+-        DEBUG ((
+-          DEBUG_INFO,
+-          "%a: System RAM @ 0x%lx - 0x%lx\n",
+-          __func__,
+-          CurBase,
+-          CurBase + CurSize - 1
+-          ));
++        if (Once) {
++          DEBUG ((
++            DEBUG_INFO,
++            "%a: System RAM @ 0x%lx - 0x%lx\n",
++            __func__,
++            CurBase,
++            CurBase + CurSize - 1
++            ));
+ 
+-        InitializeRamRegions (
+-          CurBase,
+-          CurSize
+-          );
++          InitializeRamRegions (
++            CurBase,
++            CurSize
++            );
++          Once = FALSE;
++        }
+       } else {
+         DEBUG ((
+           DEBUG_ERROR,
+-- 
+2.34.1
+

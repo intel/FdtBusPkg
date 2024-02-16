@@ -389,6 +389,8 @@ AsciiStrChr (
   @param  Length                Range length.
   @param  Type                  EFI_GCD_MEMORY_TYPE.
   @param  Attributes            Memory region attributes.
+  @param  OutType               Where to store current EFI_GCD_MEMORY_TYPE.
+  @param  OutAttributes         Where to store current attributes.
   @param  OnConflictDoNothing   TRUE if a conflicting region/attributes
                                 should be left alone. FALSE if it should
                                 be corrected.
@@ -402,6 +404,8 @@ ApplyGcdTypeAndAttrs (
   IN  UINTN                 Length,
   IN  EFI_GCD_MEMORY_TYPE   Type,
   IN  UINT64                Attributes,
+  OUT EFI_GCD_MEMORY_TYPE   *OutType OPTIONAL,
+  OUT UINT64                *OutAttributes OPTIONAL,
   IN  BOOLEAN               OnConflictDoNothing
   )
 {
@@ -410,9 +414,7 @@ ApplyGcdTypeAndAttrs (
   EFI_PHYSICAL_ADDRESS             AlignedAddress;
   UINTN                            AlignedLength;
 
-  if (Length == 0) {
-    return EFI_SUCCESS;
-  }
+  ASSERT (Length != 0);
 
   //
   // Attributes work on page-aligned mappings, so make sure
@@ -450,6 +452,9 @@ ApplyGcdTypeAndAttrs (
       AlignedAddress + AlignedLength - 1,
       Status
       ));
+    if (Status == EFI_NOT_FOUND) {
+      Status = EFI_INVALID_PARAMETER;
+    }
     return Status;
   }
 
@@ -461,7 +466,8 @@ ApplyGcdTypeAndAttrs (
     // mapped / in-use.
     //
     if (OnConflictDoNothing) {
-      return EFI_SUCCESS;
+      Status = EFI_SUCCESS;
+      goto out;
     }
 
     //
@@ -478,7 +484,7 @@ ApplyGcdTypeAndAttrs (
       AlignedAddress,
       AlignedAddress + AlignedLength - 1
       ));
-    Status = EFI_UNSUPPORTED;
+    Status = EFI_ACCESS_DENIED;
     return Status;
   }
 
@@ -489,7 +495,8 @@ ApplyGcdTypeAndAttrs (
         // Already part of the GCD. Expect it to be mapped already
         // with appropriate attributes.
         //
-        return EFI_SUCCESS;
+        Status = EFI_SUCCESS;
+        goto out;
       }
 
       Status = gDS->RemoveMemorySpace (AlignedAddress, AlignedLength);
@@ -543,7 +550,8 @@ ApplyGcdTypeAndAttrs (
     //
     ASSERT (!OnConflictDoNothing || GcdDescriptor.Attributes == Attributes);
     if (OnConflictDoNothing) {
-      return EFI_SUCCESS;
+      Status = EFI_SUCCESS;
+      goto out;
     }
   }
 
@@ -561,6 +569,17 @@ ApplyGcdTypeAndAttrs (
       AlignedAddress + AlignedLength - 1,
       Status
       ));
+  }
+
+out:
+  if (!EFI_ERROR (Status)) {
+    if (OutType != NULL) {
+      *OutType = GcdDescriptor.GcdMemoryType;
+    }
+
+    if (OutAttributes != NULL) {
+      *OutAttributes = GcdDescriptor.Attributes;
+    }
   }
 
   return Status;

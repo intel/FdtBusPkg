@@ -184,10 +184,11 @@ DtDeviceCreate (
   //
   // Device register access.
   //
-  DtDevice->DtIo.PollReg  = DtIoPollReg;
-  DtDevice->DtIo.ReadReg  = DtIoReadReg;
-  DtDevice->DtIo.WriteReg = DtIoWriteReg;
-  DtDevice->DtIo.CopyReg  = DtIoCopyReg;
+  DtDevice->DtIo.PollReg    = DtIoPollReg;
+  DtDevice->DtIo.ReadReg    = DtIoReadReg;
+  DtDevice->DtIo.WriteReg   = DtIoWriteReg;
+  DtDevice->DtIo.CopyReg    = DtIoCopyReg;
+  DtDevice->DtIo.SetRegType = DtIoSetRegType;
 
   //
   // DMA operations.

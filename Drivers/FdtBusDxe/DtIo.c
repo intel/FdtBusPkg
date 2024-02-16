@@ -654,6 +654,109 @@ Exit:
 }
 
 /**
+  Modify the type and UEFI memory attributes for a region described by an
+  EFI_DT_REG register space descriptor.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Reg                   EFI_DT_REG *.
+  @param  Type                  One of EFI_DT_IO_REG_TYPE.
+  @param  MemoryAttributes      Defined in GetMemoryMap() in the UEFI spec.
+  @param  OldType               Where to store current type.
+  @param  OldAttributes         Where to store current attributes.
+
+  @retval EFI_STATUS            EFI_SUCCESS or error.
+
+**/
+EFI_STATUS
+EFIAPI
+DtIoSetRegType (
+  IN  EFI_DT_IO_PROTOCOL  *This,
+  IN  EFI_DT_REG          *Reg,
+  IN  EFI_DT_IO_REG_TYPE  Type,
+  IN  UINT64              MemoryAttributes,
+  OUT EFI_DT_IO_REG_TYPE  *OldType OPTIONAL,
+  OUT UINT64              *OldAttributes OPTIONAL
+  )
+{
+  EFI_STATUS            Status;
+  EFI_GCD_MEMORY_TYPE   GcdType;
+  EFI_PHYSICAL_ADDRESS  Base;
+
+  if ((This == NULL) || (Reg == NULL) ||
+      (Reg->Length == 0) ||
+      (MemoryAttributes == 0))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  switch (Type) {
+    case EfiDtIoRegTypeReserved:
+      GcdType = EfiGcdMemoryTypeReserved;
+      break;
+    case EfiDtIoRegTypeSystemMemory:
+      GcdType = EfiGcdMemoryTypeSystemMemory;
+      break;
+    case EfiDtIoRegTypeMemoryMappedIo:
+      GcdType = EfiGcdMemoryTypeMemoryMappedIo;
+      break;
+    case EfiDtIoRegTypePersistent:
+      GcdType = EfiGcdMemoryTypePersistent;
+      break;
+    case EfiDtIoRegTypeMoreReliable:
+      GcdType = EfiGcdMemoryTypeMoreReliable;
+      break;
+    default:
+      return EFI_INVALID_PARAMETER;
+  }
+
+  Status = FbpRegToPhysicalAddress (Reg, &Base);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = ApplyGcdTypeAndAttrs (
+             Base,
+             Reg->Length,
+             GcdType,
+             MemoryAttributes,
+             &GcdType,
+             OldAttributes,
+             FALSE
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  if (OldType != NULL) {
+    switch (GcdType) {
+      case EfiGcdMemoryTypeNonExistent:
+        *OldType = EfiDtIoRegTypeNonExistent;
+        break;
+      case EfiGcdMemoryTypeReserved:
+        *OldType = EfiDtIoRegTypeReserved;
+        break;
+      case EfiGcdMemoryTypeSystemMemory:
+        *OldType = EfiDtIoRegTypeSystemMemory;
+        break;
+      case EfiGcdMemoryTypeMemoryMappedIo:
+        *OldType = EfiDtIoRegTypeMemoryMappedIo;
+        break;
+      case EfiGcdMemoryTypePersistent:
+        *OldType = EfiDtIoRegTypePersistent;
+        break;
+      case EfiGcdMemoryTypeMoreReliable:
+        *OldType = EfiDtIoRegTypeMoreReliable;
+        break;
+      default:
+        *OldType = EfiDtIoRegTypeInvalid;
+        break;
+    }
+  }
+
+  return Status;
+}
+
+/**
   Provides the device-specific addresses needed to access system memory.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.

@@ -42,22 +42,23 @@ DeviceIsSupported (
 /**
   Process a /memory node range.
 
+  @param[in] DtIo           EFI_DT_IO_PROTOCOL *.
   @param[in] Reg            Range to process.
 
   @retval EFI_SUCCESS       The range are processed.
   @retval other             Some error occured (and logged).
-.
 
 **/
 STATIC
 EFI_STATUS
 ProcessMemoryRange (
-  IN  EFI_DT_REG  *Reg
+  IN  EFI_DT_IO_PROTOCOL  *DtIo,
+  IN  EFI_DT_REG          *Reg
   )
 {
-  EFI_STATUS                       Status;
-  UINT64                           Attributes;
-  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  GcdDescriptor;
+  EFI_STATUS          Status;
+  UINT64              Attributes;
+  EFI_DT_IO_REG_TYPE  OldType;
 
   ASSERT (Reg != NULL);
 
@@ -65,24 +66,28 @@ ProcessMemoryRange (
     return EFI_SUCCESS;
   }
 
-  Status = gDS->GetMemorySpaceDescriptor (Reg->TranslatedBase, &GcdDescriptor);
+  Status = DtIo->SetRegType (
+                   DtIo,
+                   Reg,
+                   EfiDtIoRegTypeSystemMemory,
+                   EFI_MEMORY_WB,
+                   &OldType,
+                   NULL
+                   );
   if (EFI_ERROR (Status)) {
-    //
-    // This can happen if Reg->TranslatedBase exceeds the Gcd limits as set
-    // by the Cpu HOB. You'll get an EFI_NOT_FOUND and it's really
-    // a programmer error since the Reg->TranslatedBase is clearly invalid.
-    //
     DEBUG ((
       DEBUG_ERROR,
-      "%a: gDS->GetMemorySpaceDescriptor(0x%lx-0x%lx): %r\n",
+      "%a: SetRegType 0x%lx-0x%lx: %r\n",
       __func__,
       (UINTN)Reg->TranslatedBase,
-      (UINTN)(Reg->TranslatedBase + Reg->Length - 1)
+      (UINTN)(Reg->TranslatedBase + Reg->Length - 1),
+      Status
       ));
+    ASSERT_EFI_ERROR (Status);
     return Status;
   }
 
-  if (GcdDescriptor.GcdMemoryType == EfiGcdMemoryTypeSystemMemory) {
+  if (OldType == EfiDtIoRegTypeSystemMemory) {
     DEBUG ((
       DEBUG_ERROR,
       "%a: Nothing to do for 0x%lx-0x%lx\n",
@@ -91,64 +96,6 @@ ProcessMemoryRange (
       (UINTN)(Reg->TranslatedBase + Reg->Length - 1)
       ));
     return EFI_SUCCESS;
-  }
-
-  if (GcdDescriptor.GcdMemoryType != EfiGcdMemoryTypeNonExistent) {
-    //
-    // If the region is not present in the GCD, the DtIo GetReg
-    // will add it as MMIO with UC capabilities and attributes.
-    // So... need to undo that.
-    //
-    Status = gDS->RemoveMemorySpace (
-                    Reg->TranslatedBase,
-                    Reg->Length
-                    );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((
-        DEBUG_ERROR,
-        "%a: Couldn't remove stale range 0x%lx-0x%lx\n",
-        __func__,
-        (UINTN)Reg->TranslatedBase,
-        (UINTN)(Reg->TranslatedBase + Reg->Length - 1)
-        ));
-      ASSERT_EFI_ERROR (Status);
-      return Status;
-    }
-  }
-
-  Status = gDS->AddMemorySpace (
-                  EfiGcdMemoryTypeSystemMemory,
-                  Reg->TranslatedBase,
-                  Reg->Length,
-                  EFI_MEMORY_WB
-                  );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: gDS->AddMemorySpace(0x%lx-0x%lx): %r\n",
-      __func__,
-      (UINTN)Reg->TranslatedBase,
-      (UINTN)(Reg->TranslatedBase + Reg->Length - 1),
-      Status
-      ));
-    return Status;
-  }
-
-  Status = gDS->SetMemorySpaceAttributes (
-                  Reg->TranslatedBase,
-                  Reg->Length,
-                  EFI_MEMORY_WB
-                  );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((
-      DEBUG_WARN,
-      "%a: gDS->SetMemorySpaceAttributes(0x%lx-0x%lx): %r\n",
-      __func__,
-      (UINTN)Reg->TranslatedBase,
-      (UINTN)(Reg->TranslatedBase + Reg->Length - 1),
-      Status
-      ));
-    return Status;
   }
 
   //
@@ -170,11 +117,10 @@ ProcessMemoryRange (
   }
 
   Status = mCpu->SetMemoryAttributes (mCpu, Reg->TranslatedBase, Reg->Length, Attributes);
-
   if (EFI_ERROR (Status)) {
     DEBUG ((
       DEBUG_ERROR,
-      "%a: mCpu->SetMemorySpaceAttributes(0x%lx-0x%lx): %r\n",
+      "%a: mCpu->SetMemorySpaceAttributes 0x%lx-0x%lx: %r\n",
       __func__,
       (UINTN)Reg->TranslatedBase,
       (UINTN)(Reg->TranslatedBase + Reg->Length - 1),
@@ -183,7 +129,7 @@ ProcessMemoryRange (
   } else {
     DEBUG ((
       DEBUG_INFO,
-      "%a: Add System RAM @ 0x%lx - 0x%lx\n",
+      "%a: Add System RAM @ 0x%lx-0x%lx\n",
       __func__,
       (UINTN)Reg->TranslatedBase,
       (UINTN)(Reg->TranslatedBase + Reg->Length - 1)
@@ -245,7 +191,7 @@ ProcessMemoryRanges (
       break;
     }
 
-    Status = ProcessMemoryRange (&Reg);
+    Status = ProcessMemoryRange (DtIo, &Reg);
     if (EFI_ERROR (Status)) {
       DEBUG ((
         DEBUG_ERROR,

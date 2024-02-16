@@ -31,7 +31,6 @@
 [LibraryClasses]
   UefiLib
   DebugLib
-  DxeServicesTableLib
   PcdLib
   UefiBootServicesTableLib
   UefiDriverEntryPoint

@@ -72,6 +72,50 @@ typedef enum {
   EfiDtIoDmaOperationMaximum
 } EFI_DT_IO_PROTOCOL_DMA_OPERATION;
 
+typedef enum {
+  EfiDtIoRegTypeInvalid,
+  //
+  // A memory region that is visible to the boot processor.
+  // This memory region is being decoded by a system component,
+  // but the memory region is not considered to be either system
+  // memory or memory-mapped I/O.
+  //
+  EfiDtIoRegTypeNonExistent,
+  //
+  // A memory region that is visible to the boot processor.
+  // This memory region is being decoded by a system component,
+  // but the memory region is not considered to be either system
+  // memory or memory-mapped I/O.
+  //
+  EfiDtIoRegTypeReserved,
+  //
+  // A memory region that is visible to the boot processor.
+  // A memory controller is currently decoding this memory region
+  // and the memory controller is producing a tested system memory
+  // region that is available to the memory services.
+  //
+  EfiDtIoRegTypeSystemMemory,
+  //
+  // A memory region that is visible to the boot processor. This
+  // memory region is currently being decoded by a component as
+  // memory-mapped I/O that can be used to access I/O devices
+  // in the platform.
+  //
+  EfiDtIoRegTypeMemoryMappedIo,
+  //
+  // A memory region that is visible to the boot processor. This
+  // memory supports byteaddressable non-volatility.
+  //
+  EfiDtIoRegTypePersistent,
+  //
+  // A memory region that provides higher reliability relative to
+  // other memory in the system. If all memory has the same
+  // reliability, then this bit is not used.
+  //
+  EfiDtIoRegTypeMoreReliable,
+  EfiDtIoRegTypeMaximum,
+} EFI_DT_IO_REG_TYPE;
+
 typedef unsigned __int128  EFI_DT_BUS_ADDRESS;
 typedef unsigned __int128  EFI_DT_SIZE;
 typedef UINT32             EFI_DT_CELL;
@@ -633,6 +677,32 @@ EFI_STATUS
   );
 
 /**
+  Modify the type and UEFI memory attributes for a region described by an
+  EFI_DT_REG register space descriptor.
+
+  @param  This                   A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Reg                    EFI_DT_REG *.
+  @param  Type                   One of EFI_DT_IO_REG_TYPE.
+  @param  MemoryAttributes       Defined in GetMemoryMap() in the UEFI spec.
+  @param  OldType                Where to store current type.
+  @param  OldAttributes          Where to store current attributes.
+
+  @retval EFI_SUCCESS            Type and attributes set.
+  @retval EFI_INVALID_PARAMETER  One or more parameters are invalid.
+
+**/
+typedef
+EFI_STATUS
+(EFIAPI *EFI_DT_IO_PROTOCOL_SET_REG_TYPE)(
+  IN  EFI_DT_IO_PROTOCOL          *This,
+  IN  EFI_DT_REG                  *Reg,
+  IN  EFI_DT_IO_REG_TYPE          Type,
+  IN  UINT64                      MemoryAttributes,
+  OUT EFI_DT_IO_REG_TYPE          *OldType OPTIONAL,
+  OUT UINT64                      *OldAttributes OPTIONAL
+  );
+
+/**
   Provides the device-specific addresses needed to access system memory.
 
   Note: the implementation of this may perform cache coherency operations,
@@ -826,6 +896,7 @@ struct _EFI_DT_IO_PROTOCOL {
   EFI_DT_IO_PROTOCOL_IO_REG              ReadReg;
   EFI_DT_IO_PROTOCOL_IO_REG              WriteReg;
   EFI_DT_IO_PROTOCOL_COPY_REG            CopyReg;
+  EFI_DT_IO_PROTOCOL_SET_REG_TYPE        SetRegType;
   //
   // DMA operations.
   //

@@ -468,9 +468,12 @@ DtDeviceScan (
   TreeBase = GetTreeBaseFromDeviceFlags (DtDevice->Flags);
 
   if (RemainingDevicePath != NULL) {
-    if ((RemainingDevicePath->VendorDevicePath.Header.Type != HARDWARE_DEVICE_PATH) ||
-        (RemainingDevicePath->VendorDevicePath.Header.SubType != HW_VENDOR_DP) ||
-        !CompareGuid (&RemainingDevicePath->VendorDevicePath.Guid, &gEfiDtDevicePathGuid))
+    if ((DevicePathType (RemainingDevicePath) != HARDWARE_DEVICE_PATH) ||
+        (DevicePathSubType (RemainingDevicePath) != HW_VENDOR_DP) ||
+        !CompareGuid (
+           &RemainingDevicePath->VendorDevicePath.Guid,
+           &gEfiDtDevicePathGuid
+           ))
     {
       //
       // Nothing to-do, as the remaining device path does not describe a DT node.

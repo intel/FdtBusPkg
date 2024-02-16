@@ -455,6 +455,7 @@ ApplyGcdTypeAndAttrs (
     if (Status == EFI_NOT_FOUND) {
       Status = EFI_INVALID_PARAMETER;
     }
+
     return Status;
   }
 

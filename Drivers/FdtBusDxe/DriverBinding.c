@@ -63,6 +63,25 @@ DriverSupported (
   EFI_DT_IO_PROTOCOL  *DtIo;
   DT_DEVICE           *DtDevice;
 
+  //
+  // Follow the logic laid out in "Bus Driver that is able to create
+  // all or one of its child handles on each call to Start()".
+  //
+
+  if ((RemainingDevicePath != NULL) &&
+      !IsDevicePathEnd (RemainingDevicePath))
+  {
+    EFI_DT_DEVICE_PATH_NODE  *Node;
+
+    Node = (VOID *)RemainingDevicePath;
+    if ((DevicePathType (RemainingDevicePath) != HARDWARE_DEVICE_PATH) ||
+        (DevicePathSubType (RemainingDevicePath) != HW_VENDOR_DP) ||
+        !CompareGuid (&Node->VendorDevicePath.Guid, &gEfiDtDevicePathGuid))
+    {
+      return EFI_UNSUPPORTED;
+    }
+  }
+
   DtIo   = NULL;
   Status = gBS->OpenProtocol (
                   ControllerHandle,
@@ -156,6 +175,11 @@ DriverStart (
   EFI_STATUS          Status;
   EFI_DT_IO_PROTOCOL  *DtIo;
   DT_DEVICE           *DtDevice;
+
+  //
+  // Follow the logic laid out in "Bus Driver that is able to create
+  // all or one of its child handles on each call to Start()".
+  //
 
   DtIo     = NULL;
   DtDevice = NULL;

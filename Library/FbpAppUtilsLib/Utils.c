@@ -284,7 +284,7 @@ PrintDtU128 (
     L"%0*lx%a",
     Pad,
     (UINT64)Value,
-    NewLine ? "\n" : ""
+    NewLine ? "\r\n" : ""
     );
 }
 
@@ -302,7 +302,7 @@ PrintDtReg (
   PrintDtU128 (Reg->TranslatedBase, FALSE);
   Print (L"(");
   PrintDtU128 (Reg->Length, FALSE);
-  Print (L")%a", NewLine ? "\n" : "");
+  Print (L")%a", NewLine ? "\r\n" : "");
 }
 
 VOID

@@ -1,0 +1,78 @@
+#/** @file
+#   NOR Flash Driver for the cfi-flash DT node.
+#
+#   Copyright (c) 2011 - 2021, ARM Ltd. All rights reserved.<BR>
+#   Copyright (c) 2020, Linaro, Ltd. All rights reserved.<BR>
+#   Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
+#
+#   SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+#**/
+
+[Defines]
+  INF_VERSION                    = 1.29
+  BASE_NAME                      = VirtNorFlashDxe
+  FILE_GUID                      = e452cabd-5fe1-4d97-8161-e80ed6a409a8
+  MODULE_TYPE                    = DXE_RUNTIME_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = NorFlashInitialise
+
+[Sources.common]
+  ComponentName.c
+  DriverBinding.c
+  VirtNorFlash.c
+  VirtNorFlash.h
+  VirtNorFlashDxe.c
+  VirtNorFlashFvb.c
+
+[Packages]
+  EmbeddedPkg/EmbeddedPkg.dec
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  OvmfPkg/OvmfPkg.dec
+  FdtBusPkg/FdtBusPkg.dec
+
+[LibraryClasses]
+  IoLib
+  HobLib
+  BaseLib
+  UefiLib
+  DebugLib
+  FbpUtilsLib
+  BaseMemoryLib
+  UefiRuntimeLib
+  MemoryAllocationLib
+  DxeServicesTableLib
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
+
+[Guids]
+  gEdkiiNvVarStoreFormattedGuid     ## PRODUCES ## PROTOCOL
+  gEfiAuthenticatedVariableGuid
+  gEfiEventVirtualAddressChangeGuid
+  gEfiSystemNvDataFvGuid
+  gEfiVariableGuid
+
+[Protocols]
+  gEfiBlockIoProtocolGuid
+  gEfiDevicePathProtocolGuid
+  gEfiDiskIoProtocolGuid
+  gEfiFirmwareVolumeBlockProtocolGuid
+
+[Pcd.common]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableBase64
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableBase
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableSize
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingBase64
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingBase
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingSize
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareBase64
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareBase
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareSize
+
+[Depex]
+  gEfiCpuArchProtocolGuid
+
+[Pcd]
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFdBaseAddress
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFirmwareFdSize

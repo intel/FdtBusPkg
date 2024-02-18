@@ -1,4 +1,4 @@
-From 1096088d78f9df88aaeacde68e0decde70b48f6e Mon Sep 17 00:00:00 2001
+From 870fc36b4e73cbfff2ea289020c37866b8655560 Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Thu, 16 Mar 2023 15:46:04 -0500
 Subject: [PATCH 1/1] RiscVVirt: Patches to enable FdtBusPkg components
@@ -12,29 +12,39 @@ and driver binding where possible.
 - HighMemDxe (binding variant by default)
 - PciSioSerialDxe (which supports the FDT UART device),
   instead of SerialDxe.
+- VirtNorFlashDxe (without VirtNorFlashPlatformLib)
 
 PlatformBootManagerLib is modified to set ConOut/ConIn/StdErr
 to the UART described by /chosen/stdout-path.
 
 Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
 ---
- OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc           | 26 ++++--
- OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf           | 11 ++-
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc           | 31 +++++--
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf           | 19 +++-
  .../PlatformBootManagerLib.inf                |  4 +
  .../PlatformBootManagerLib/PlatformBm.c       | 92 ++++++++++++-------
  OvmfPkg/RiscVVirt/Sec/Platform.c              |  1 -
- 5 files changed, 91 insertions(+), 43 deletions(-)
+ 5 files changed, 100 insertions(+), 47 deletions(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-index f8b9479345d7..122b7464846a 100644
+index f8b9479345d7..c459c969ccfc 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
+@@ -85,7 +85,7 @@ [LibraryClasses.common]
+   QemuLoadImageLib|OvmfPkg/Library/GenericQemuLoadImageLib/GenericQemuLoadImageLib.inf
+ 
+   TimerLib|UefiCpuPkg/Library/BaseRiscV64CpuTimerLib/BaseRiscV64CpuTimerLib.inf
+-  VirtNorFlashPlatformLib|OvmfPkg/RiscVVirt/Library/VirtNorFlashPlatformLib/VirtNorFlashDeviceTreeLib.inf
++# VirtNorFlashPlatformLib|OvmfPkg/RiscVVirt/Library/VirtNorFlashPlatformLib/VirtNorFlashDeviceTreeLib.inf
+ 
+   CapsuleLib|MdeModulePkg/Library/DxeCapsuleLibNull/DxeCapsuleLibNull.inf
+   BootLogoLib|MdeModulePkg/Library/BootLogoLib/BootLogoLib.inf
 @@ -95,13 +95,15 @@ [LibraryClasses.common]
    FrameBufferBltLib|MdeModulePkg/Library/FrameBufferBltLib/FrameBufferBltLib.inf
    QemuBootOrderLib|OvmfPkg/Library/QemuBootOrderLib/QemuBootOrderLib.inf
    FileExplorerLib|MdeModulePkg/Library/FileExplorerLib/FileExplorerLib.inf
 -  PciPcdProducerLib|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
-+  # PciPcdProducerLib|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++# PciPcdProducerLib|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
 +  PciPcdProducerLib|FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
    PciSegmentLib|MdePkg/Library/BasePciSegmentLibPci/BasePciSegmentLibPci.inf
 -  PciHostBridgeLib|OvmfPkg/Fdt/FdtPciHostBridgeLib/FdtPciHostBridgeLib.inf
@@ -47,17 +57,24 @@ index f8b9479345d7..122b7464846a 100644
  
  !if $(TPM2_ENABLE) == TRUE
    Tpm2CommandLib|SecurityPkg/Library/Tpm2CommandLib/Tpm2CommandLib.inf
-@@ -334,7 +336,8 @@ [Components]
+@@ -334,12 +336,14 @@ [Components]
    MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe.inf
    MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
    MdeModulePkg/Universal/Console/TerminalDxe/TerminalDxe.inf
 -  MdeModulePkg/Universal/SerialDxe/SerialDxe.inf
-+  # MdeModulePkg/Universal/SerialDxe/SerialDxe.inf
++# MdeModulePkg/Universal/SerialDxe/SerialDxe.inf
 +  FdtBusPkg/Drivers/PciSioSerialDxe/PciSioSerialDxe.inf
  
    MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
  
-@@ -351,14 +354,18 @@ [Components]
+   UefiCpuPkg/CpuTimerDxeRiscV64/CpuTimerDxeRiscV64.inf
+-  OvmfPkg/VirtNorFlashDxe/VirtNorFlashDxe.inf
++# OvmfPkg/VirtNorFlashDxe/VirtNorFlashDxe.inf
++  FdtBusPkg/Drivers/VirtNorFlashDxe/VirtNorFlashDxe.inf
+   MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
+ 
+   #
+@@ -351,14 +355,18 @@ [Components]
    #
    # Platform Driver
    #
@@ -72,42 +89,54 @@ index f8b9479345d7..122b7464846a 100644
        DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
    }
 -  OvmfPkg/Fdt/HighMemDxe/HighMemDxe.inf
-+  #OvmfPkg/Fdt/HighMemDxe/HighMemDxe.inf
++# OvmfPkg/Fdt/HighMemDxe/HighMemDxe.inf
 +  FdtBusPkg/Drivers/HighMemDxe/HighMemDxe.inf
-+  #FdtBusPkg/Drivers/HighMemDxe/HighMemDxeNoBinding.inf
++# FdtBusPkg/Drivers/HighMemDxe/HighMemDxeNoBinding.inf
    OvmfPkg/VirtioBlkDxe/VirtioBlk.inf
    OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
    OvmfPkg/VirtioNetDxe/VirtioNet.inf
-@@ -448,12 +455,14 @@ [Components]
+@@ -448,12 +456,14 @@ [Components]
    #
    OvmfPkg/RiscVVirt/PciCpuIo2Dxe/PciCpuIo2Dxe.inf {
      <LibraryClasses>
 -      NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
-+      # NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++#     NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
 +      NULL|FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
    }
    MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe.inf
    MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe.inf {
      <LibraryClasses>
 -      NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
-+      # NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++#     NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
 +      NULL|FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
    }
    OvmfPkg/PciHotPlugInitDxe/PciHotPlugInit.inf
    OvmfPkg/VirtioPciDeviceDxe/VirtioPciDeviceDxe.inf
-@@ -503,5 +512,6 @@ [Components]
+@@ -503,5 +513,6 @@ [Components]
    MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
    OvmfPkg/AcpiPlatformDxe/AcpiPlatformDxe.inf {
      <LibraryClasses>
 -      NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
-+      # NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++#     NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
 +      NULL|FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
    }
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
-index 40d12e0f4c46..792144bfcab6 100644
+index 40d12e0f4c46..60cbf767bd06 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
-@@ -69,9 +69,13 @@ [FV.DXEFV]
+@@ -60,7 +60,10 @@ [FV.DXEFV]
+   INF  MdeModulePkg/Universal/StatusCodeHandler/RuntimeDxe/StatusCodeHandlerRuntimeDxe.inf
+   INF  EmbeddedPkg/Drivers/FdtClientDxe/FdtClientDxe.inf
+   INF  UefiCpuPkg/CpuDxeRiscV64/CpuDxeRiscV64.inf
+-  INF  OvmfPkg/VirtNorFlashDxe/VirtNorFlashDxe.inf
++# INF  OvmfPkg/VirtNorFlashDxe/VirtNorFlashDxe.inf
++  INF  OvmfPkg/RiscVVirt/PciCpuIo2Dxe/PciCpuIo2Dxe.inf
++  INF  FdtBusPkg/Drivers/VirtNorFlashDxe/VirtNorFlashDxe.inf
++  INF  FdtBusPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
+ }
+ 
+ #
+@@ -69,9 +72,13 @@ [FV.DXEFV]
  INF  MdeModulePkg/Core/Dxe/DxeMain.inf
  INF  MdeModulePkg/Universal/PCD/Dxe/Pcd.inf
  INF  MdeModulePkg/Universal/DevicePathDxe/DevicePathDxe.inf
@@ -123,7 +152,7 @@ index 40d12e0f4c46..792144bfcab6 100644
  
  #
  # PI DXE Drivers producing Architectural Protocols (EFI Services)
-@@ -98,7 +102,8 @@ [FV.DXEFV]
+@@ -98,11 +105,13 @@ [FV.DXEFV]
  INF  MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe.inf
  INF  MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
  INF  MdeModulePkg/Universal/Console/TerminalDxe/TerminalDxe.inf
@@ -133,6 +162,12 @@ index 40d12e0f4c46..792144bfcab6 100644
  
  # RISC-V Core Drivers
  INF  UefiCpuPkg/CpuTimerDxeRiscV64/CpuTimerDxeRiscV64.inf
+-INF  OvmfPkg/VirtNorFlashDxe/VirtNorFlashDxe.inf
++# INF OvmfPkg/VirtNorFlashDxe/VirtNorFlashDxe.inf
++INF  FdtBusPkg/Drivers/VirtNorFlashDxe/VirtNorFlashDxe.inf
+ INF  MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
+ 
+ #
 diff --git a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBootManagerLib.inf b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBootManagerLib.inf
 index 9d66c8110c53..b62c2af15da1 100644
 --- a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBootManagerLib.inf

@@ -1,12 +1,14 @@
 /** @file
+    NOR Flash Driver for the cfi-flash DT node.
 
-    Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
+    Copyright (c) 2011 - 2021, ARM Ltd. All rights reserved.<BR>
+    Copyright (c) 2020, Linaro, Ltd. All rights reserved.<BR>
+    Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
 
     SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
-
-#include "FdtBusDxe.h"
+#include "VirtNorFlash.h"
 
 /**
   Tests to see if this driver supports a given controller. If a child device is provided,
@@ -61,22 +63,22 @@ DriverSupported (
 {
   EFI_STATUS          Status;
   EFI_DT_IO_PROTOCOL  *DtIo;
-  DT_DEVICE           *DtDevice;
 
   //
-  // Follow the logic laid out in "Bus Driver that is able to create
-  // all or one of its child handles on each call to Start()".
+  // Follows the logic described in "Bus Driver that creates
+  // all of its child handles on the first call to Start()".
   //
 
   if ((RemainingDevicePath != NULL) &&
       !IsDevicePathEnd (RemainingDevicePath))
   {
-    EFI_DT_DEVICE_PATH_NODE  *Node;
+    NOR_FLASH_DEVICE_PATH  *Node;
 
     Node = (VOID *)RemainingDevicePath;
     if ((DevicePathType (RemainingDevicePath) != HARDWARE_DEVICE_PATH) ||
         (DevicePathSubType (RemainingDevicePath) != HW_VENDOR_DP) ||
-        !CompareGuid (&Node->VendorDevicePath.Guid, &gEfiDtDevicePathGuid))
+        (DevicePathNodeLength (RemainingDevicePath) != sizeof (NOR_FLASH_DEVICE_PATH)) ||
+        (!CompareGuid (&(Node->Vendor.Guid), &gEfiCallerIdGuid)))
     {
       return EFI_UNSUPPORTED;
     }
@@ -92,32 +94,20 @@ DriverSupported (
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
-    if (Status == EFI_ALREADY_STARTED) {
-      return EFI_SUCCESS;
-    }
-
-    return EFI_UNSUPPORTED;
+    return Status;
   }
 
-  DtDevice = DT_DEV_FROM_THIS (DtIo);
+  Status = DtIo->IsCompatible (DtIo, "cfi-flash");
+  if (EFI_ERROR (Status)) {
+    goto out;
+  }
 
-  if (((DtDevice->Flags & DT_DEVICE_TEST_UNIT) != 0) ||
-      (AsciiStrCmp (
-         DtIo->Name,
-         GetDtRootNameFromDeviceFlags (DtDevice->Flags)
-         ) == 0) ||
-      (DtIo->IsCompatible (DtIo, "simple-bus") == EFI_SUCCESS))
-  {
-    Status = EFI_SUCCESS;
-  } else {
-    //
-    // A client driver should use DtIo->ScanChildren to make
-    // FdtBusDxe discover handles under nodes it doesn't directly
-    // support.
-    //
+  if (DtIo->DeviceStatus != EFI_DT_STATUS_OKAY) {
     Status = EFI_UNSUPPORTED;
+    goto out;
   }
 
+out:
   gBS->CloseProtocol (
          ControllerHandle,
          &gEfiDtIoProtocolGuid,
@@ -172,18 +162,17 @@ DriverStart (
   IN  EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath OPTIONAL
   )
 {
-  EFI_STATUS          Status;
-  EFI_DT_IO_PROTOCOL  *DtIo;
-  DT_DEVICE           *DtDevice;
+  UINTN                     Index;
+  EFI_STATUS                Status;
+  EFI_DT_IO_PROTOCOL        *DtIo;
+  EFI_DEVICE_PATH_PROTOCOL  *ControllerPath;
 
   //
-  // Follow the logic laid out in "Bus Driver that is able to create
-  // all or one of its child handles on each call to Start()".
+  // Follows the logic described in "Bus Driver that
+  // creates all of its child handles on the first call to Start()".
   //
 
-  DtIo     = NULL;
-  DtDevice = NULL;
-
+  DtIo   = NULL;
   Status = gBS->OpenProtocol (
                   ControllerHandle,
                   &gEfiDtIoProtocolGuid,
@@ -192,31 +181,149 @@ DriverStart (
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
-  if (EFI_ERROR (Status) && (Status != EFI_ALREADY_STARTED)) {
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  Status   = EFI_SUCCESS;
-  DtDevice = DT_DEV_FROM_THIS (DtIo);
+  if ((RemainingDevicePath != NULL) &&
+      IsDevicePathEndType (RemainingDevicePath))
+  {
+    goto out;
+  }
 
-  Status = DtDeviceScan (
-             DtDevice,
-             (VOID *)RemainingDevicePath,
-             This->DriverBindingHandle
-             );
+  ControllerPath = DevicePathFromHandle (ControllerHandle);
+  if (ControllerPath == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: DevicePathFromHandle\n"));
+    return EFI_NOT_FOUND;
+  }
+
+  Index = 0;
+  do {
+    EFI_DT_REG            Reg;
+    EFI_PHYSICAL_ADDRESS  RegBase;
+    BOOLEAN               ContainVariableStorage;
+
+    Status = DtIo->GetReg (DtIo, Index++, &Reg);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: GetReg %lu: %r\n",
+        __func__,
+        Index,
+        Status
+        ));
+      if ((Index != 0) && (Status == EFI_NOT_FOUND)) {
+        Status = EFI_SUCCESS;
+      }
+
+      goto out;
+    }
+
+    //
+    // No, you cannot use DtIo Reg* API in a runtime DXE, as
+    // FdtBusDxe is not a runtime driver.
+    //
+    Status = FbpRegToPhysicalAddress (&Reg, &RegBase);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: couldn't translate range to CPU addresses: %r\n",
+        __func__
+        ));
+      ASSERT_EFI_ERROR (Status);
+      continue;
+    }
+
+    //
+    // Disregard any flash devices that overlap with the primary FV.
+    // The firmware is not updatable from inside the guest anyway.
+    //
+    if ((PcdGet32 (PcdOvmfFdBaseAddress) + PcdGet32 (PcdOvmfFirmwareFdSize) > RegBase) &&
+        ((RegBase + Reg.Length) > PcdGet32 (PcdOvmfFdBaseAddress)))
+    {
+      continue;
+    }
+
+    if (PcdGet64 (PcdFlashNvStorageVariableBase64) != 0) {
+      ContainVariableStorage =
+        (RegBase <= PcdGet64 (PcdFlashNvStorageVariableBase64)) &&
+        (PcdGet64 (PcdFlashNvStorageVariableBase64) + PcdGet32 (PcdFlashNvStorageVariableSize) <=
+         RegBase + Reg.Length);
+    } else {
+      ContainVariableStorage =
+        (RegBase <= PcdGet32 (PcdFlashNvStorageVariableBase)) &&
+        (PcdGet32 (PcdFlashNvStorageVariableBase) + PcdGet32 (PcdFlashNvStorageVariableSize) <=
+         RegBase + Reg.Length);
+    }
+
+    if (!ContainVariableStorage) {
+      continue;
+    }
+
+    //
+    // Declare the Non-Volatile storage as EFI_MEMORY_RUNTIME.
+    //
+    // Note: all the NOR Flash region needs to be reserved into
+    // the UEFI Runtime memory; even if we only use the small
+    // block region at the top of the NOR Flash. The reason is
+    // when the NOR Flash memory is set into program mode, the
+    // command is written as the base of the flash region
+    // (i.e.: RegBase).
+    //
+    Status = DtIo->SetRegType (
+                     DtIo,
+                     &Reg,
+                     EfiDtIoRegTypeMemoryMappedIo,
+                     EFI_MEMORY_UC | EFI_MEMORY_RUNTIME,
+                     NULL,
+                     NULL
+                     );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: SetRegType %lu: %r\n",
+        __func__,
+        Index,
+        Status
+        ));
+      ASSERT_EFI_ERROR (Status);
+      continue;
+    }
+
+    Status = ChildCreate (
+               Index,
+               RegBase,
+               RegBase,
+               Reg.Length,
+               QEMU_NOR_BLOCK_SIZE,
+               ControllerHandle,
+               This->DriverBindingHandle,
+               ControllerPath
+               );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: ChildCreate %lu: %r\n",
+        __func__,
+        Index,
+        Status
+        ));
+      ASSERT_EFI_ERROR (Status);
+      continue;
+    }
+  } while (1);
+
+out:
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: DtDeviceEnumerate: %r\n", __func__, Status));
+    gBS->CloseProtocol (
+           ControllerHandle,
+           &gEfiDtIoProtocolGuid,
+           This->DriverBindingHandle,
+           ControllerHandle
+           );
   }
 
-  //
-  // DtDeviceScan above may have created some handles.
-  //
-
-  if ((DtDevice->Flags & DT_DEVICE_TEST_UNIT) != 0) {
-    TestsInvoke (DtDevice);
-  }
-
-  return EFI_SUCCESS;
+  return Status;
 }
 
 /**
@@ -255,47 +362,7 @@ DriverStop (
   IN  EFI_HANDLE                   *ChildHandleBuffer OPTIONAL
   )
 {
-  UINTN       Index;
-  EFI_STATUS  Status;
-  BOOLEAN     AllChildrenStopped;
-
-  if (NumberOfChildren == 0) {
-    gBS->CloseProtocol (
-           ControllerHandle,
-           &gEfiDtIoProtocolGuid,
-           This->DriverBindingHandle,
-           ControllerHandle
-           );
-
-    return EFI_SUCCESS;
-  }
-
-  AllChildrenStopped = TRUE;
-
-  for (Index = 0; Index < NumberOfChildren; Index++) {
-    Status = DtDeviceRemove (
-               ChildHandleBuffer[Index],
-               ControllerHandle,
-               This->DriverBindingHandle
-               );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((
-        DEBUG_ERROR,
-        "%a: DtDeviceRemove(%p): %r\n",
-        __func__,
-        ChildHandleBuffer[Index],
-        Status
-        ));
-      AllChildrenStopped = FALSE;
-      continue;
-    }
-  }
-
-  if (!AllChildrenStopped) {
-    return EFI_DEVICE_ERROR;
-  }
-
-  return EFI_SUCCESS;
+  return EFI_UNSUPPORTED;
 }
 
 GLOBAL_REMOVE_IF_UNREFERENCED EFI_DRIVER_BINDING_PROTOCOL  gDriverBinding = {

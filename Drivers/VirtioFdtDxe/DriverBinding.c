@@ -311,9 +311,7 @@ ChildCreate (
                   NULL
                   );
   if (EFI_ERROR (Status)) {
-    if (Status != EFI_ALREADY_STARTED) {
-      DEBUG ((DEBUG_ERROR, "%a: CreateDeviceNode: %r\n", __func__, Status));
-    }
+    DEBUG ((DEBUG_ERROR, "%a: InstallMultipleProtocolInterfaces: %r\n", __func__, Status));
 
     goto out;
   }

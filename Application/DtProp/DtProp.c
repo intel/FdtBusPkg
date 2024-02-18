@@ -251,7 +251,6 @@ EntryPoint (
           PrintDtReg (&Value.Reg, TRUE);
           break;
         case L'R':
-          Print (L"\n  ");
           PrintDtRange (&Value.Range, TRUE);
           break;
         case L's':

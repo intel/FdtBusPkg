@@ -1,10 +1,11 @@
 #/** @file
+#   NOR Flash Driver for the cfi-flash DT node.
 #
-#  Component description file for NorFlashDxe module
+#   Copyright (c) 2011 - 2021, ARM Ltd. All rights reserved.<BR>
+#   Copyright (c) 2020, Linaro, Ltd. All rights reserved.<BR>
+#   Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
 #
-#  Copyright (c) 2011 - 2021, Arm Limited. All rights reserved.<BR>
-#
-#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#   SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 #**/
 
@@ -17,6 +18,8 @@
   ENTRY_POINT                    = NorFlashInitialise
 
 [Sources.common]
+  ComponentName.c
+  DriverBinding.c
   VirtNorFlash.c
   VirtNorFlash.h
   VirtNorFlashDxe.c
@@ -27,18 +30,21 @@
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
   OvmfPkg/OvmfPkg.dec
+  FdtBusPkg/FdtBusPkg.dec
 
 [LibraryClasses]
-  BaseLib
-  DebugLib
-  DxeServicesTableLib
-  HobLib
   IoLib
-  UefiBootServicesTableLib
-  UefiDriverEntryPoint
+  HobLib
+  BaseLib
   UefiLib
+  DebugLib
+  FbpUtilsLib
+  BaseMemoryLib
   UefiRuntimeLib
-  VirtNorFlashPlatformLib
+  MemoryAllocationLib
+  DxeServicesTableLib
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
 
 [Guids]
   gEdkiiNvVarStoreFormattedGuid     ## PRODUCES ## PROTOCOL
@@ -66,3 +72,7 @@
 
 [Depex]
   gEfiCpuArchProtocolGuid
+
+[Pcd]
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFdBaseAddress
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFirmwareFdSize

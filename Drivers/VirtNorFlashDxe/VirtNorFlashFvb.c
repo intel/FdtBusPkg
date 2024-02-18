@@ -1,26 +1,16 @@
-/*++ @file  NorFlashFvbDxe.c
+/** @file
+    NOR Flash Driver for the cfi-flash DT node.
 
- Copyright (c) 2011 - 2021, Arm Limited. All rights reserved.<BR>
+    Copyright (c) 2011 - 2021, ARM Ltd. All rights reserved.<BR>
+    Copyright (c) 2020, Linaro, Ltd. All rights reserved.<BR>
+    Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
 
- SPDX-License-Identifier: BSD-2-Clause-Patent
+    SPDX-License-Identifier: BSD-2-Clause-Patent
 
- --*/
-
-#include <PiDxe.h>
-
-#include <Library/BaseLib.h>
-#include <Library/BaseMemoryLib.h>
-#include <Library/MemoryAllocationLib.h>
-#include <Library/PcdLib.h>
-#include <Library/UefiLib.h>
-
-#include <Guid/NvVarStoreFormatted.h>
-#include <Guid/SystemNvDataGuid.h>
-#include <Guid/VariableFormat.h>
+**/
 
 #include "VirtNorFlash.h"
 
-extern UINTN  mFlashNvStorageVariableBase;
 ///
 /// The Firmware Volume Block Protocol is the low-level interface
 /// to a firmware volume. File-level access to a firmware volume
@@ -366,7 +356,7 @@ FvbGetPhysicalAddress (
 
   ASSERT (Address != NULL);
 
-  *Address = mFlashNvStorageVariableBase;
+  *Address = Instance->StorageVariableBase;
   return EFI_SUCCESS;
 }
 
@@ -740,23 +730,4 @@ FvbEraseBlocks (
 
 EXIT:
   return Status;
-}
-
-/**
-  Fixup internal data so that EFI can be call in virtual mode.
-  Call the passed in Child Notify event and convert any pointers in
-  lib to virtual mode.
-
-  @param[in]    Event   The Event that is being processed
-  @param[in]    Context Event Context
-**/
-VOID
-EFIAPI
-FvbVirtualNotifyEvent (
-  IN EFI_EVENT  Event,
-  IN VOID       *Context
-  )
-{
-  EfiConvertPointer (0x0, (VOID **)&mFlashNvStorageVariableBase);
-  return;
 }

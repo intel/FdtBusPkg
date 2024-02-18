@@ -1,27 +1,41 @@
-/** @file  NorFlash.h
+/** @file
+    NOR Flash Driver for the cfi-flash DT node.
 
-  Copyright (c) 2011 - 2014, ARM Ltd. All rights reserved.<BR>
+    Copyright (c) 2011 - 2021, ARM Ltd. All rights reserved.<BR>
+    Copyright (c) 2020, Linaro, Ltd. All rights reserved.<BR>
+    Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
 
-  SPDX-License-Identifier: BSD-2-Clause-Patent
+    SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #ifndef __VIRT_NOR_FLASH__
 #define __VIRT_NOR_FLASH__
 
-#include <Base.h>
-#include <PiDxe.h>
-
-#include <Guid/EventGroup.h>
-
-#include <Protocol/FirmwareVolumeBlock.h>
-
+#include <Uefi.h>
+#include <Library/BaseLib.h>
+#include <Library/UefiLib.h>
+#include <Library/BaseMemoryLib.h>
+#include <Library/MemoryAllocationLib.h>
 #include <Library/DebugLib.h>
+#include <Library/PcdLib.h>
+#include <Library/HobLib.h>
 #include <Library/IoLib.h>
 #include <Library/UefiLib.h>
 #include <Library/UefiRuntimeLib.h>
 #include <Library/VirtNorFlashPlatformLib.h>
+#include <Library/UefiBootServicesTableLib.h>
+#include <Library/DxeServicesTableLib.h>
+#include <Library/DevicePathLib.h>
+#include <Library/FbpUtilsLib.h>
+#include <Guid/EventGroup.h>
+#include <Guid/NvVarStoreFormatted.h>
+#include <Guid/SystemNvDataGuid.h>
+#include <Guid/VariableFormat.h>
+#include <Protocol/DtIo.h>
+#include <Protocol/FirmwareVolumeBlock.h>
 
+#define QEMU_NOR_BLOCK_SIZE    SIZE_256KB
 #define NOR_FLASH_ERASE_RETRY  10
 
 // Device access macros
@@ -63,35 +77,20 @@
 #define MAX_BUFFERED_PROG_ITERATIONS  10000000
 #define BOUNDARY_OF_32_WORDS          0x7F
 
-// CFI Addresses
-#define P30_CFI_ADDR_QUERY_UNIQUE_QRY  0x10
-#define P30_CFI_ADDR_VENDOR_ID         0x13
-
-// CFI Data
-#define CFI_QRY  0x00595251
-
 // READ Commands
 #define P30_CMD_READ_DEVICE_ID         0x0090
 #define P30_CMD_READ_STATUS_REGISTER   0x0070
 #define P30_CMD_CLEAR_STATUS_REGISTER  0x0050
 #define P30_CMD_READ_ARRAY             0x00FF
-#define P30_CMD_READ_CFI_QUERY         0x0098
 
 // WRITE Commands
-#define P30_CMD_WORD_PROGRAM_SETUP            0x0040
-#define P30_CMD_ALTERNATE_WORD_PROGRAM_SETUP  0x0010
-#define P30_CMD_BUFFERED_PROGRAM_SETUP        0x00E8
-#define P30_CMD_BUFFERED_PROGRAM_CONFIRM      0x00D0
-#define P30_CMD_BEFP_SETUP                    0x0080
-#define P30_CMD_BEFP_CONFIRM                  0x00D0
+#define P30_CMD_WORD_PROGRAM_SETUP        0x0040
+#define P30_CMD_BUFFERED_PROGRAM_SETUP    0x00E8
+#define P30_CMD_BUFFERED_PROGRAM_CONFIRM  0x00D0
 
 // ERASE Commands
 #define P30_CMD_BLOCK_ERASE_SETUP    0x0020
 #define P30_CMD_BLOCK_ERASE_CONFIRM  0x00D0
-
-// SUSPEND Commands
-#define P30_CMD_PROGRAM_OR_ERASE_SUSPEND  0x00B0
-#define P30_CMD_SUSPEND_RESUME            0x00D0
 
 // BLOCK LOCKING / UNLOCKING Commands
 #define P30_CMD_LOCK_BLOCK_SETUP  0x0060
@@ -99,23 +98,20 @@
 #define P30_CMD_UNLOCK_BLOCK      0x00D0
 #define P30_CMD_LOCK_DOWN_BLOCK   0x002F
 
-// PROTECTION Commands
-#define P30_CMD_PROGRAM_PROTECTION_REGISTER_SETUP  0x00C0
-
-// CONFIGURATION Commands
-#define P30_CMD_READ_CONFIGURATION_REGISTER_SETUP  0x0060
-#define P30_CMD_READ_CONFIGURATION_REGISTER        0x0003
-
 #define NOR_FLASH_SIGNATURE  SIGNATURE_32('n', 'o', 'r', '0')
 #define INSTANCE_FROM_FVB_THIS(a)  CR(a, NOR_FLASH_INSTANCE, FvbProtocol, NOR_FLASH_SIGNATURE)
 
 typedef struct _NOR_FLASH_INSTANCE NOR_FLASH_INSTANCE;
 
+extern EFI_COMPONENT_NAME_PROTOCOL   gComponentName;
+extern EFI_COMPONENT_NAME2_PROTOCOL  gComponentName2;
+extern EFI_DRIVER_BINDING_PROTOCOL   gDriverBinding;
+
 #pragma pack (1)
 typedef struct {
-  VENDOR_DEVICE_PATH          Vendor;
-  UINT8                       Index;
-  EFI_DEVICE_PATH_PROTOCOL    End;
+  VENDOR_DEVICE_PATH      Vendor;
+  EFI_PHYSICAL_ADDRESS    DeviceBaseAddress;
+  UINT8                   Index;
 } NOR_FLASH_DEVICE_PATH;
 #pragma pack ()
 
@@ -133,27 +129,28 @@ struct _NOR_FLASH_INSTANCE {
   EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL    FvbProtocol;
   VOID                                   *ShadowBuffer;
 
-  NOR_FLASH_DEVICE_PATH                  DevicePath;
+  UINTN                                  StorageVariableBase;
+  EFI_EVENT                              VirtualAddrChangeEvent;
 };
 
-EFI_STATUS
-NorFlashReadCfiData (
-  IN  UINTN   DeviceBaseAddress,
-  IN  UINTN   CFI_Offset,
-  IN  UINT32  NumberOfBytes,
-  OUT UINT32  *Data
-  );
+//
+// VirtNorFlashDxe.c
+//
 
 EFI_STATUS
-NorFlashWriteBuffer (
-  IN NOR_FLASH_INSTANCE  *Instance,
-  IN UINTN               TargetAddress,
-  IN UINTN               BufferSizeInBytes,
-  IN UINT32              *Buffer
+ChildCreate (
+  IN  UINTN                     Index,
+  IN  UINTN                     NorFlashDeviceBase,
+  IN  UINTN                     NorFlashRegionBase,
+  IN  UINTN                     NorFlashSize,
+  IN  UINT32                    BlockSize,
+  IN  EFI_HANDLE                ControllerHandle,
+  IN  EFI_HANDLE                DriverBindingHandle,
+  IN  EFI_DEVICE_PATH_PROTOCOL  *ControllerPath
   );
 
 //
-// NorFlashFvbDxe.c
+// VirtNorFlashFvb.c
 //
 
 EFI_STATUS
@@ -223,15 +220,8 @@ InitializeFvAndVariableStoreHeaders (
   IN NOR_FLASH_INSTANCE  *Instance
   );
 
-VOID
-EFIAPI
-FvbVirtualNotifyEvent (
-  IN EFI_EVENT  Event,
-  IN VOID       *Context
-  );
-
 //
-// NorFlashDxe.c
+// VirtNorFlash.c
 //
 
 EFI_STATUS
@@ -249,40 +239,12 @@ NorFlashUnlockAndEraseSingleBlock (
   );
 
 EFI_STATUS
-NorFlashCreateInstance (
-  IN UINTN                NorFlashDeviceBase,
-  IN UINTN                NorFlashRegionBase,
-  IN UINTN                NorFlashSize,
-  IN UINT32               Index,
-  IN UINT32               BlockSize,
-  IN BOOLEAN              SupportFvb,
-  OUT NOR_FLASH_INSTANCE  **NorFlashInstance
-  );
-
-EFI_STATUS
-EFIAPI
-NorFlashFvbInitialize (
-  IN NOR_FLASH_INSTANCE  *Instance
-  );
-
-//
-// NorFlash.c
-//
-EFI_STATUS
 NorFlashWriteSingleBlock (
   IN        NOR_FLASH_INSTANCE  *Instance,
   IN        EFI_LBA             Lba,
   IN        UINTN               Offset,
   IN OUT    UINTN               *NumBytes,
   IN        UINT8               *Buffer
-  );
-
-EFI_STATUS
-NorFlashWriteBlocks (
-  IN  NOR_FLASH_INSTANCE  *Instance,
-  IN  EFI_LBA             Lba,
-  IN  UINTN               BufferSizeInBytes,
-  IN  VOID                *Buffer
   );
 
 EFI_STATUS
@@ -309,37 +271,6 @@ NorFlashWrite (
   IN        UINTN               Offset,
   IN OUT    UINTN               *NumBytes,
   IN        UINT8               *Buffer
-  );
-
-EFI_STATUS
-NorFlashReset (
-  IN  NOR_FLASH_INSTANCE  *Instance
-  );
-
-EFI_STATUS
-NorFlashEraseSingleBlock (
-  IN NOR_FLASH_INSTANCE  *Instance,
-  IN UINTN               BlockAddress
-  );
-
-EFI_STATUS
-NorFlashUnlockSingleBlockIfNecessary (
-  IN NOR_FLASH_INSTANCE  *Instance,
-  IN UINTN               BlockAddress
-  );
-
-EFI_STATUS
-NorFlashWriteSingleWord (
-  IN NOR_FLASH_INSTANCE  *Instance,
-  IN UINTN               WordAddress,
-  IN UINT32              WriteData
-  );
-
-VOID
-EFIAPI
-NorFlashVirtualNotifyEvent (
-  IN EFI_EVENT  Event,
-  IN VOID       *Context
   );
 
 #endif /* __VIRT_NOR_FLASH__ */

@@ -474,6 +474,12 @@ ApplyGcdTypeAndAttrs (
   );
 
 #ifndef MDEPKG_NDEBUG
+EFI_STATUS
+RangeIsMapped (
+  IN  EFI_PHYSICAL_ADDRESS  Address,
+  IN  UINT32                Length
+  );
+
 BOOLEAN
 FdtIsUnitTestDevice (
   IN  VOID  *TreeBase,

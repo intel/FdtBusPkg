@@ -330,10 +330,69 @@ done:
 }
 
 /**
+  Validate the Devicetree pointer.
+
+  @param[in]  DeviceTreeBase Pointer to the Devicetree to check.
+
+  @retval EFI_SUCCESS        Devicetree validated.
+  @retval other              Some error occured.
+
+**/
+STATIC
+EFI_STATUS
+ValidateFdt (
+  IN  VOID  *DeviceTreeBase
+  )
+{
+  UINT32                TotalSize;
+  EFI_PHYSICAL_ADDRESS  Address;
+
+ #ifndef MDEPKG_NDEBUG
+  EFI_STATUS  Status;
+ #endif /* MDEPKG_NDEBUG */
+
+  if (fdt_check_header (DeviceTreeBase) != 0) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: DTB @ %p seems corrupted?\n",
+      __func__,
+      DeviceTreeBase
+      ));
+    return EFI_NOT_FOUND;
+  }
+
+  Address   = (EFI_PHYSICAL_ADDRESS)DeviceTreeBase;
+  TotalSize = fdt_totalsize (DeviceTreeBase);
+  DEBUG ((
+    DEBUG_INFO,
+    "%a: DTB at 0x%lx-0x%lx\n",
+    __func__,
+    Address,
+    Address + TotalSize - 1
+    ));
+
+ #ifndef MDEPKG_NDEBUG
+  Status = RangeIsMapped (Address, TotalSize);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: DTB range not correctly mapped: %r\n",
+      Status
+      ));
+    ASSERT_EFI_ERROR (Status);
+    return Status;
+  }
+
+ #endif /* MDEPKG_NDEBUG */
+
+  return EFI_SUCCESS;
+}
+
+/**
   The Entry Point for FdtBusDxe driver.
 
-  @param[in] ImageHandle    The firmware allocated handle for the EFI image.
-  @param[in] SystemTable    A pointer to the EFI System Table.
+  @param[in]  ImageHandle   The firmware allocated handle for the EFI image .
+  @param[in]  SystemTable   A pointer to the EFI System Table.
 
   @retval EFI_SUCCESS       The entry point is executed successfully.
   @retval other             Some error occured.
@@ -365,22 +424,17 @@ EntryPoint (
                   (VOID **)&gCpuIo2
                   );
   ASSERT_EFI_ERROR (Status);
-
   DeviceTreeBase = (VOID *)(UINTN)*(UINT64 *)GET_GUID_HOB_DATA (Hob);
-  if (fdt_check_header (DeviceTreeBase) != 0) {
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: DTB @ %p seems corrupted?\n",
-      __func__,
-      DeviceTreeBase
-      ));
-    return EFI_NOT_FOUND;
+  Status         = ValidateFdt (DeviceTreeBase);
+  if (EFI_ERROR (Status)) {
+    //
+    // Logged in ValidateFdt.
+    //
+    return Status;
   }
 
   gDeviceTreeBase = DeviceTreeBase;
-  DEBUG ((DEBUG_INFO, "%a: DTB @ %p\n", __func__, gDeviceTreeBase));
-
-  Status = TestsInit ();
+  Status          = TestsInit ();
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: TestsInit: %r\n", __func__, Status));
     return Status;

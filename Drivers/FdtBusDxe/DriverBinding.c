@@ -76,8 +76,6 @@ DriverSupported (
     Node = (VOID *)RemainingDevicePath;
     if ((DevicePathType (RemainingDevicePath) != HARDWARE_DEVICE_PATH) ||
         (DevicePathSubType (RemainingDevicePath) != HW_VENDOR_DP) ||
-        ((DevicePathNodeLength (RemainingDevicePath) !=
-          sizeof (EFI_DT_DEVICE_PATH_NODE))) ||
         !CompareGuid (&Node->VendorDevicePath.Guid, &gEfiDtDevicePathGuid))
     {
       return EFI_UNSUPPORTED;

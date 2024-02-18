@@ -5,8 +5,16 @@
     alias-G2P0 = &l1;
   };
 
-  sample-device {
-    compatible = "uefi,sample-device"; 
+  sample-bus {
+    compatible = "uefi,sample-bus";
+    #address-cells = <1>;
+    #size-cells = <1>;
+
+    sample-device@1337 {
+      compatible = "uefi,sample-device";
+
+      reg = <0x1337 0x100>;
+    };
   };
 
   unit-test-devices {

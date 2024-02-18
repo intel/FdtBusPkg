@@ -97,13 +97,6 @@ GetDtRootFromDeviceFlags (
   IN  UINTN  DeviceFlags
   );
 
-BOOLEAN
-HandleHasBoundDriver (
-  IN  EFI_HANDLE                           Handle,
-  IN  UINT32                               ExtraAttributeChecks,
-  OUT EFI_OPEN_PROTOCOL_INFORMATION_ENTRY  *MatchingEntry OPTIONAL
-  );
-
 CHAR16 *
 FormatComponentName (
   IN  CONST CHAR8  *AsciiStr

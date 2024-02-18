@@ -41,7 +41,7 @@ OnEndOfDxe (
     DtDevice = DT_DEV_FROM_LINK (Link);
     Link     = Link->ForwardLink;
 
-    if (!HandleHasBoundDriver (DtDevice->Handle, 0, NULL)) {
+    if (!FbpHandleHasBoundDriver (DtDevice->Handle, 0, NULL)) {
       Status = gBS->ConnectController (DtDevice->Handle, NULL, NULL, TRUE);
       if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_WARN, "%s: critical device not connected\n", DtDevice->DtIo.ComponentName));

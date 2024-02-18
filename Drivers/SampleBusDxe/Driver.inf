@@ -1,0 +1,46 @@
+## @file
+#  Sample DT controller device driver code.
+#
+#  Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = SampleBusDxe
+  FILE_GUID                      = 63EA1463-FBFA-428A-B97F-E262755651C6
+  MODULE_TYPE                    = UEFI_DRIVER
+  VERSION_STRING                 = 1.0
+
+  ENTRY_POINT                    = EntryPoint
+
+[Sources]
+  Driver.c
+  ComponentName.c
+  DriverBinding.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  FdtBusPkg/FdtBusPkg.dec
+
+[LibraryClasses]
+  DebugLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  DevicePathLib
+  BaseMemoryLib
+  FbpUtilsLib
+  UefiLib
+
+[Guids]
+  gEfiDtDevicePathGuid
+
+[Protocols]
+  gEfiDtIoProtocolGuid                    ## CONSUMES
+
+[Pcd]
+
+[Depex]

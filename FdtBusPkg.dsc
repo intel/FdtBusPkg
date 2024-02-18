@@ -103,6 +103,7 @@
   FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
 
   FdtBusPkg/Drivers/SampleDeviceDxe/Driver.inf
+  FdtBusPkg/Drivers/SampleBusDxe/Driver.inf
   FdtBusPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
   FdtBusPkg/Drivers/VirtioFdtDxe/VirtioFdtDxe.inf {
     <LibraryClasses>

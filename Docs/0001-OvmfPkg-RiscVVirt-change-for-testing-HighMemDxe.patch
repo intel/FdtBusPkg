@@ -1,4 +1,4 @@
-From 01e1a122c55e49f25207b23db6f01c74998c47f0 Mon Sep 17 00:00:00 2001
+From a1f5fa73401d9f759eae61a143118a25e4d52b2f Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Thu, 15 Feb 2024 23:25:47 -0600
 Subject: [PATCH 1/1] OvmfPkg/RiscVVirt: change for testing HighMemDxe

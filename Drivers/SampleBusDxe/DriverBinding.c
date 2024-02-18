@@ -10,6 +10,85 @@
 #include "Driver.h"
 
 /**
+  Service child device EFI_DT_REG reads.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Width                 Signifies the width of the I/O operations.
+  @param  Reg                   Pointer to a register space descriptor.
+  @param  Offset                The offset within the selected register space to start the
+                                I/O operation.
+  @param  Count                 The number of I/O operations to perform.
+  @param  Buffer                The destination buffer to store the results.
+
+  @retval EFI_SUCCESS           The data was read from the device.
+  @retval EFI_UNSUPPORTED       The address range specified by Offset, Width, and Count is not
+                                valid for the register space specified by Reg.
+  @retval EFI_OUT_OF_RESOURCES  The request could not be completed due to a lack of resources.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+ReadChildReg (
+  IN     EFI_DT_IO_PROTOCOL        *This,
+  IN     EFI_DT_IO_PROTOCOL_WIDTH  Width,
+  IN     EFI_DT_REG                *Reg,
+  IN     EFI_DT_SIZE               Offset,
+  IN     UINTN                     Count,
+  IN OUT VOID                      *Buffer
+  )
+{
+  EFI_PHYSICAL_ADDRESS  Address;
+
+  if ((Width == EfiDtIoWidthFifoUint8) ||
+      (Width == EfiDtIoWidthFifoUint16) ||
+      (Width == EfiDtIoWidthFifoUint32) ||
+      (Width == EfiDtIoWidthFifoUint64) ||
+      (Width == EfiDtIoWidthFillUint8) ||
+      (Width == EfiDtIoWidthFillUint16) ||
+      (Width == EfiDtIoWidthFillUint32) ||
+      (Width == EfiDtIoWidthFillUint64))
+  {
+    return EFI_UNSUPPORTED;
+  }
+
+  //
+  // Reads return a test pattern to easily identify
+  // access widths and offsets.
+  //
+
+  Address = (EFI_PHYSICAL_ADDRESS)Buffer;
+  while (Count--) {
+    switch (DT_IO_PROTOCOL_WIDTH (Width)) {
+      case 1:
+        *(UINT8 *)Address = Offset & 0xff;
+        break;
+      case 2:
+        *(UINT16 *)Address = 0x2200 + (Offset & 0xff);
+        break;
+      case 4:
+        *(UINT32 *)Address = 0x44444400 + (Offset & 0xff);
+        break;
+      case 8:
+        *(UINT64 *)Address = 0x8888888888888800 + (Offset & 0xff);
+        break;
+      default:
+        return EFI_UNSUPPORTED;
+    }
+
+    Address += DT_IO_PROTOCOL_WIDTH (Width);
+    Offset  += DT_IO_PROTOCOL_WIDTH (Width);
+  }
+
+  return EFI_SUCCESS;
+}
+
+STATIC EFI_DT_IO_PROTOCOL_CB  Callbacks = {
+  .ReadChildReg = ReadChildReg,
+};
+
+/**
   Tests to see if this driver supports a given controller. If a child device is provided,
   it further tests to see if this driver supports creating a handle for the specified child device.
 
@@ -190,6 +269,22 @@ DriverStart (
   }
 
   //
+  // In this example, set I/O callbacks for child device reads.
+  //
+  Status = DtIo->SetCallbacks (DtIo, This->DriverBindingHandle, &Callbacks);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: SetCallbacks: %r\n",
+      __func__,
+      ControllerHandle,
+      Status
+      ));
+    ASSERT_EFI_ERROR (Status);
+    return Status;
+  }
+
+  //
   // Create all children, which is why RemainingDevicePath
   // is not being passed in.
   //
@@ -259,15 +354,6 @@ DriverStop (
   BOOLEAN             AllChildrenStopped;
   EFI_DT_IO_PROTOCOL  *DtIo;
 
-  if (NumberOfChildren == 0) {
-    return gBS->CloseProtocol (
-                  ControllerHandle,
-                  &gEfiDtIoProtocolGuid,
-                  This->DriverBindingHandle,
-                  ControllerHandle
-                  );
-  }
-
   Status = gBS->OpenProtocol (
                   ControllerHandle,
                   &gEfiDtIoProtocolGuid,
@@ -286,6 +372,28 @@ DriverStop (
       ));
     ASSERT_EFI_ERROR (Status);
     return Status;
+  }
+
+  if (NumberOfChildren == 0) {
+    Status = DtIo->SetCallbacks (DtIo, This->DriverBindingHandle, NULL);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: SetCallbacks: %r\n",
+        __func__,
+        ControllerHandle,
+        Status
+        ));
+      ASSERT_EFI_ERROR (Status);
+      return Status;
+    }
+
+    return gBS->CloseProtocol (
+                  ControllerHandle,
+                  &gEfiDtIoProtocolGuid,
+                  This->DriverBindingHandle,
+                  ControllerHandle
+                  );
   }
 
   AllChildrenStopped = TRUE;

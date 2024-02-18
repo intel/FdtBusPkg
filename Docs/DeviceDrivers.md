@@ -15,6 +15,10 @@ document) may be suitable under some circumstances.
 See [SampleDeviceDxe](../Drivers/SampleDeviceDxe) for a basic template
 of a UEFI Driver Model driver.
 
+See [SampleBusDxe](../Drivers/SampleBusDxe) for a basic template
+of a UEFI Driver Model driver that is also a bus driver, producing
+DT controller children.
+
 See [HighMemDxe](../Drivers/HighMemDxe) for an example of a driver
 that can be compiled as either a UEFI Driver Model driver or a legacy driver.
 
@@ -113,8 +117,9 @@ controller device driver creating a new device handle that is NOT
 a DT controller.
 
 In some situations, a DT controller's children are actually DT
-controllers that need to be enumerated.  A good example may be
-supporting a Devicetree node for a composite device
+controllers that need to be enumerated. See
+[SampleBusDxe](../Drivers/SampleBusDxe) for sample code. A good
+example may be supporting a Devicetree node for a composite device
 such as a NIC or graphics.
 
 Let's examine a Devicetree snippet:
@@ -176,6 +181,12 @@ device), it should do so to support the rapid boot capability in the
 UEFI Driver  Model. DT device drivers enumerating child DT controllers
 may also register callback via the `SetCallbacks()` Devicetree I/O
 Protocol function, to directly handle child register reads and writes.
+In the example given above, PHY driver register accesses would be
+generally handled by the MDIO driver.
+
+[SampleBusDxe](../Drivers/SampleBusDxe) demonstrates `SetCallbacks()`
+use. You can use the [DtReg](Developers.md#dtregefi) tool to test I/O
+against the register read callback.
 
 #### `Stop()`
 

@@ -240,26 +240,14 @@ tool writes to a register region. The accesses begin at the specified
 
 #### Examples
 
-16 reads of 2 bytes each at offset 0:
+4 reads of 8 bytes each at offset 8:
 ```
-Shell> FS0:\DtReg -n 16 -w 2 soc/pci@30000000 0
-Dumping 32 bytes at offset 0x0 of reg via CPU 0x30000000(10000000):
-  00000000: 1B36
-  00000002: 0008
-  00000004: 0000
-  00000006: 0000
-  00000008: 0000
-  0000000A: 0600
-  0000000C: 0000
-  0000000E: 0000
-  00000010: 0000
-  00000012: 0000
-  00000014: 0000
-  00000016: 0000
-  00000018: 0000
-  0000001A: 0000
-  0000001C: 0000
-  0000001E: 0000
+FS0:\> DtReg -n 4 -w 8 /sample-bus/sample-device@1337 8
+Dumping 32 bytes at offset 0x8 of reg via DT(sample-bus) 0x1337(100):
+00000008: 8888888888888808
+00000010: 8888888888888810
+00000018: 8888888888888818
+00000020: 8888888888888820
 ```
 
 Write 1 byte at offset 0:

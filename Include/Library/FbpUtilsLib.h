@@ -88,4 +88,19 @@ FbpRangeToPhysicalAddress (
   return EFI_SUCCESS;
 }
 
+BOOLEAN
+FbpHandleHasBoundDriver (
+  IN  EFI_HANDLE                           Handle,
+  IN  UINT32                               ExtraAttributeChecks,
+  OUT EFI_OPEN_PROTOCOL_INFORMATION_ENTRY  *MatchingEntry OPTIONAL
+  );
+
+EFI_STATUS
+FbpBusComponentName (
+  IN  EFI_HANDLE  ControllerHandle,
+  IN  EFI_HANDLE  ChildHandle,
+  IN  CHAR8       *Language,
+  OUT CHAR16      **ControllerName
+  );
+
 #endif /* __FBP_UTILS_LIB_H__ */

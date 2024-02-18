@@ -897,7 +897,7 @@ DtIoSetCallbacks (
   }
 
   DtDevice = DT_DEV_FROM_THIS (This);
-  Found    = HandleHasBoundDriver (DtDevice->Handle, 0, &Entry);
+  Found    = FbpHandleHasBoundDriver (DtDevice->Handle, 0, &Entry);
   ASSERT (Found);
   if (!Found) {
     return EFI_ACCESS_DENIED;

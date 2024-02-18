@@ -532,8 +532,7 @@ ApplyGcdTypeAndAttrs (
     }
   } else if (GcdDescriptor.Attributes != 0) {
     //
-    // Already part of the GCD. Expect actual attributes to
-    // be correct (if there any set).
+    // Already part of the GCD.
     //
     // It looks like on some (RISC-V?) implementations the GCD
     // entries set up via HOBS have attributes 0 with the MMU code
@@ -549,8 +548,10 @@ ApplyGcdTypeAndAttrs (
     // it wasn't really mapped, which is resilient to this kind of
     // violation.
     //
-    ASSERT (!OnConflictDoNothing || GcdDescriptor.Attributes == Attributes);
     if (OnConflictDoNothing) {
+      //
+      // Expect actual attributes to be the correct ones (if there any set).
+      //
       Status = EFI_SUCCESS;
       goto out;
     }

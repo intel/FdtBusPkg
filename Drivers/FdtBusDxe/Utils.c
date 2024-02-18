@@ -585,3 +585,125 @@ out:
 
   return Status;
 }
+
+#ifndef MDEPKG_NDEBUG
+
+/**
+  Check that a range is present in the memory map, and that it
+  is not part of unallocated/free memory or similar.
+
+  @param[in]  Address       Base of range to check.
+  @param[in]  Length        Length fo range to check.
+
+  @retval EFI_SUCCESS       Range is not in free memory or similar.
+  @retval other             Some error occured.
+
+**/
+EFI_STATUS
+RangeIsMapped (
+  IN  EFI_PHYSICAL_ADDRESS  Address,
+  IN  UINT32                Length
+  )
+{
+  UINTN                  Index;
+  UINTN                  MapKey;
+  UINTN                  MapSize;
+  UINTN                  MapPages;
+  EFI_STATUS             Status;
+  UINTN                  DescriptorSize;
+  UINT32                 DescriptorVersion;
+  EFI_MEMORY_DESCRIPTOR  *Map;
+  EFI_MEMORY_DESCRIPTOR  *Next;
+  EFI_PHYSICAL_ADDRESS   AlignedAddress;
+
+  AlignedAddress = ROUND_DOWN (Address, EFI_PAGE_SIZE);
+  Length         = ROUND_UP (Address + Length, EFI_PAGE_SIZE) -
+                   AlignedAddress;
+
+  Map               = NULL;
+  MapKey            = 0;
+  MapSize           = 0;
+  MapPages          = 0;
+  DescriptorSize    = 0;
+  DescriptorVersion = 0;
+  Status            = gBS->GetMemoryMap (
+                             &MapSize,
+                             NULL,
+                             &MapKey,
+                             &DescriptorSize,
+                             &DescriptorVersion
+                             );
+
+  if (Status != EFI_BUFFER_TOO_SMALL) {
+    DEBUG ((DEBUG_ERROR, "%a: GetMemoryMap: %r\n", __func__, Status));
+    return Status;
+  }
+
+  do {
+    MapPages = EFI_SIZE_TO_PAGES (MapSize) + 1;
+    Map      = AllocatePages (MapPages);
+    if (Map == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: AllocatePages %u: %r\n",
+        __func__,
+        MapPages,
+        Status
+        ));
+      return Status;
+    }
+
+    Status = gBS->GetMemoryMap (
+                    &MapSize,
+                    Map,
+                    &MapKey,
+                    &DescriptorSize,
+                    &DescriptorVersion
+                    );
+    if (!EFI_ERROR (Status)) {
+      break;
+    }
+
+    if (EFI_ERROR (Status)) {
+      FreePages (Map, MapPages);
+
+      if (Status != EFI_BUFFER_TOO_SMALL) {
+        DEBUG ((DEBUG_ERROR, "%a: GetMemoryMap: %r\n", __func__, Status));
+        return Status;
+      }
+    }
+  } while (1);
+
+  ASSERT_EFI_ERROR (Status);
+
+  for (Index = 0, Next = Map; Index < (MapSize / DescriptorSize);
+       Index++, Next = (VOID *)((UINTN)Next + DescriptorSize))
+  {
+    EFI_PHYSICAL_ADDRESS  Last;
+
+    Last = Next->PhysicalStart - 1 + (Next->NumberOfPages * EFI_PAGE_SIZE);
+    if ((AlignedAddress >= Next->PhysicalStart) &&
+        ((AlignedAddress + Length - 1) <= Last))
+    {
+      break;
+    }
+  }
+
+  if (Index == (MapSize / DescriptorSize)) {
+    Status = EFI_NOT_FOUND;
+  } else {
+    if ((Next->Type == EfiConventionalMemory) ||
+        (Next->Type == EfiUnusableMemory) ||
+        (Next->Type == EfiPersistentMemory) ||
+        (Next->Type == EfiUnacceptedMemoryType))
+    {
+      Status = EFI_UNSUPPORTED;
+    }
+  }
+
+  FreePages (Map, MapPages);
+  return Status;
+}
+
+#endif /* MDEPKG_NDEBUG */

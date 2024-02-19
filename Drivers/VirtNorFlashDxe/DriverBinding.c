@@ -206,7 +206,7 @@ DriverStart (
     Status = DtIo->GetReg (DtIo, Index++, &Reg);
     if (EFI_ERROR (Status)) {
       DEBUG ((
-        DEBUG_ERROR,
+        Index != 0 ? DEBUG_VERBOSE : DEBUG_ERROR,
         "%a: GetReg %lu: %r\n",
         __func__,
         Index,

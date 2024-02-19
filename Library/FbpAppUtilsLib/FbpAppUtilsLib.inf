@@ -30,6 +30,7 @@
   UefiBootServicesTableLib
   HandleParsingLib
   FbpUtilsLib
+  DxeServicesTableLib
 
 [Guids]
 

@@ -136,7 +136,7 @@ Here's an example of output:
      IsDmaCoherent: 'no'
       ParentDevice: '17F447E18'
         Compatible: 'ns16550a'
-               Reg: #0 via CPU 0x10000000(100)
+               Reg: #0 10000000(100) MemoryMappedIo UC
 ```
 
 ### DtProp.efi
@@ -197,17 +197,25 @@ Formatting property data using the parse string parameter:
 ```
 Shell> FS0:\DtProp /soc/pci@30000000 reg 1111
 Parsing 'reg' with command string '1111':
-  00000000: 0x0
-  00000004: 0x30000000
-  00000008: 0x0
-  0000000C: 0x10000000
+00000000: 0x0
+00000004: 0x30000000
+00000008: 0x0
+0000000C: 0x10000000
 Shell> FS0:\DtProp /soc/pci@30000000 reg bz
 Parsing 'reg' with command string 'bz':
-  00000000: 30000000
-  00000008: 10000000
+00000000: 30000000
+00000008: 10000000
 Shell> FS0:\DtProp /soc/pci@30000000 reg r
 Parsing 'reg' with command string 'r':
-  00000000: via CPU 0x30000000(10000000)
+00000000: 30000000(10000000) MemoryMappedIo UC
+Shell> FS0:\DtProp /soc/pci@30000000 ranges RRR
+Parsing 'ranges' with command string 'RRRR':
+00000000: 0x10000000000000000000000(10000)->0x3000000 MemoryMappedIo UC
+0000001C: 0x20000000000000040000000(40000000)->0x40000000 MemoryMappedIo UC
+00000038: 0x30000000000000400000000(400000000)->0x400000000 MemoryMappedIo UC
+Shell> FS0:\DtProp sample-bus/sample-device@1337 reg r
+Parsing 'reg' with command string 'r':
+00000000: 1337(100) via DT(sample-bus)
 ```
 
 The first column in the output is the offset of the parsed element within the

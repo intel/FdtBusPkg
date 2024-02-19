@@ -8,6 +8,7 @@
 **/
 
 #include <Uefi.h>
+#include <PiDxe.h>
 #include <Library/UefiLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/FbpAppUtilsLib.h>
@@ -19,6 +20,7 @@
 #include <Library/FbpUtilsLib.h>
 #include <Library/DebugLib.h>
 #include <Library/HandleParsingLib.h>
+#include <Library/DxeServicesTableLib.h>
 
 EFI_STATUS
 GetOpt (
@@ -269,7 +271,7 @@ FbpAppLookup (
 VOID
 PrintDtU128 (
   IN  EFI_DT_U128  Value,
-  IN BOOLEAN       NewLine
+  IN  BOOLEAN      NewLine
   )
 {
   UINTN  Pad;
@@ -288,37 +290,153 @@ PrintDtU128 (
     );
 }
 
+STATIC
 VOID
-PrintDtReg (
-  IN EFI_DT_REG  *Reg,
-  IN BOOLEAN     NewLine
+PrintMemTypeAttrs (
+  IN  EFI_PHYSICAL_ADDRESS  Address,
+  IN  BOOLEAN               NewLine
   )
 {
-  Print (
-    L"via %s 0x",
-    Reg->BusDtIo == NULL ? L"CPU" : Reg->BusDtIo->ComponentName
-    );
+  EFI_STATUS                       Status;
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  GcdDescriptor;
+  CONST CHAR8                      *Str;
+  UINTN                            Index;
 
+  Status = gDS->GetMemorySpaceDescriptor (Address, &GcdDescriptor);
+  if (EFI_ERROR (Status)) {
+    Print (L"invalid");
+    return;
+  }
+
+  switch (GcdDescriptor.GcdMemoryType) {
+    case EfiGcdMemoryTypeNonExistent:
+      Str = "NonExistent";
+      break;
+    case EfiGcdMemoryTypeReserved:
+      Str = "Reserved";
+      break;
+    case EfiGcdMemoryTypeSystemMemory:
+      Str = "SystemMemory";
+      break;
+    case EfiGcdMemoryTypeMemoryMappedIo:
+      Str = "MemoryMappedIo";
+      break;
+    case EfiGcdMemoryTypePersistent:
+      Str = "Persistent";
+      break;
+    case EfiGcdMemoryTypeMoreReliable:
+      Str = "MoreReliable";
+      break;
+    default:
+      Str = "?";
+  }
+
+  Print (L"%a ", Str);
+  for (Index = 0; GcdDescriptor.Attributes != 0;
+       GcdDescriptor.Attributes >>= 1, Index++)
+  {
+    if ((GcdDescriptor.Attributes & 1) == 0) {
+      continue;
+    }
+
+    switch (1UL << Index) {
+      case EFI_MEMORY_UC:
+        Str = "UC";
+        break;
+      case EFI_MEMORY_WC:
+        Str = "WC";
+        break;
+      case EFI_MEMORY_WT:
+        Str = "WT";
+        break;
+      case EFI_MEMORY_WB:
+        Str = "WB";
+        break;
+      case EFI_MEMORY_UCE:
+        Str = "UCE";
+        break;
+      case EFI_MEMORY_WP:
+        Str = "WT";
+        break;
+      case EFI_MEMORY_RP:
+        Str = "WT";
+        break;
+      case EFI_MEMORY_XP:
+        Str = "WT";
+        break;
+      case EFI_MEMORY_NV:
+        Str = "NV";
+        break;
+      case EFI_MEMORY_MORE_RELIABLE:
+        Str = "MR";
+        break;
+      case EFI_MEMORY_RO:
+        Str = "RO";
+        break;
+      case EFI_MEMORY_SP:
+        Str = "SP";
+        break;
+      case EFI_MEMORY_CPU_CRYPTO:
+        Str = "CC";
+        break;
+      case EFI_MEMORY_RUNTIME:
+        Str = "RT";
+        break;
+      default:
+        Str = "??";
+    }
+
+    Print (L"%a ", Str);
+  }
+
+  if (NewLine) {
+    Print (L"\r\n");
+  }
+}
+
+VOID
+PrintDtReg (
+  IN  EFI_DT_REG  *Reg,
+  IN  BOOLEAN     NewLine
+  )
+{
   PrintDtU128 (Reg->TranslatedBase, FALSE);
   Print (L"(");
   PrintDtU128 (Reg->Length, FALSE);
-  Print (L")%a", NewLine ? "\r\n" : "");
+  Print (L") ");
+
+  if (Reg->BusDtIo != NULL) {
+    Print (L"via %s", Reg->BusDtIo->ComponentName);
+  } else {
+    PrintMemTypeAttrs (Reg->TranslatedBase, FALSE);
+  }
+
+  if (NewLine) {
+    Print (L"\r\n");
+  }
 }
 
 VOID
 PrintDtRange (
-  IN EFI_DT_RANGE  *Range,
-  IN BOOLEAN       NewLine
+  IN  EFI_DT_RANGE  *Range,
+  IN  BOOLEAN       NewLine
   )
 {
   Print (L"0x");
   PrintDtU128 (Range->ChildBase, FALSE);
   Print (L"(");
   PrintDtU128 (Range->Length, FALSE);
-  Print (
-    L") via %s 0x",
-    Range->BusDtIo == NULL ? L"CPU" : Range->BusDtIo->ComponentName
-    );
+  Print (L")->0x");
+  PrintDtU128 (Range->TranslatedParentBase, FALSE);
 
-  PrintDtU128 (Range->TranslatedParentBase, NewLine);
+  Print (L" ");
+  if (Range->BusDtIo != NULL) {
+    Print (L"via %s", Range->BusDtIo->ComponentName);
+  } else {
+    PrintMemTypeAttrs (Range->TranslatedParentBase, FALSE);
+  }
+
+  if (NewLine) {
+    Print (L"\r\n");
+  }
 }

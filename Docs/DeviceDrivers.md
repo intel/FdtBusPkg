@@ -466,6 +466,28 @@ when entering a setup utility).
 
 What about the devices that are not in the boot path?
 
+### Early and Implicit Dependencies
+
+Sometimes the device needs to be initialized at an early phase. For example,
+VariableRuntimeDxe requires the flash to be accessible, which may introduce
+a dependency on the NOR flash driver. This can be resolved using the DXE
+APRIORI list, which will load the specified drivers in the specified
+order before dispatching anything else. For example:
+
+```
+APRIORI DXE {
+...
+  INF  FdtBusPkg/Drivers/VirtNorFlashDxe/VirtNorFlashDxe.inf
+  INF  FdtBusPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
+}
+```
+
+This ensures that the DT bus driver is loaded before anything else. It
+also ensures that the flash driver is loaded before the DT bus driver,
+ensuring that it binds to the flash device as soon as the DT bus
+driver loads. Overall this ensures the flash device is initialized
+before VariableRuntimeDxe.
+
 ### Manually Connecting during the BDS Phase
 
 A good example here are console devices - the actual devices required

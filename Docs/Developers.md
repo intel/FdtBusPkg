@@ -209,7 +209,7 @@ Shell> FS0:\DtProp /soc/pci@30000000 reg r
 Parsing 'reg' with command string 'r':
 00000000: 30000000(10000000) MemoryMappedIo UC
 Shell> FS0:\DtProp /soc/pci@30000000 ranges RRR
-Parsing 'ranges' with command string 'RRRR':
+Parsing 'ranges' with command string 'RRR':
 00000000: 0x10000000000000000000000(10000)->0x3000000 MemoryMappedIo UC
 0000001C: 0x20000000000000040000000(40000000)->0x40000000 MemoryMappedIo UC
 00000038: 0x30000000000000400000000(400000000)->0x400000000 MemoryMappedIo UC

@@ -174,7 +174,7 @@ DriverSupported (
     return Status;
   }
 
-  Status = DtIo->IsCompatible (DtIo, "uefi,sample-bus");
+  Status = DtIo->IsCompatible (DtIo, "fdtbuspkg,sample-bus");
   if (EFI_ERROR (Status)) {
     goto out;
   }

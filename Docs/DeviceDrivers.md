@@ -561,13 +561,13 @@ devices. _memory_ devices are a good example - there may be multiple
 of these, so programmatic lookup would involve connecting the parent
 and then enumerating and connecting all the children.
 
-The alternative is to tag the devices with the [_uefi,critical_
-property](UefiDtBindings.md#ueficritical). FdtBusDxe will connect all
+The alternative is to tag the devices with the [_fdtbuspkg,critical_
+property](DtBindings.md#fdtbuspkgcritical). FdtBusDxe will connect all
 such devices when End-of-DXE event is signalled during the BDS phase.
 
 > [!NOTE]
 > DT controllers of _device_type_ _memory_ are implicitly treated as
-> having _uefi,critical_.
+> having _fdtbuspkg,critical_.
 
 HighMemDxe, when [compiled](../Drivers/HighMemDxe/HighMemDxe.inf) as a
 UEFI Driver Model driver, is an example of a driver used with DT

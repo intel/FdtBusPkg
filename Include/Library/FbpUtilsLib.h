@@ -37,6 +37,29 @@ FbpPathNodeCreate (
   );
 
 /**
+  Convert an EFI_DT_RANGE to an EFI_DT_REG.
+
+  Useful in a bus driver to do I/O on behalf of a child.
+
+  @param[in]  Range            EFI_DT_RANGE *.
+  @param[out] Reg              EFI_DT_REG *.
+
+**/
+STATIC
+inline
+VOID
+FbpRangeToReg (
+               IN  CONST EFI_DT_RANGE *Range,
+               OUT EFI_DT_REG *Reg
+               )
+{
+  Reg->BusBase = Range->ParentBase;
+  Reg->TranslatedBase = Range->TranslatedParentBase;
+  Reg->Length = Range->Length;
+  Reg->BusDtIo = Range->BusDtIo;
+}
+
+/**
   Return the EFI_PHYSICAL_ADDRESS corresponding to an EFI_DT_REG,
   if one exists.
 
@@ -51,14 +74,17 @@ inline
 EFI_STATUS
 FbpRegToPhysicalAddress (
   IN  CONST EFI_DT_REG      *Reg,
-  OUT EFI_PHYSICAL_ADDRESS  *Address
+  OUT EFI_PHYSICAL_ADDRESS  *Address OPTIONAL
   )
 {
   if (Reg->BusDtIo != NULL) {
     return EFI_UNSUPPORTED;
   }
 
-  *Address = Reg->TranslatedBase;
+  if (Address != NULL) {
+    *Address = Reg->TranslatedBase;
+  }
+
   return EFI_SUCCESS;
 }
 
@@ -77,14 +103,17 @@ inline
 EFI_STATUS
 FbpRangeToPhysicalAddress (
   IN  CONST EFI_DT_RANGE    *Range,
-  OUT EFI_PHYSICAL_ADDRESS  *Address
+  OUT EFI_PHYSICAL_ADDRESS  *Address OPTIONAL
   )
 {
   if (Range->BusDtIo != NULL) {
     return EFI_UNSUPPORTED;
   }
 
-  *Address = Range->TranslatedParentBase;
+  if (Address != NULL) {
+    *Address = Range->TranslatedParentBase;
+  }
+
   return EFI_SUCCESS;
 }
 

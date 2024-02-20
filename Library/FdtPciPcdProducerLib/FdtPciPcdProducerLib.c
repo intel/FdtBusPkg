@@ -15,38 +15,10 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Protocol/DtIo.h>
 #include <Library/FbpUtilsLib.h>
+#include <Library/FbpPciUtilsLib.h>
 
 STATIC VOID       *mDtIoRegistration;
 STATIC EFI_EVENT  mDtIoEvent;
-
-//
-// See 2.2.1. Physical Address Formats in
-// IEEE Std 1275-1994.
-//
-#define EFI_DT_PCI_HOST_RANGE_IO  BIT24
-
-/**
-  Get the range attribute portion of the child base address.
-
-  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
-  @param  ChildBase             The ChildBase portion of 'ranges' element.
-
-  @return EFI_DT_CELL           phys.hi from 2.2.1 IEEE Std 1275-1994.
-**/
-STATIC
-EFI_DT_CELL
-EFIAPI
-GetRangeAttribute (
-  IN  EFI_DT_IO_PROTOCOL  *This,
-  IN  EFI_DT_BUS_ADDRESS  ChildBase
-  )
-{
-  if (This->ChildAddressCells < 2) {
-    return 0;
-  }
-
-  return (EFI_DT_CELL)(ChildBase >> ((This->ChildAddressCells - 1) * sizeof (EFI_DT_CELL) * 8));
-}
 
 /**
   Process the DT I/O device handles compatible to pci-host-ecam-generic.
@@ -137,14 +109,35 @@ ProcessHandle (
        !FoundIoTranslation && !EFI_ERROR (Status);
        Status = DtIo->GetRange (DtIo, "ranges", ++Index, &Range))
   {
-    EFI_DT_CELL  SpaceCode;
+    EFI_DT_CELL           SpaceCode;
+    EFI_PHYSICAL_ADDRESS  RangeCpuBase;
 
-    SpaceCode = GetRangeAttribute (DtIo, Range.ChildBase);
+    Status = FbpRangeToPhysicalAddress (&Range, &RangeCpuBase);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: couldn't translate range[%lu] to CPU addresses: %r\n",
+        __func__,
+        Index,
+        Status
+        ));
+      ASSERT_EFI_ERROR (Status);
+      continue;
+    }
+
+    ASSERT (RangeCpuBase == Range.ParentBase);
+
+    SpaceCode = FbpPciGetRangeAttribute (DtIo, Range.ChildBase);
     switch (SpaceCode) {
       case EFI_DT_PCI_HOST_RANGE_IO:
-        Status = PcdSet64S (PcdPciIoTranslation, Range.ParentBase - Range.ChildBase);
-        ASSERT_EFI_ERROR (Status);
-        FoundIoTranslation = TRUE;
+        if ((Range.ChildBase <= MAX_UINT32) &&
+            ((Range.ChildBase + Range.Length - 1) <= MAX_UINT32))
+        {
+          Status = PcdSet64S (PcdPciIoTranslation, RangeCpuBase - Range.ChildBase);
+          ASSERT_EFI_ERROR (Status);
+          FoundIoTranslation = TRUE;
+        }
+
         break;
       default:
         continue;

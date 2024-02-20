@@ -20,6 +20,7 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/FbpUtilsLib.h>
+#include <Library/FbpPciUtilsLib.h>
 
 #pragma pack(1)
 typedef struct {
@@ -55,41 +56,6 @@ GLOBAL_REMOVE_IF_UNREFERENCED
 CHAR16  *mPciHostBridgeLibAcpiAddressSpaceTypeStr[] = {
   L"Mem", L"I/O", L"Bus"
 };
-
-//
-// See 2.2.1. Physical Address Formats in
-// IEEE Std 1275-1994.
-//
-#define EFI_DT_PCI_HOST_RANGE_RELOCATABLE   BIT31
-#define EFI_DT_PCI_HOST_RANGE_PREFETCHABLE  BIT30
-#define EFI_DT_PCI_HOST_RANGE_ALIASED       BIT29
-#define EFI_DT_PCI_HOST_RANGE_SS_MASK       (BIT24|BIT25)
-#define EFI_DT_PCI_HOST_RANGE_MMIO64        (BIT24|BIT25)
-#define EFI_DT_PCI_HOST_RANGE_MMIO32        BIT25
-#define EFI_DT_PCI_HOST_RANGE_IO            BIT24
-
-/**
-  Get the range attribute portion of the child base address.
-
-  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
-  @param  ChildBase             The ChildBase portion of 'ranges' element.
-
-  @return EFI_DT_CELL           phys.hi from 2.2.1 IEEE Std 1275-1994.
-**/
-STATIC
-EFI_DT_CELL
-EFIAPI
-GetRangeAttribute (
-  IN  EFI_DT_IO_PROTOCOL  *This,
-  IN  EFI_DT_BUS_ADDRESS  ChildBase
-  )
-{
-  if (This->ChildAddressCells < 2) {
-    return 0;
-  }
-
-  return (EFI_DT_CELL)(ChildBase >> ((This->ChildAddressCells - 1) * sizeof (EFI_DT_CELL) * 8));
-}
 
 /**
   Process a compatible DtIo into a PCI_ROOT_BRIDGE.
@@ -170,27 +136,32 @@ ProcessPciHost (
         Index,
         Status
         ));
-      DEBUG ((
-        DEBUG_ERROR,
-        "BusDtIo is %p vs %p -> addy 0x%lx vs 0x%lx\n",
-        Range.BusDtIo,
-        DtIo,
-        (UINTN)Range.TranslatedParentBase,
-        (UINTN)Range.ParentBase
-        ));
       ASSERT_EFI_ERROR (Status);
       continue;
     }
 
     ASSERT (RangeCpuBase == Range.ParentBase);
 
-    SpaceCode = GetRangeAttribute (DtIo, Range.ChildBase);
+    SpaceCode = FbpPciGetRangeAttribute (DtIo, Range.ChildBase);
     switch (SpaceCode) {
       case EFI_DT_PCI_HOST_RANGE_IO:
         Io.Base        = Range.ChildBase;
         Io.Limit       = Io.Base + Range.Length - 1;
         Io.Translation = Io.Base - RangeCpuBase;
         break;
+
+        if ((Io.Base > MAX_UINT32) || (Io.Limit > MAX_UINT32)) {
+          DEBUG ((
+            DEBUG_ERROR,
+            "%a: skipping invalid IO space [0x%lx-0x%Lx]\n",
+            Io.Base,
+            Io.Limit,
+            __func__
+            ));
+          Io.Base  = 1;
+          Io.Limit = 0;
+          break;
+        }
 
       case EFI_DT_PCI_HOST_RANGE_MMIO32:
         Mem.Base        = Range.ChildBase;
@@ -205,6 +176,8 @@ ProcessPciHost (
             Mem.Limit,
             __func__
             ));
+          Mem.Base  = 1;
+          Mem.Limit = 0;
           break;
         }
 
@@ -217,11 +190,13 @@ ProcessPciHost (
         if ((PMem.Base > MAX_UINT32) || (PMem.Limit > MAX_UINT32)) {
           DEBUG ((
             DEBUG_ERROR,
-            "%a: skipping invalid MMIO32 space [0x%lx-0x%Lx]\n",
-            Mem.Base,
-            Mem.Limit,
+            "%a: skipping invalid prefetch MMIO32 space [0x%lx-0x%Lx]\n",
+            PMem.Base,
+            PMem.Limit,
             __func__
             ));
+          PMem.Base  = 1;
+          PMem.Limit = 0;
           break;
         }
 
@@ -245,8 +220,9 @@ ProcessPciHost (
         //
         DEBUG ((
           DEBUG_ERROR,
-          "%a: Unknown SpaceCode is detected\n",
-          __func__
+          "%a: Unknown SpaceCode 0x%x is detected\n",
+          __func__,
+          SpaceCode
           ));
         break;
     }
@@ -338,7 +314,7 @@ ProcessPciHost (
   }
 
   if ((MemAbove4G.Base <= MemAbove4G.Limit) ||
-      (PMemAbove4G.Limit <= PMemAbove4G.Limit))
+      (PMemAbove4G.Base <= PMemAbove4G.Limit))
   {
     AllocationAttributes |= EFI_PCI_HOST_BRIDGE_MEM64_DECODE;
   }
@@ -349,6 +325,7 @@ ProcessPciHost (
   // (valid for PC-like systems).
   //
   ASSERT (Status == EFI_NOT_FOUND);
+  ASSERT (DtIo->IsDmaCoherent);
   Bridge->DmaAbove4G = TRUE;
 
   Bridge->Supports              = Attributes;

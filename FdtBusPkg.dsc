@@ -62,7 +62,7 @@
 #
 # These 3 are here only to compile FdtPciPcdProducerLib.
 #
-  gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress|0x0
+  gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress|0xffffffffffffffff
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDisableBusEnumeration|TRUE
   gEfiMdePkgTokenSpaceGuid.PcdPciIoTranslation|0x0
 
@@ -87,6 +87,7 @@
   DevicePathLib|MdePkg/Library/UefiDevicePathLibDevicePathProtocol/UefiDevicePathLibDevicePathProtocol.inf
   UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
   FbpUtilsLib|FdtBusPkg/Library/FbpUtilsLib/FbpUtilsLib.inf
+  FbpPciUtilsLib|FdtBusPkg/Library/FbpPciUtilsLib/FbpPciUtilsLib.inf
   DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
 
 [LibraryClasses.AARCH64]
@@ -104,6 +105,7 @@
 
   FdtBusPkg/Drivers/SampleDeviceDxe/Driver.inf
   FdtBusPkg/Drivers/SampleBusDxe/Driver.inf
+  FdtBusPkg/Drivers/PciHostBridgeFdtDxe/Driver.inf
   FdtBusPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
   FdtBusPkg/Drivers/VirtioFdtDxe/VirtioFdtDxe.inf {
     <LibraryClasses>

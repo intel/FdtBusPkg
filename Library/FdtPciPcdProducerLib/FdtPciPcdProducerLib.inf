@@ -32,6 +32,7 @@
   PcdLib
   UefiBootServicesTableLib
   FbpUtilsLib
+  FbpPciUtilsLib
 
 [Protocols]
   gEfiDtIoProtocolGuid                                        ## CONSUMES

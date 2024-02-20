@@ -182,6 +182,13 @@ DriverStart (
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: OpenProtocol: %r\n",
+      __func__,
+      Status
+      ));
+    ASSERT (Status != EFI_ALREADY_STARTED);
     return Status;
   }
 

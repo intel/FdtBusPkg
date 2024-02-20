@@ -14,7 +14,6 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/PcdLib.h>
 #include <Library/PciHostBridgeLib.h>
-#include <PiDxe.h>
 #include <Protocol/PciRootBridgeIo.h>
 #include <Protocol/PciHostBridgeResourceAllocation.h>
 #include <Protocol/DtIo.h>

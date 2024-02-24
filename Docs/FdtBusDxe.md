@@ -23,7 +23,7 @@ On loading, `EntryPoint()`:
 Devicetree to the OS" signal. The callback installs the managed
 Devicetree in the EFI Configuration Table, which matches FdtClientDxe behavior.
 - Registers an End-of-DXE notification callback. The callback ensures
-that controllers [marked as critical](UefiDtBindings.md#ueficritical)
+that controllers [marked as critical](DtBindings.md#fdtbuspkgcritical)
 are connected to their drivers and initialized when End-of-DXE is signalled
 during the BDS phase.
 - Registers as a bus driver, by:

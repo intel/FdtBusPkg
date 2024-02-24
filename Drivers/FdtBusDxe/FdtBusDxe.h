@@ -10,6 +10,7 @@
 #define __FDT_BUS_DXE_H__
 
 #include <Uefi.h>
+#include <PiDxe.h>
 #include <Protocol/CpuIo2.h>
 #include <Protocol/DtIo.h>
 #include <Library/BaseLib.h>

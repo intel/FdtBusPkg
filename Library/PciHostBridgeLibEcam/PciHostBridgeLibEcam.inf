@@ -38,6 +38,7 @@
   PcdLib
   UefiBootServicesTableLib
   FbpUtilsLib
+  FbpPciUtilsLib
 
 [Pcd]
 

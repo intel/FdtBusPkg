@@ -28,7 +28,7 @@ See further documentation:
 - [FdtBusPkg Documentation Style and Terms Definitions](Docs/StyleAndTerms.md)
 - [Devicetree Device Drivers](Docs/DeviceDrivers.md)
 - [EFI Devicetree I/O Protocol](Docs/DtIoProtocol.md)
-- [EFI-Specific Devicetree Bindings](Docs/UefiDtBindings.md)
+- [FdtBusPkg-Specific Devicetree Bindings](Docs/DtBindings.md)
 - [FdtBusDxe Overview](Docs/FdtBusDxe.md)
 - [Another README for Developers](Docs/Developers.md)
 

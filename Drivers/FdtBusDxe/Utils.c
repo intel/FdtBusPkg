@@ -378,7 +378,7 @@ ApplyGcdTypeAndAttrs (
     //
     DEBUG ((
       DEBUG_ERROR,
-      "%a: gDS->GetMemorySpaceDescriptor(0x%lx-0x%lx): %r\n",
+      "%a: GetMemorySpaceDescriptor(0x%lx-0x%lx): %r\n",
       __func__,
       AlignedAddress,
       AlignedAddress + AlignedLength - 1,

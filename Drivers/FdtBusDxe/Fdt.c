@@ -188,7 +188,7 @@ FdtIsDeviceCritical (
   IN  INTN  FdtNode
   )
 {
-  return fdt_getprop (TreeBase, FdtNode, "uefi,critical", NULL) != NULL;
+  return fdt_getprop (TreeBase, FdtNode, "fdtbuspkg,critical", NULL) != NULL;
 }
 
 #ifndef MDEPKG_NDEBUG
@@ -209,7 +209,7 @@ FdtIsUnitTestDevice (
   IN  INTN  FdtNode
   )
 {
-  return fdt_getprop (TreeBase, FdtNode, "uefi,unit-test-device", NULL) != NULL;
+  return fdt_getprop (TreeBase, FdtNode, "fdtbuspkg,unit-test-device", NULL) != NULL;
 }
 
 #endif /* MDEPKG_NDEBUG */

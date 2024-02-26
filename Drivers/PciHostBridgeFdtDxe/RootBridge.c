@@ -276,33 +276,59 @@ AddIoSpace (
   )
 {
   EFI_STATUS                   Status;
-  EFI_PHYSICAL_ADDRESS         HostAddress;
+  EFI_PHYSICAL_ADDRESS         Address;
   UINTN                        Length;
   EFI_GCD_IO_SPACE_DESCRIPTOR  GcdDescriptor;
 
   //
-  // Base and Limit in PCI_ROOT_BRIDGE_APERTURE are device address.
-  // For GCD resource manipulation, we need to use host address.
+  // The EFI_DT_RANGE describes the translation of PCI I/O
+  // addresses to host memory addresses, and this is basically
+  // only used on non-x86 designs.
   //
-  HostAddress = TO_HOST_ADDRESS (RB (*Range), RT (*Range));
-  Length      = RS (*Range);
+  // The IO space is entirely fake and there's very little
+  // reason to use the translated MMIO (host) addresses for
+  // GCD manipulation, at the very least because frequently
+  // the IO space is sized at 16 or 32 bits in the CPU HOB, but
+  // also because the CpuIo2 protocol expects the addresses
+  // to effectively be in this [0..0xffff(ffff)] range, so
+  // keeping them in the GCD that way is at least consistent.
+  //
+  // NOTE: This is different from how the MdeModulePkg PciHostBridgeDxe
+  // does i in code, but not different from how it does it in
+  // practice, seeing that PciHostBridgeDxe is never truly aware of
+  // the IO->MMIO translation offset (which is reported OOB via
+  // PcdPciIoTranslation).
+  //
+  // NOTE: HostBridge AllocateResource thus *also* is only
+  // passed device addresses, not translated addreses, for PCI I/O.
+  //
+  // For the sake of argument, if FdtBusPkg is ever used with x86,
+  // then you're looking at PCI I/O to CPU I/O translation with
+  // an offset of 0, so using the PCI I/O address for manipulating
+  // the I/O GCD is perfectly fine.
+  //
+
+  Address = RB (*Range);
+  Length  = RS (*Range);
 
   Status = gDS->GetIoSpaceDescriptor (
-                  HostAddress,
+                  Address,
                   &GcdDescriptor
                   );
   if (EFI_ERROR (Status)) {
     //
-    // This can happen if HostAddress exceeds the Gcd limits as set
+    // This can happen if Address exceeds the Gcd limits as set
     // by the Cpu HOB. You'll get an EFI_NOT_FOUND and it's really
-    // a programmer error since the HostAddress is clearly invalid.
+    // a programmer error since the Address is clearly invalid.
+    // ("programmer" here refers in the wider sense to the platform
+    // firmware as a whole).
     //
     DEBUG ((
       DEBUG_ERROR,
       "%a: GetIoSpaceDescriptor(0x%lx-0x%lx): %r\n",
       __func__,
-      HostAddress,
-      HostAddress + Length - 1,
+      Address,
+      Address + Length - 1,
       Status
       ));
     if (Status == EFI_NOT_FOUND) {
@@ -312,15 +338,15 @@ AddIoSpace (
     return Status;
   }
 
-  if ((HostAddress + Length - 1) >
+  if ((Address + Length - 1) >
       (GcdDescriptor.BaseAddress + GcdDescriptor.Length - 1))
   {
     DEBUG ((
       DEBUG_ERROR,
       "%a: [0x%lx, 0x%lx) straddles multiple GCD entries\n",
       __func__,
-      HostAddress,
-      HostAddress + Length - 1
+      Address,
+      Address + Length - 1
       ));
     Status = EFI_ACCESS_DENIED;
     return Status;
@@ -333,7 +359,7 @@ AddIoSpace (
     return EFI_SUCCESS;
   }
 
-  return gDS->AddIoSpace (EfiGcdIoTypeIo, HostAddress, Length);
+  return gDS->AddIoSpace (EfiGcdIoTypeIo, Address, Length);
 }
 
 /**

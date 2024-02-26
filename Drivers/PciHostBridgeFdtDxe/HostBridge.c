@@ -244,18 +244,15 @@ HostBridgeNotifyPhase (
               // For AllocateResource is manipulating GCD resource, we need to use
               // host address here.
               //
+              // See note in AddIoSpace for why the base/limits passed to
+              // AllocateResource are not translated via TO_HOST_ADDRESS.
+              //
               BaseAddress = AllocateResource (
                               FALSE,
                               RootBridge->ResAllocNode[Index].Length,
                               MIN (15, BitsOfAlignment),
-                              TO_HOST_ADDRESS (
-                                ALIGN_VALUE (RB (RootBridge->IoRange), Alignment + 1),
-                                RT (RootBridge->IoRange)
-                                ),
-                              TO_HOST_ADDRESS (
-                                RL (RootBridge->IoRange),
-                                RT (RootBridge->IoRange)
-                                )
+                              ALIGN_VALUE (RB (RootBridge->IoRange), Alignment + 1),
+                              RL (RootBridge->IoRange)
                               );
               break;
 
@@ -858,16 +855,30 @@ HostBridgeGetProposedResources (
       Descriptor->Desc    = ACPI_ADDRESS_SPACE_DESCRIPTOR;
       Descriptor->Len     = sizeof (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR) - 3;
       Descriptor->GenFlag = 0;
+
       //
       // AddrRangeMin in Resource Descriptor here should be device address
       // instead of host address, or else PCI bus driver cannot set correct
       // address into PCI BAR registers.
-      // Base in ResAllocNode is a host address, so conversion is needed.
       //
-      Descriptor->AddrRangeMin = TO_DEVICE_ADDRESS (
-                                   RootBridge->ResAllocNode[Index].Base,
-                                   GetTranslationByResourceType (RootBridge, Index)
-                                   );
+      if (Index == TypeIo) {
+        //
+        // For PCI IO, the _device_ address is kept in ResAllocNode, so a
+        // conversion is not needed. See the big note in AddIoSpace as for
+        // why.
+        //
+        Descriptor->AddrRangeMin = RootBridge->ResAllocNode[Index].Base;
+      } else {
+        //
+        // For MMIO, the _host_ address is kept in ResAllocNode, so a conversion
+        // is needed.
+        //
+        Descriptor->AddrRangeMin = TO_DEVICE_ADDRESS (
+                                     RootBridge->ResAllocNode[Index].Base,
+                                     GetTranslationByResourceType (RootBridge, Index)
+                                     );
+      }
+
       Descriptor->AddrRangeMax          = 0;
       Descriptor->AddrTranslationOffset = (ResStatus == ResAllocated) ? EFI_RESOURCE_SATISFIED : PCI_RESOURCE_LESS;
       Descriptor->AddrLen               = RootBridge->ResAllocNode[Index].Length;

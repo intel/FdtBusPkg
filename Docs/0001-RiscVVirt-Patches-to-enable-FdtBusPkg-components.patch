@@ -1,4 +1,4 @@
-From 870fc36b4e73cbfff2ea289020c37866b8655560 Mon Sep 17 00:00:00 2001
+From 5bc8696169b8577f81a6f9d8e4016953470ee3d2 Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Thu, 16 Mar 2023 15:46:04 -0500
 Subject: [PATCH 1/1] RiscVVirt: Patches to enable FdtBusPkg components
@@ -19,18 +19,18 @@ to the UART described by /chosen/stdout-path.
 
 Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
 ---
- OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc           | 31 +++++--
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc           | 32 +++++--
  OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf           | 19 +++-
  .../PlatformBootManagerLib.inf                |  4 +
  .../PlatformBootManagerLib/PlatformBm.c       | 92 ++++++++++++-------
  OvmfPkg/RiscVVirt/Sec/Platform.c              |  1 -
- 5 files changed, 100 insertions(+), 47 deletions(-)
+ 5 files changed, 101 insertions(+), 47 deletions(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-index f8b9479345d7..c459c969ccfc 100644
+index 024badebf250..df883017c1a8 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-@@ -85,7 +85,7 @@ [LibraryClasses.common]
+@@ -143,7 +143,7 @@ [LibraryClasses.common]
    QemuLoadImageLib|OvmfPkg/Library/GenericQemuLoadImageLib/GenericQemuLoadImageLib.inf
  
    TimerLib|UefiCpuPkg/Library/BaseRiscV64CpuTimerLib/BaseRiscV64CpuTimerLib.inf
@@ -39,7 +39,7 @@ index f8b9479345d7..c459c969ccfc 100644
  
    CapsuleLib|MdeModulePkg/Library/DxeCapsuleLibNull/DxeCapsuleLibNull.inf
    BootLogoLib|MdeModulePkg/Library/BootLogoLib/BootLogoLib.inf
-@@ -95,13 +95,15 @@ [LibraryClasses.common]
+@@ -153,13 +153,16 @@ [LibraryClasses.common]
    FrameBufferBltLib|MdeModulePkg/Library/FrameBufferBltLib/FrameBufferBltLib.inf
    QemuBootOrderLib|OvmfPkg/Library/QemuBootOrderLib/QemuBootOrderLib.inf
    FileExplorerLib|MdeModulePkg/Library/FileExplorerLib/FileExplorerLib.inf
@@ -54,10 +54,11 @@ index f8b9479345d7..c459c969ccfc 100644
    PlatformHookLib|MdeModulePkg/Library/BasePlatformHookLibNull/BasePlatformHookLibNull.inf
    ImagePropertiesRecordLib|MdeModulePkg/Library/ImagePropertiesRecordLib/ImagePropertiesRecordLib.inf
 +  FbpUtilsLib|FdtBusPkg/Library/FbpUtilsLib/FbpUtilsLib.inf
++  FbpPciUtilsLib|FdtBusPkg/Library/FbpPciUtilsLib/FbpPciUtilsLib.inf
  
  !if $(TPM2_ENABLE) == TRUE
    Tpm2CommandLib|SecurityPkg/Library/Tpm2CommandLib/Tpm2CommandLib.inf
-@@ -334,12 +336,14 @@ [Components]
+@@ -392,12 +395,14 @@ [Components]
    MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe.inf
    MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
    MdeModulePkg/Universal/Console/TerminalDxe/TerminalDxe.inf
@@ -74,7 +75,7 @@ index f8b9479345d7..c459c969ccfc 100644
    MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
  
    #
-@@ -351,14 +355,18 @@ [Components]
+@@ -409,14 +414,18 @@ [Components]
    #
    # Platform Driver
    #
@@ -95,7 +96,7 @@ index f8b9479345d7..c459c969ccfc 100644
    OvmfPkg/VirtioBlkDxe/VirtioBlk.inf
    OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
    OvmfPkg/VirtioNetDxe/VirtioNet.inf
-@@ -448,12 +456,14 @@ [Components]
+@@ -506,12 +515,14 @@ [Components]
    #
    OvmfPkg/RiscVVirt/PciCpuIo2Dxe/PciCpuIo2Dxe.inf {
      <LibraryClasses>
@@ -112,7 +113,7 @@ index f8b9479345d7..c459c969ccfc 100644
    }
    OvmfPkg/PciHotPlugInitDxe/PciHotPlugInit.inf
    OvmfPkg/VirtioPciDeviceDxe/VirtioPciDeviceDxe.inf
-@@ -503,5 +513,6 @@ [Components]
+@@ -561,5 +572,6 @@ [Components]
    MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
    OvmfPkg/AcpiPlatformDxe/AcpiPlatformDxe.inf {
      <LibraryClasses>
@@ -121,7 +122,7 @@ index f8b9479345d7..c459c969ccfc 100644
 +      NULL|FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
    }
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
-index 40d12e0f4c46..60cbf767bd06 100644
+index 3a542a5cb13f..802da9d5f1d0 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
 @@ -60,7 +60,10 @@ [FV.DXEFV]

@@ -145,10 +145,40 @@ ProcessPciHost (
     SpaceCode = FbpPciGetRangeAttribute (DtIo, Range.ChildBase);
     switch (SpaceCode) {
       case EFI_DT_PCI_HOST_RANGE_IO:
-        Io.Base        = Range.ChildBase;
-        Io.Limit       = Io.Base + Range.Length - 1;
-        Io.Translation = Io.Base - RangeCpuBase;
-        break;
+        Io.Base  = Range.ChildBase;
+        Io.Limit = Io.Base + Range.Length - 1;
+
+        /*
+         * Due to the way PciHostBridgeDxe and OvmfPkg/RiscVVirt/PciCpuIo2Dxe
+         * interoperate, the IO translation here must be reported as 0.
+         *
+         * PciHostBridgeDxe applies the translation because it passes the host
+         * address to the CpuIo2 service, and it uses the mCpuIo->Io.Read
+         * call because it doesn't know anything about PCI IO -> MMIO
+         * translation. On the other hand, the CpuIoServiceRead implementation
+         * expects an IO address between [0, 0xFFFF] - a host address only
+         * valid on x86, without any translation, which promptly fails the
+         * CpuIoCheckParameter check. Even if this check were to pass,
+         * CpuIoServiceRead then applies the translation again as reported
+         * by PcdPciIoTranslation, so the address would be translated
+         * twice.
+         *
+         * There are three ways to fix this:
+         * - The IO space on non-x86 CPUs could be reported to be as big
+         *   as the memory space, and the CpuIo2 protocol could be fixed
+         *   to treat IO reads as MMIO reads.
+         * - PciHostDxe could assume the IO->MMIO translation and use the
+         *   mCpuIo->Mem.Read service to satisfy translated IO accesses.
+         * - An alternate PciHostDxe implementation could rely on another
+         *   layer to abstract IO and translation. This is what
+         *   PciHostBridgeFdtDxe does.
+         *
+         * If the CpuIo2 component were to be fixed (to simply treat IO
+         * reads as MMIO reads), then this would be valid:
+         *
+         * Io.Translation = Io.Base - RangeCpuBase;
+         */
+        Io.Translation = 0;
 
         if ((Io.Base > MAX_UINT32) || (Io.Limit > MAX_UINT32)) {
           DEBUG ((
@@ -163,6 +193,7 @@ ProcessPciHost (
           break;
         }
 
+        break;
       case EFI_DT_PCI_HOST_RANGE_MMIO32:
         Mem.Base        = Range.ChildBase;
         Mem.Limit       = Mem.Base + Range.Length - 1;

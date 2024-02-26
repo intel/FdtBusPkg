@@ -130,8 +130,8 @@ ProcessHandle (
     SpaceCode = FbpPciGetRangeAttribute (DtIo, Range.ChildBase);
     switch (SpaceCode) {
       case EFI_DT_PCI_HOST_RANGE_IO:
-        if ((Range.ChildBase <= MAX_UINT32) &&
-            ((Range.ChildBase + Range.Length - 1) <= MAX_UINT32))
+        if (((UINT32)Range.ChildBase <= MAX_UINT32) &&
+            ((UINT32)(Range.ChildBase + Range.Length - 1) <= MAX_UINT32))
         {
           Status = PcdSet64S (PcdPciIoTranslation, RangeCpuBase - Range.ChildBase);
           ASSERT_EFI_ERROR (Status);

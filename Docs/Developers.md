@@ -47,6 +47,10 @@ $ git submodule add https://github.com/intel/FdtBusPkg
 $ git submodule update --init --recursive
 $ . edksetup.sh
 $ python3 BaseTools/Scripts/SetupGit.py
+$ git am FdtBusPkg/Docs/edk2-patches/*
+$ pushd FdtBusPkg
+$ python3 ../BaseTools/Scripts/SetupGit.py
+$ popd
 $ make -C BaseTools
 ```
 
@@ -62,9 +66,7 @@ $ build -a RISCV64 -t GCC5 -p FdtBusPkg/FdtBusPkg.dsc -b DEBUG
 To build RISC-V OVMF firmware enabled with FdtBusPkg components:
 
 ```
-$ git am FdtBusPkg/Docs/0001-RiscVVirt-Patches-to-enable-FdtBusPkg-components.patch
-$ git am FdtBusPkg/Docs/0001-UefiDevicePathLib-support-DT-.-device-path-nodes.patch
-$ git am FdtBusPkg/Docs/0001-OvmfPkg-RiscVVirt-change-for-testing-HighMemDxe.patch
+$ git am FdtBusPkg/Docs/ovmf-patches/*
 $ export GCC_RISCV64_PREFIX=... (if you are on a non-RISCV64 system)
 $ build -a RISCV64  -p OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc -t GCC -b DEBUG
 ```

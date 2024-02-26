@@ -179,7 +179,6 @@ ProcessPciHost (
          * Io.Translation = Io.Base - RangeCpuBase;
          */
         Io.Translation = 0;
-        break;
 
         if ((Io.Base > MAX_UINT32) || (Io.Limit > MAX_UINT32)) {
           DEBUG ((
@@ -194,6 +193,7 @@ ProcessPciHost (
           break;
         }
 
+        break;
       case EFI_DT_PCI_HOST_RANGE_MMIO32:
         Mem.Base        = Range.ChildBase;
         Mem.Limit       = Mem.Base + Range.Length - 1;

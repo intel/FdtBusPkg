@@ -39,9 +39,14 @@ FbpPathNodeCreate (
 /**
   Convert an EFI_DT_RANGE to an EFI_DT_REG.
 
+  If the EFI_DT_REG is going to be use with
+  ChildBase address offsets, pass ForChildSide
+  as TRUE.
+
   Useful in a bus driver to do I/O on behalf of a child.
 
   @param[in]  Range            EFI_DT_RANGE *.
+  @param[in]  ForChildSide     BOOLEAN.
   @param[out] Reg              EFI_DT_REG *.
 
 **/
@@ -49,14 +54,23 @@ STATIC
 inline
 VOID
 FbpRangeToReg (
-               IN  CONST EFI_DT_RANGE *Range,
-               OUT EFI_DT_REG *Reg
-               )
+  IN  CONST EFI_DT_RANGE  *Range,
+  IN  BOOLEAN             ForChildSide,
+  OUT EFI_DT_REG          *Reg
+  )
 {
-  Reg->BusBase = Range->ParentBase;
-  Reg->TranslatedBase = Range->TranslatedParentBase;
-  Reg->Length = Range->Length;
-  Reg->BusDtIo = Range->BusDtIo;
+  EFI_DT_SIZE  Offset;
+
+  if (ForChildSide) {
+    Offset = Range->ChildBase;
+  } else {
+    Offset = 0;
+  }
+
+  Reg->BusBase        = Range->ParentBase - Offset;
+  Reg->TranslatedBase = Range->TranslatedParentBase - Offset;
+  Reg->Length         = Range->Length + Offset;
+  Reg->BusDtIo        = Range->BusDtIo;
 }
 
 /**

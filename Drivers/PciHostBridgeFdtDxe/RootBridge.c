@@ -158,7 +158,7 @@ RootBridgeIoCheckParameter (
     Base  = RB (RootBridge->IoRange);
     Limit = RL (RootBridge->IoRange);
 
-    FbpRangeToReg (&RootBridge->IoRange, Reg);
+    FbpRangeToReg (&RootBridge->IoRange, TRUE, Reg);
   } else if ((OperationType == MemOperation) || (OperationType == MemOperationNoBuffer)) {
     EFI_DT_RANGE  *Range;
 
@@ -190,7 +190,7 @@ RootBridgeIoCheckParameter (
       Range = &RootBridge->PMemAbove4GRange;
     }
 
-    FbpRangeToReg (Range, Reg);
+    FbpRangeToReg (Range, TRUE, Reg);
   } else {
     PciRbAddr = (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS *)&Address;
     if ((PciRbAddr->Bus < RB (RootBridge->BusRange)) ||
@@ -405,7 +405,7 @@ RootBridgeIoPollMem (
                              RootBridge->DtIo,
                              Width,
                              &Reg,
-                             Address - Reg.BusBase,
+                             Address,
                              Mask,
                              Value,
                              Delay,
@@ -480,7 +480,7 @@ RootBridgeIoPollIo (
                              RootBridge->DtIo,
                              Width,
                              &Reg,
-                             Address - Reg.BusBase,
+                             Address,
                              Mask,
                              Value,
                              Delay,
@@ -548,7 +548,7 @@ RootBridgeIoMemRead (
                              RootBridge->DtIo,
                              Width,
                              &Reg,
-                             Address - Reg.BusBase,
+                             Address,
                              Count,
                              Buffer
                              );
@@ -614,7 +614,7 @@ RootBridgeIoMemWrite (
                              RootBridge->DtIo,
                              Width,
                              &Reg,
-                             Address - Reg.BusBase,
+                             Address,
                              Count,
                              Buffer
                              );
@@ -674,7 +674,7 @@ RootBridgeIoIoRead (
                              RootBridge->DtIo,
                              Width,
                              &Reg,
-                             Address - Reg.BusBase,
+                             Address,
                              Count,
                              Buffer
                              );
@@ -734,7 +734,7 @@ RootBridgeIoIoWrite (
                              RootBridge->DtIo,
                              Width,
                              &Reg,
-                             Address - Reg.BusBase,
+                             Address,
                              Count,
                              Buffer
                              );
@@ -818,9 +818,9 @@ RootBridgeIoCopyMem (
                              RootBridge->DtIo,
                              Width,
                              &DestReg,
-                             DestAddress - DestReg.BusBase,
+                             DestAddress,
                              &SrcReg,
-                             SrcAddress - SrcReg.BusBase,
+                             SrcAddress,
                              Count
                              );
 }

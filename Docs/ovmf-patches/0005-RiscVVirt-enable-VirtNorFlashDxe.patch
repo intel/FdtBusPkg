@@ -1,7 +1,7 @@
-From 824594965c788242796b4b9476f25281b8951fa7 Mon Sep 17 00:00:00 2001
+From 7ab9ab25e907ac6dbf220465d7f9c9b9d60cbb58 Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Mon, 26 Feb 2024 17:43:10 -0600
-Subject: [PATCH 5/8] RiscVVirt: enable VirtNorFlashDxe
+Subject: [PATCH 5/9] RiscVVirt: enable VirtNorFlashDxe
 
 Build with FBP_NORFLASH_DXE=TRUE (default) to use DT-based
 flash driver. Build with FALSE for old behavior.

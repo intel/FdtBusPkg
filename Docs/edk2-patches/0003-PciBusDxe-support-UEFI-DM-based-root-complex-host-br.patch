@@ -1,0 +1,227 @@
+From 437c8ad7decb732060cae3048da9c87ea2a6a3d0 Mon Sep 17 00:00:00 2001
+From: Andrei Warkentin <andrei.warkentin@intel.com>
+Date: Wed, 28 Feb 2024 10:37:52 -0600
+Subject: [PATCH 3/3] PciBusDxe: support UEFI DM-based root complex/host bridge
+ drivers.
+
+Fixes issue with connecting PciBusDxe after disconnecting PciBusDxe,
+caused by stale host bridge handle within gPciHostBridgeHandles. Now,
+host bridge handle is cleaned up when the last root bridge associated
+with the host bridge goes away.
+
+Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
+---
+ MdeModulePkg/Bus/Pci/PciBusDxe/PciBus.h       |  7 ++-
+ .../Bus/Pci/PciBusDxe/PciEnumerator.h         | 22 ++++++++
+ MdeModulePkg/Bus/Pci/PciBusDxe/PciBus.c       | 24 ++++++--
+ .../Bus/Pci/PciBusDxe/PciEnumerator.c         | 55 +++++++++++++++++--
+ 4 files changed, 98 insertions(+), 10 deletions(-)
+
+diff --git a/MdeModulePkg/Bus/Pci/PciBusDxe/PciBus.h b/MdeModulePkg/Bus/Pci/PciBusDxe/PciBus.h
+index ca5c06204dec..32c19fc4832a 100644
+--- a/MdeModulePkg/Bus/Pci/PciBusDxe/PciBus.h
++++ b/MdeModulePkg/Bus/Pci/PciBusDxe/PciBus.h
+@@ -284,6 +284,11 @@ struct _PCI_IO_DEVICE {
+   UINT32                                       ResizableBarNumber;
+ };
+ 
++typedef struct _PCI_HOST_BRIDGE_HANDLE {
++  EFI_HANDLE    Handle;
++  UINTN         RootBridgeCount;
++} PCI_HOST_BRIDGE_HANDLE;
++
+ #define PCI_IO_DEVICE_FROM_PCI_IO_THIS(a) \
+   CR (a, PCI_IO_DEVICE, PciIo, PCI_IO_DEVICE_SIGNATURE)
+ 
+@@ -305,7 +310,7 @@ extern EFI_COMPONENT_NAME_PROTOCOL                   gPciBusComponentName;
+ extern EFI_COMPONENT_NAME2_PROTOCOL                  gPciBusComponentName2;
+ extern BOOLEAN                                       gFullEnumeration;
+ extern UINTN                                         gPciHostBridgeNumber;
+-extern EFI_HANDLE                                    gPciHostBrigeHandles[PCI_MAX_HOST_BRIDGE_NUM];
++extern PCI_HOST_BRIDGE_HANDLE                        gPciHostBridgeHandles[PCI_MAX_HOST_BRIDGE_NUM];
+ extern UINT64                                        gAllOne;
+ extern UINT64                                        gAllZero;
+ extern EFI_PCI_PLATFORM_PROTOCOL                     *gPciPlatformProtocol;
+diff --git a/MdeModulePkg/Bus/Pci/PciBusDxe/PciEnumerator.h b/MdeModulePkg/Bus/Pci/PciBusDxe/PciEnumerator.h
+index 2c81def04c9a..77a59b4fe863 100644
+--- a/MdeModulePkg/Bus/Pci/PciBusDxe/PciEnumerator.h
++++ b/MdeModulePkg/Bus/Pci/PciBusDxe/PciEnumerator.h
+@@ -500,6 +500,8 @@ SearchHostBridgeHandle (
+ /**
+   Add host bridge handle to global variable for enumerating.
+ 
++  Called once for every root bridge added.
++
+   @param HostBridgeHandle   Host bridge handle.
+ 
+   @retval EFI_SUCCESS       Successfully added host bridge.
+@@ -512,4 +514,24 @@ AddHostBridgeEnumerator (
+   IN EFI_HANDLE  HostBridgeHandle
+   );
+ 
++/**
++  Delete host bridge handle to global variable for enumerating.
++
++  Called once for every root bridge removed (stopped). When the
++  number of calls to DeleteHostBridgeEnumerator matches the number
++  of calls to AddHostBridgeEnumerator, the handle is removed
++  from the global host bridge handle tracker.
++
++  @param HostBridgeHandle   Host bridge handle.
++
++  @retval EFI_SUCCESS       Successfully added host bridge.
++  @retval EFI_ABORTED       Host bridge is NULL, or given host bridge
++                            has been in host bridge list.
++
++**/
++EFI_STATUS
++DeleteHostBridgeEnumeratorIfPossible (
++  IN EFI_HANDLE  HostBridgeHandle
++  );
++
+ #endif
+diff --git a/MdeModulePkg/Bus/Pci/PciBusDxe/PciBus.c b/MdeModulePkg/Bus/Pci/PciBusDxe/PciBus.c
+index 337b2090d98e..7593a816ab5a 100644
+--- a/MdeModulePkg/Bus/Pci/PciBusDxe/PciBus.c
++++ b/MdeModulePkg/Bus/Pci/PciBusDxe/PciBus.c
+@@ -27,7 +27,7 @@ EFI_DRIVER_BINDING_PROTOCOL  gPciBusDriverBinding = {
+   NULL
+ };
+ 
+-EFI_HANDLE                                    gPciHostBrigeHandles[PCI_MAX_HOST_BRIDGE_NUM];
++PCI_HOST_BRIDGE_HANDLE                        gPciHostBridgeHandles[PCI_MAX_HOST_BRIDGE_NUM];
+ EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL  *gIncompatiblePciDeviceSupport = NULL;
+ UINTN                                         gPciHostBridgeNumber           = 0;
+ BOOLEAN                                       gFullEnumeration               = TRUE;
+@@ -406,9 +406,23 @@ PciBusDriverBindingStop (
+   IN  EFI_HANDLE                   *ChildHandleBuffer
+   )
+ {
+-  EFI_STATUS  Status;
+-  UINTN       Index;
+-  BOOLEAN     AllChildrenStopped;
++  EFI_STATUS                       Status;
++  UINTN                            Index;
++  BOOLEAN                          AllChildrenStopped;
++  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *PciRootBridgeIo;
++  EFI_HANDLE                       ParentHandle;
++
++  PciRootBridgeIo = NULL;
++  Status          = gBS->OpenProtocol (
++                           Controller,
++                           &gEfiPciRootBridgeIoProtocolGuid,
++                           (VOID **)&PciRootBridgeIo,
++                           gPciBusDriverBinding.DriverBindingHandle,
++                           Controller,
++                           EFI_OPEN_PROTOCOL_GET_PROTOCOL
++                           );
++  ASSERT_EFI_ERROR (Status);
++  ParentHandle = PciRootBridgeIo->ParentHandle;
+ 
+   if (NumberOfChildren == 0) {
+     //
+@@ -431,6 +445,8 @@ PciBusDriverBindingStop (
+       Controller
+       );
+ 
++    DeleteHostBridgeEnumeratorIfPossible (ParentHandle);
++
+     return EFI_SUCCESS;
+   }
+ 
+diff --git a/MdeModulePkg/Bus/Pci/PciBusDxe/PciEnumerator.c b/MdeModulePkg/Bus/Pci/PciBusDxe/PciEnumerator.c
+index 3f8c6e6da7dc..364c72ca4bf8 100644
+--- a/MdeModulePkg/Bus/Pci/PciBusDxe/PciEnumerator.c
++++ b/MdeModulePkg/Bus/Pci/PciBusDxe/PciEnumerator.c
+@@ -1887,7 +1887,7 @@ PreprocessController (
+   }
+ 
+   //
+-  // Get Root Brige Handle
++  // Get Root Brigde Handle
+   //
+   while (Bridge->Parent != NULL) {
+     Bridge = Bridge->Parent;
+@@ -2149,7 +2149,7 @@ SearchHostBridgeHandle (
+ 
+   HostBridgeHandle = PciRootBridgeIo->ParentHandle;
+   for (Index = 0; Index < gPciHostBridgeNumber; Index++) {
+-    if (HostBridgeHandle == gPciHostBrigeHandles[Index]) {
++    if (HostBridgeHandle == gPciHostBridgeHandles[Index].Handle) {
+       return TRUE;
+     }
+   }
+@@ -2160,6 +2160,8 @@ SearchHostBridgeHandle (
+ /**
+   Add host bridge handle to global variable for enumerating.
+ 
++  Called once for every root bridge added.
++
+   @param HostBridgeHandle   Host bridge handle.
+ 
+   @retval EFI_SUCCESS       Successfully added host bridge.
+@@ -2179,15 +2181,58 @@ AddHostBridgeEnumerator (
+   }
+ 
+   for (Index = 0; Index < gPciHostBridgeNumber; Index++) {
+-    if (HostBridgeHandle == gPciHostBrigeHandles[Index]) {
+-      return EFI_ABORTED;
++    if (HostBridgeHandle == gPciHostBridgeHandles[Index].Handle) {
++      gPciHostBridgeHandles[Index].RootBridgeCount++;
++      return EFI_SUCCESS;
+     }
+   }
+ 
+   if (Index < PCI_MAX_HOST_BRIDGE_NUM) {
+-    gPciHostBrigeHandles[Index] = HostBridgeHandle;
++    gPciHostBridgeHandles[Index].Handle          = HostBridgeHandle;
++    gPciHostBridgeHandles[Index].RootBridgeCount = 1;
+     gPciHostBridgeNumber++;
+   }
+ 
+   return EFI_SUCCESS;
+ }
++
++/**
++  Delete host bridge handle to global variable for enumerating.
++
++  Called once for every root bridge removed (stopped). When the
++  number of calls to DeleteHostBridgeEnumerator matches the number
++  of calls to AddHostBridgeEnumerator, the handle is removed
++  from the global host bridge handle tracker.
++
++  @param HostBridgeHandle   Host bridge handle.
++
++  @retval EFI_SUCCESS       Successfully added host bridge.
++  @retval EFI_ABORTED       Host bridge is NULL, or given host bridge
++                            has been in host bridge list.
++
++**/
++EFI_STATUS
++DeleteHostBridgeEnumeratorIfPossible (
++  IN EFI_HANDLE  HostBridgeHandle
++  )
++{
++  UINTN  Index;
++
++  if (HostBridgeHandle == NULL) {
++    return EFI_ABORTED;
++  }
++
++  for (Index = 0; Index < gPciHostBridgeNumber; Index++) {
++    if (HostBridgeHandle == gPciHostBridgeHandles[Index].Handle) {
++      gPciHostBridgeHandles[Index].RootBridgeCount--;
++      if (gPciHostBridgeHandles[Index].RootBridgeCount == 0) {
++        gPciHostBridgeHandles[Index].Handle = NULL;
++        gPciHostBridgeNumber--;
++      }
++
++      return EFI_SUCCESS;
++    }
++  }
++
++  return EFI_NOT_FOUND;
++}
+-- 
+2.34.1
+

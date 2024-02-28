@@ -1,7 +1,7 @@
-From f18d2dd61b7ad4cb3aca1e8a36e8a3a9e1058174 Mon Sep 17 00:00:00 2001
+From bfad8fe8df168b40cae94dae919ea15f3b9a259a Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Wed, 28 Feb 2024 00:39:31 -0600
-Subject: [PATCH 8/8] RiscVVirt: enable native DT-based PCI stack
+Subject: [PATCH 8/9] RiscVVirt: enable native DT-based PCI stack
 
 Build with FBP_PCI=TRUE and FBP_PCI_LEGACY=FALSE (default) to
 use the new PciHostBridgeFdtDxe root complex driver. Build with

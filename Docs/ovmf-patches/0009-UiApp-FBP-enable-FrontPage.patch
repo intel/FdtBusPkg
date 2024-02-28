@@ -1,0 +1,173 @@
+From 02a28142fd88f5a9634d5216aa93906d2556674a Mon Sep 17 00:00:00 2001
+From: Andrei Warkentin <andrei.warkentin@intel.com>
+Date: Wed, 28 Feb 2024 09:10:53 -0600
+Subject: [PATCH 9/9] UiApp: FBP-enable FrontPage
+
+Get the memory and board/cpu strings from FBP device properties.
+
+Just meant as an example - e.g. should be rewritten to be a fallback for
+situations where SMBIOS provides no strings.
+
+Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
+---
+ MdeModulePkg/Application/UiApp/UiApp.inf   |   2 +
+ MdeModulePkg/Application/UiApp/FrontPage.c | 109 +++++++++++++++++++++
+ 2 files changed, 111 insertions(+)
+
+diff --git a/MdeModulePkg/Application/UiApp/UiApp.inf b/MdeModulePkg/Application/UiApp/UiApp.inf
+index 3b9e048851fe..89eabe97e1be 100644
+--- a/MdeModulePkg/Application/UiApp/UiApp.inf
++++ b/MdeModulePkg/Application/UiApp/UiApp.inf
+@@ -37,6 +37,7 @@ [Sources]
+ [Packages]
+   MdePkg/MdePkg.dec
+   MdeModulePkg/MdeModulePkg.dec
++  FdtBusPkg/FdtBusPkg.dec
+ 
+ [LibraryClasses]
+   DevicePathLib
+@@ -54,6 +55,7 @@ [LibraryClasses]
+   PcdLib
+   UefiHiiServicesLib
+   UefiBootManagerLib
++  FbpUtilsLib
+ 
+ [Guids]
+   gEfiIfrTianoGuid                              ## CONSUMES ## GUID (Extended IFR Guid Opcode)
+diff --git a/MdeModulePkg/Application/UiApp/FrontPage.c b/MdeModulePkg/Application/UiApp/FrontPage.c
+index 0e784fb327f5..c66adfdfca94 100644
+--- a/MdeModulePkg/Application/UiApp/FrontPage.c
++++ b/MdeModulePkg/Application/UiApp/FrontPage.c
+@@ -9,6 +9,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
+ 
+ #include "FrontPage.h"
+ #include "FrontPageCustomizedUi.h"
++#include <Library/FbpUtilsLib.h>
+ 
+ #define MAX_STRING_LEN  200
+ 
+@@ -496,6 +497,107 @@ GetOptionalStringByIndex (
+   return EFI_SUCCESS;
+ }
+ 
++/**
++
++  Update the banner information for the Front Page based on DT information.
++
++**/
++EFI_STATUS
++UpdateFrontPageBannerStringsFbp (
++  VOID
++  )
++{
++  EFI_DT_IO_PROTOCOL  *DtIo;
++  CONST CHAR8         *Model;
++  EFI_STATUS          Status;
++  CHAR16              *String;
++  UINTN               Size;
++  EFI_HANDLE          Handle;
++  UINTN               HandleCount;
++  EFI_HANDLE          *HandleBuffer;
++  UINTN               Index;
++  EFI_DT_SIZE         MemorySize;
++
++  DtIo = FbpGetDtRoot ();
++  if (DtIo == NULL) {
++    return EFI_UNSUPPORTED;
++  }
++
++  Status = DtIo->GetString (DtIo, "model", 0, &Model);
++  ASSERT_EFI_ERROR (Status);
++
++  Size   = AsciiStrSize (Model);
++  String = AllocatePool (Size * sizeof (CHAR16));
++  AsciiStrToUnicodeStrS (Model, String, Size);
++  UiCustomizeFrontPageBanner (1, TRUE, &String);
++  HiiSetString (gFrontPagePrivate.HiiHandle, STRING_TOKEN (STR_FRONT_PAGE_COMPUTER_MODEL), String, NULL);
++  FreePool (String);
++
++  Status = DtIo->Lookup (DtIo, "/cpus/cpu@0", FALSE, &Handle);
++  ASSERT_EFI_ERROR (Status);
++  Status = gBS->HandleProtocol (
++                  Handle,
++                  &gEfiDtIoProtocolGuid,
++                  (VOID **)&DtIo
++                  );
++  ASSERT_EFI_ERROR (Status);
++
++  Status = DtIo->GetString (DtIo, "riscv,isa", 0, &Model);
++  ASSERT_EFI_ERROR (Status);
++
++  Size   = AsciiStrSize (Model);
++  String = AllocatePool (Size * sizeof (CHAR16));
++  AsciiStrToUnicodeStrS (Model, String, Size);
++  UiCustomizeFrontPageBanner (2, TRUE, &String);
++  HiiSetString (gFrontPagePrivate.HiiHandle, STRING_TOKEN (STR_FRONT_PAGE_CPU_MODEL), String, NULL);
++  FreePool (String);
++
++  Status = gBS->LocateHandleBuffer (
++                  ByProtocol,
++                  &gEfiDtIoProtocolGuid,
++                  NULL,
++                  &HandleCount,
++                  &HandleBuffer
++                  );
++  ASSERT_EFI_ERROR (Status);
++
++  MemorySize = 0;
++  for (Index = 0; Index < HandleCount; Index++) {
++    EFI_DT_REG  Reg;
++    UINTN       Index2;
++
++    Status = gBS->HandleProtocol (
++                    HandleBuffer[Index],
++                    &gEfiDtIoProtocolGuid,
++                    (VOID **)&DtIo
++                    );
++    ASSERT_EFI_ERROR (Status);
++
++    if (AsciiStrCmp (DtIo->DeviceType, "memory") != 0) {
++      continue;
++    }
++
++    Index2 = 0;
++    do {
++      Status = DtIo->GetReg (DtIo, Index2++, &Reg);
++      if (EFI_ERROR (Status)) {
++        break;
++      }
++
++      MemorySize += Reg.Length;
++    } while (1);
++  }
++
++  FreePool (HandleBuffer);
++
++  ConvertMemorySizeToString (MemorySize >> 20, &String);
++  UiCustomizeFrontPageBanner (3, FALSE, &String);
++  HiiSetString (gFrontPagePrivate.HiiHandle, STRING_TOKEN (STR_FRONT_PAGE_MEMORY_SIZE), String, NULL);
++  FreePool (String);
++
++  return EFI_SUCCESS;
++}
++
+ /**
+ 
+   Update the banner information for the Front Page based on Smbios information.
+@@ -546,6 +648,13 @@ UpdateFrontPageBannerStrings (
+   HiiSetString (gFrontPagePrivate.HiiHandle, STRING_TOKEN (STR_CUSTOMIZE_BANNER_LINE5_RIGHT), NewString, NULL);
+   FreePool (NewString);
+ 
++  //
++  // Use FBP if available.
++  //
++  if (!EFI_ERROR (UpdateFrontPageBannerStringsFbp ())) {
++    return;
++  }
++
+   //
+   // Update Front Page banner strings base on SmBios Table.
+   //
+-- 
+2.34.1
+

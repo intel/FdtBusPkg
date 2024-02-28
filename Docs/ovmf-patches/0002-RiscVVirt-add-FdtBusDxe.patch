@@ -1,7 +1,7 @@
-From a4ce2cfa02a473e79aa6fc65537487fa8507dc6d Mon Sep 17 00:00:00 2001
+From 4edbcc05a5d13feb2809bafa810056795f51865c Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Mon, 26 Feb 2024 17:01:39 -0600
-Subject: [PATCH 2/8] RiscVVirt: add FdtBusDxe
+Subject: [PATCH 2/9] RiscVVirt: add FdtBusDxe
 
 Not used by anything.
 

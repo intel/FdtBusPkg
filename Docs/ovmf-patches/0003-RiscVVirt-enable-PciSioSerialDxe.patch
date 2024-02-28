@@ -1,7 +1,7 @@
-From 69ec89ea317030eaffd5d7c441fd10b42762f077 Mon Sep 17 00:00:00 2001
+From d2ddf4348b8c0d7ebdcd7f1ee0dcbf64b4f2458c Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Mon, 26 Feb 2024 17:20:41 -0600
-Subject: [PATCH 3/8] RiscVVirt: enable PciSioSerialDxe
+Subject: [PATCH 3/9] RiscVVirt: enable PciSioSerialDxe
 
 Build with FBP_SERIAL_DXE=TRUE (default) to use DT-based
 console driver. Build with FALSE for old behavior.

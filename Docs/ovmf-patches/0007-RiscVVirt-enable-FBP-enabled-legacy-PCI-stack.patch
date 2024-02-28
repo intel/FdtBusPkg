@@ -1,7 +1,7 @@
-From 11bd22457f67a9c72a144d153f9ff249464a3a05 Mon Sep 17 00:00:00 2001
+From 0de02f06df2e0c98f4d3bd474c2d376e51ed4dca Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Mon, 26 Feb 2024 18:16:36 -0600
-Subject: [PATCH 7/8] RiscVVirt: enable FBP-enabled legacy PCI stack
+Subject: [PATCH 7/9] RiscVVirt: enable FBP-enabled legacy PCI stack
 
 Build with FBP_PCI_LEGACY=TRUE (default) to use FBP-based
 PCI support libraries Build with FALSE for old behavior

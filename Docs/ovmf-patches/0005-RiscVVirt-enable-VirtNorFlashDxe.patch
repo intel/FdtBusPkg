@@ -1,0 +1,82 @@
+From 824594965c788242796b4b9476f25281b8951fa7 Mon Sep 17 00:00:00 2001
+From: Andrei Warkentin <andrei.warkentin@intel.com>
+Date: Mon, 26 Feb 2024 17:43:10 -0600
+Subject: [PATCH 5/8] RiscVVirt: enable VirtNorFlashDxe
+
+Build with FBP_NORFLASH_DXE=TRUE (default) to use DT-based
+flash driver. Build with FALSE for old behavior.
+
+Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
+---
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc |  7 +++++++
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf | 12 +++++++++++-
+ 2 files changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
+index 5e9576c09612..feb58684d5d0 100644
+--- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
++++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
+@@ -29,6 +29,7 @@ [Defines]
+   #
+   FBP_SERIAL_DXE                = TRUE
+   FBP_VIRTIO_DXE                = TRUE
++  FBP_NORFLASH_DXE              = TRUE
+ 
+   #
+   # Enable below options may cause build error or may not work on
+@@ -155,7 +156,9 @@ [LibraryClasses.common]
+   QemuLoadImageLib|OvmfPkg/Library/GenericQemuLoadImageLib/GenericQemuLoadImageLib.inf
+ 
+   TimerLib|UefiCpuPkg/Library/BaseRiscV64CpuTimerLib/BaseRiscV64CpuTimerLib.inf
++!if $(FBP_NORFLASH_DXE) == FALSE
+   VirtNorFlashPlatformLib|OvmfPkg/RiscVVirt/Library/VirtNorFlashPlatformLib/VirtNorFlashDeviceTreeLib.inf
++!endif
+ 
+   CapsuleLib|MdeModulePkg/Library/DxeCapsuleLibNull/DxeCapsuleLibNull.inf
+   BootLogoLib|MdeModulePkg/Library/BootLogoLib/BootLogoLib.inf
+@@ -414,7 +417,11 @@ [Components]
+   MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
+ 
+   UefiCpuPkg/CpuTimerDxeRiscV64/CpuTimerDxeRiscV64.inf
++!if $(FBP_NORFLASH_DXE) == TRUE
++  FdtBusPkg/Drivers/VirtNorFlashDxe/VirtNorFlashDxe.inf
++!else
+   OvmfPkg/VirtNorFlashDxe/VirtNorFlashDxe.inf
++!endif
+   MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
+ 
+   #
+diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
+index aff49852a45a..70624c1afb68 100644
+--- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
++++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
+@@ -60,7 +60,13 @@ [FV.DXEFV]
+   INF  MdeModulePkg/Universal/StatusCodeHandler/RuntimeDxe/StatusCodeHandlerRuntimeDxe.inf
+   INF  EmbeddedPkg/Drivers/FdtClientDxe/FdtClientDxe.inf
+   INF  UefiCpuPkg/CpuDxeRiscV64/CpuDxeRiscV64.inf
++!if $(FBP_NORFLASH_DXE) == TRUE
++  INF  OvmfPkg/RiscVVirt/PciCpuIo2Dxe/PciCpuIo2Dxe.inf
++  INF  FdtBusPkg/Drivers/VirtNorFlashDxe/VirtNorFlashDxe.inf
++  INF  FdtBusPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
++!else
+   INF  OvmfPkg/VirtNorFlashDxe/VirtNorFlashDxe.inf
++!endif
+ }
+ 
+ #
+@@ -110,7 +116,11 @@ [FV.DXEFV]
+ 
+ # RISC-V Core Drivers
+ INF  UefiCpuPkg/CpuTimerDxeRiscV64/CpuTimerDxeRiscV64.inf
+-INF  OvmfPkg/VirtNorFlashDxe/VirtNorFlashDxe.inf
++!if $(FBP_NORFLASH_DXE) == TRUE
++  INF  FdtBusPkg/Drivers/VirtNorFlashDxe/VirtNorFlashDxe.inf
++!else
++  INF  OvmfPkg/VirtNorFlashDxe/VirtNorFlashDxe.inf
++!endif
+ INF  MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
+ 
+ #
+-- 
+2.34.1
+

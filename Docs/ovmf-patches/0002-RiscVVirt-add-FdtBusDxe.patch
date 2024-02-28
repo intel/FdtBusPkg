@@ -1,0 +1,48 @@
+From a4ce2cfa02a473e79aa6fc65537487fa8507dc6d Mon Sep 17 00:00:00 2001
+From: Andrei Warkentin <andrei.warkentin@intel.com>
+Date: Mon, 26 Feb 2024 17:01:39 -0600
+Subject: [PATCH 2/8] RiscVVirt: add FdtBusDxe
+
+Not used by anything.
+
+Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
+---
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc | 2 ++
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf | 1 +
+ 2 files changed, 3 insertions(+)
+
+diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
+index 024badebf250..bca63deacf67 100644
+--- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
++++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
+@@ -160,6 +160,7 @@ [LibraryClasses.common]
+   PeiHardwareInfoLib|OvmfPkg/Library/HardwareInfoLib/PeiHardwareInfoLib.inf
+   PlatformHookLib|MdeModulePkg/Library/BasePlatformHookLibNull/BasePlatformHookLibNull.inf
+   ImagePropertiesRecordLib|MdeModulePkg/Library/ImagePropertiesRecordLib/ImagePropertiesRecordLib.inf
++  FbpUtilsLib|FdtBusPkg/Library/FbpUtilsLib/FbpUtilsLib.inf
+ 
+ !if $(TPM2_ENABLE) == TRUE
+   Tpm2CommandLib|SecurityPkg/Library/Tpm2CommandLib/Tpm2CommandLib.inf
+@@ -421,6 +422,7 @@ [Components]
+   OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
+   OvmfPkg/VirtioNetDxe/VirtioNet.inf
+   OvmfPkg/VirtioRngDxe/VirtioRng.inf
++  FdtBusPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
+ 
+   #
+   # FAT filesystem + GPT/MBR partitioning + UDF filesystem + virtio-fs
+diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
+index 3a542a5cb13f..2ed85c52830c 100644
+--- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
++++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
+@@ -128,6 +128,7 @@ [FV.DXEFV]
+ INF  OvmfPkg/VirtioNetDxe/VirtioNet.inf
+ INF  OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
+ INF  OvmfPkg/VirtioRngDxe/VirtioRng.inf
++INF  FdtBusPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
+ 
+ INF  ShellPkg/Application/Shell/Shell.inf
+ INF  ShellPkg/DynamicCommand/TftpDynamicCommand/TftpDynamicCommand.inf
+-- 
+2.34.1
+

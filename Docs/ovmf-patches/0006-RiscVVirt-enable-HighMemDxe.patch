@@ -1,0 +1,72 @@
+From d7ac89df3ad57f20a22f96147827776b9b9bacfb Mon Sep 17 00:00:00 2001
+From: Andrei Warkentin <andrei.warkentin@intel.com>
+Date: Mon, 26 Feb 2024 18:01:14 -0600
+Subject: [PATCH 6/8] RiscVVirt: enable HighMemDxe
+
+Build with FBP_HIGHMEMDXE_DXE=TRUE (default) to use DT-based
+HighMemDxe driver. Build with FALSE for old behavior.
+
+When building with FBP_HIGHMEM_BINDING=TRUE (default) the
+UEFI Driver Model-based driver is used. Otherwise, a legacy-style
+driver is used.
+
+Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
+---
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc | 11 +++++++++++
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf | 10 +++++++++-
+ 2 files changed, 20 insertions(+), 1 deletion(-)
+
+diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
+index feb58684d5d0..810836692446 100644
+--- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
++++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
+@@ -30,6 +30,8 @@ [Defines]
+   FBP_SERIAL_DXE                = TRUE
+   FBP_VIRTIO_DXE                = TRUE
+   FBP_NORFLASH_DXE              = TRUE
++  FBP_HIGHMEM_DXE               = TRUE
++  FBP_HIGHMEM_BINDING           = TRUE
+ 
+   #
+   # Enable below options may cause build error or may not work on
+@@ -444,7 +446,16 @@ [Components]
+       PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
+       DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
+   }
++!if $(FBP_HIGHMEM_DXE) == TRUE
++  !if $(FBP_HIGHMEM_BINDING) == TRUE
++    FdtBusPkg/Drivers/HighMemDxe/HighMemDxe.inf
++  !else
++    FdtBusPkg/Drivers/HighMemDxe/HighMemDxeNoBinding.inf
++  !endif
++!else
+   OvmfPkg/Fdt/HighMemDxe/HighMemDxe.inf
++!endif
++
+   OvmfPkg/VirtioBlkDxe/VirtioBlk.inf
+   OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
+   OvmfPkg/VirtioNetDxe/VirtioNet.inf
+diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
+index 70624c1afb68..793f69ba5d22 100644
+--- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
++++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
+@@ -81,7 +81,15 @@ [FV.DXEFV]
+   INF  OvmfPkg/Fdt/VirtioFdtDxe/VirtioFdtDxe.inf
+ !endif
+ INF  EmbeddedPkg/Drivers/FdtClientDxe/FdtClientDxe.inf
+-INF  OvmfPkg/Fdt/HighMemDxe/HighMemDxe.inf
++!if $(FBP_HIGHMEM_DXE) == TRUE
++  !if $(FBP_HIGHMEM_BINDING) == TRUE
++    INF  FdtBusPkg/Drivers/HighMemDxe/HighMemDxe.inf
++  !else
++    INF  FdtBusPkg/Drivers/HighMemDxe/HighMemDxeNoBinding.inf
++  !endif
++!else
++  INF  OvmfPkg/Fdt/HighMemDxe/HighMemDxe.inf
++!endif
+ 
+ #
+ # PI DXE Drivers producing Architectural Protocols (EFI Services)
+-- 
+2.34.1
+

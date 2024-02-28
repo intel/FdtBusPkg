@@ -75,14 +75,13 @@ index 024badebf250..df883017c1a8 100644
    MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
  
    #
-@@ -409,14 +414,18 @@ [Components]
+@@ -409,14 +414,17 @@ [Components]
    #
    # Platform Driver
    #
 -  OvmfPkg/Fdt/VirtioFdtDxe/VirtioFdtDxe.inf
 +  # OvmfPkg/Fdt/VirtioFdtDxe/VirtioFdtDxe.inf
 +  FdtBusPkg/Drivers/VirtioFdtDxe/VirtioFdtDxe.inf
-+  FdtBusPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
    EmbeddedPkg/Drivers/FdtClientDxe/FdtClientDxe.inf {
      <LibraryClasses>
        DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf

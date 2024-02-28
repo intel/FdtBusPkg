@@ -1,0 +1,212 @@
+From 69ec89ea317030eaffd5d7c441fd10b42762f077 Mon Sep 17 00:00:00 2001
+From: Andrei Warkentin <andrei.warkentin@intel.com>
+Date: Mon, 26 Feb 2024 17:20:41 -0600
+Subject: [PATCH 3/8] RiscVVirt: enable PciSioSerialDxe
+
+Build with FBP_SERIAL_DXE=TRUE (default) to use DT-based
+console driver. Build with FALSE for old behavior.
+
+Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
+---
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc           | 12 ++++
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf           |  6 +-
+ .../PlatformBootManagerLib.inf                |  2 +
+ .../PlatformBootManagerLib/PlatformBm.c       | 65 +++++++++++++++++--
+ 4 files changed, 80 insertions(+), 5 deletions(-)
+
+diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
+index bca63deacf67..d9a5d82550fd 100644
+--- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
++++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
+@@ -24,6 +24,11 @@ [Defines]
+   SKUID_IDENTIFIER               = DEFAULT
+   FLASH_DEFINITION               = OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
+ 
++  #
++  # FdtBusDxe-based build options.
++  #
++  FBP_SERIAL_DXE                = TRUE
++
+   #
+   # Enable below options may cause build error or may not work on
+   # the initial version of RISC-V package
+@@ -113,6 +118,9 @@ [Defines]
+ 
+ [BuildOptions]
+   GCC:RELEASE_*_*_CC_FLAGS       = -DMDEPKG_NDEBUG
++!if $(FBP_SERIAL_DXE) == TRUE
++  GCC:*_*_*_CC_FLAGS             = -DFBP_SERIAL_DXE
++!endif
+ !ifdef $(SOURCE_DEBUG_ENABLE)
+   GCC:*_*_RISCV64_GENFW_FLAGS    = --keepexceptiontable
+ !endif
+@@ -393,7 +401,11 @@ [Components]
+   MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe.inf
+   MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
+   MdeModulePkg/Universal/Console/TerminalDxe/TerminalDxe.inf
++!if $(FBP_SERIAL_DXE) == TRUE
++  FdtBusPkg/Drivers/PciSioSerialDxe/PciSioSerialDxe.inf
++!else
+   MdeModulePkg/Universal/SerialDxe/SerialDxe.inf
++!endif
+ 
+   MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
+ 
+diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
+index 2ed85c52830c..6ebd986c6698 100644
+--- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
++++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
+@@ -98,7 +98,11 @@ [FV.DXEFV]
+ INF  MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe.inf
+ INF  MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
+ INF  MdeModulePkg/Universal/Console/TerminalDxe/TerminalDxe.inf
+-INF  MdeModulePkg/Universal/SerialDxe/SerialDxe.inf
++!if $(FBP_SERIAL_DXE) == TRUE
++  INF  FdtBusPkg/Drivers/PciSioSerialDxe/PciSioSerialDxe.inf
++!else
++  INF  MdeModulePkg/Universal/SerialDxe/SerialDxe.inf
++!endif
+ 
+ # RISC-V Core Drivers
+ INF  UefiCpuPkg/CpuTimerDxeRiscV64/CpuTimerDxeRiscV64.inf
+diff --git a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBootManagerLib.inf b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBootManagerLib.inf
+index 9d66c8110c53..8dedff8cb268 100644
+--- a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBootManagerLib.inf
++++ b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBootManagerLib.inf
+@@ -32,6 +32,7 @@ [Packages]
+   OvmfPkg/OvmfPkg.dec
+   SecurityPkg/SecurityPkg.dec
+   ShellPkg/ShellPkg.dec
++  FdtBusPkg/FdtBusPkg.dec
+ 
+ [LibraryClasses]
+   BaseLib
+@@ -50,6 +51,7 @@ [LibraryClasses]
+   UefiBootServicesTableLib
+   UefiLib
+   UefiRuntimeServicesTableLib
++  FbpUtilsLib
+ 
+ [FixedPcd]
+   gEfiMdePkgTokenSpaceGuid.PcdUartDefaultBaudRate
+diff --git a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
+index 44fd21f74fcf..354efccd36a6 100644
+--- a/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
++++ b/OvmfPkg/RiscVVirt/Library/PlatformBootManagerLib/PlatformBm.c
+@@ -31,6 +31,12 @@
+ #include <Guid/SerialPortLibVendor.h>
+ #include <Guid/TtyTerm.h>
+ 
++#ifdef FBP_SERIAL_DXE
++#include <Library/DevicePathLib.h>
++#include <Library/FbpUtilsLib.h>
++#include <Protocol/DtIo.h>
++#endif /* FBP_SERIAL_DXE */
++
+ #include "PlatformBm.h"
+ 
+ #define DP_NODE_LEN(Type)  { (UINT8)sizeof (Type), (UINT8)(sizeof (Type) >> 8) }
+@@ -39,13 +45,18 @@
+ 
+ #pragma pack (1)
+ typedef struct {
++#ifndef FBP_SERIAL_DXE
+   VENDOR_DEVICE_PATH            SerialDxe;
++#endif /* FBP_SERIAL_DXE */
+   UART_DEVICE_PATH              Uart;
+   VENDOR_DEFINED_DEVICE_PATH    TermType;
+   EFI_DEVICE_PATH_PROTOCOL      End;
+ } PLATFORM_SERIAL_CONSOLE;
+ #pragma pack ()
+ 
++#ifdef FBP_SERIAL_DXE
++STATIC PLATFORM_SERIAL_CONSOLE mSerialConsoleSuffix = {
++#else
+ STATIC PLATFORM_SERIAL_CONSOLE  mSerialConsole = {
+   //
+   // VENDOR_DEVICE_PATH SerialDxe
+@@ -54,7 +65,7 @@ STATIC PLATFORM_SERIAL_CONSOLE  mSerialConsole = {
+     { HARDWARE_DEVICE_PATH,  HW_VENDOR_DP, DP_NODE_LEN (VENDOR_DEVICE_PATH) },
+     EDKII_SERIAL_PORT_LIB_VENDOR_GUID
+   },
+-
++#endif /* FBP_SERIAL_DXE */
+   //
+   // UART_DEVICE_PATH Uart
+   //
+@@ -784,9 +795,16 @@ PlatformBootManagerBeforeConsole (
+   VOID
+   )
+ {
+-  UINT16         FrontPageTimeout;
+-  RETURN_STATUS  PcdStatus;
+-  EFI_STATUS     Status;
++  UINT16                   FrontPageTimeout;
++  RETURN_STATUS            PcdStatus;
++  EFI_STATUS               Status;
++#ifdef FBP_SERIAL_DXE
++  EFI_HANDLE               Handle;
++  EFI_DT_IO_PROTOCOL       *DtIo;
++  EFI_DEVICE_PATH_PROTOCOL *DtDp;
++  EFI_DEVICE_PATH_PROTOCOL *NewDp;
++  CONST CHAR8              *DtStdOutPath;
++#endif /* FBP_SERIAL_DXE */
+ 
+   //
+   // Signal EndOfDxe PI Event
+@@ -837,6 +855,44 @@ PlatformBootManagerBeforeConsole (
+     NULL
+     );
+ 
++#ifdef FBP_SERIAL_DXE
++  CopyGuid (&mSerialConsoleSuffix.TermType.Guid, &gEfiTtyTermGuid);
++
++  DtIo = FbpGetDtRoot ();
++  ASSERT (DtIo != NULL);
++
++  Status = DtIo->Lookup (DtIo, "/chosen", TRUE, &Handle);
++  ASSERT_EFI_ERROR (Status);
++
++  Status = gBS->HandleProtocol (
++                  Handle,
++                  &gEfiDtIoProtocolGuid,
++                  (VOID **)&DtIo
++                  );
++  ASSERT_EFI_ERROR (Status);
++
++  DtStdOutPath = NULL;
++  Status       = DtIo->GetString (DtIo, "stdout-path", 0, &DtStdOutPath);
++  ASSERT_EFI_ERROR (Status);
++  ASSERT (DtStdOutPath != NULL);
++
++  Status = DtIo->Lookup (DtIo, DtStdOutPath, TRUE, &Handle);
++  ASSERT_EFI_ERROR (Status);
++
++  Status = gBS->HandleProtocol (
++                  Handle,
++                  &gEfiDevicePathProtocolGuid,
++                  (VOID **)&DtDp
++                  );
++  ASSERT_EFI_ERROR (Status);
++
++  NewDp = AppendDevicePath (DtDp, (VOID *)&mSerialConsoleSuffix);
++
++  EfiBootManagerUpdateConsoleVariable (ConIn, NewDp, NULL);
++  EfiBootManagerUpdateConsoleVariable (ConOut, NewDp, NULL);
++  EfiBootManagerUpdateConsoleVariable (ErrOut, NewDp, NULL);
++  FreePool (NewDp);
++#else
+   //
+   // Add the hardcoded serial console device path to ConIn, ConOut, ErrOut.
+   //
+@@ -857,6 +913,7 @@ PlatformBootManagerBeforeConsole (
+     (EFI_DEVICE_PATH_PROTOCOL *)&mSerialConsole,
+     NULL
+     );
++#endif /* FBP_SERIAL_DXE */
+ 
+   //
+   // Set the front page timeout from the QEMU configuration.
+-- 
+2.34.1
+

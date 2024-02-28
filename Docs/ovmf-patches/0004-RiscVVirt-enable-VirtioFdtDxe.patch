@@ -1,0 +1,83 @@
+From c01122031cdc401398472289fb3d3a2821275e88 Mon Sep 17 00:00:00 2001
+From: Andrei Warkentin <andrei.warkentin@intel.com>
+Date: Mon, 26 Feb 2024 17:27:05 -0600
+Subject: [PATCH 4/8] RiscVVirt: enable VirtioFdtDxe
+
+Build with FBP_VIRTIO_DXE=TRUE (default) to use DT-based
+virtio driver. Build with FALSE for old behavior.
+
+Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
+---
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc | 8 ++++++++
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf | 6 +++++-
+ OvmfPkg/RiscVVirt/Sec/Platform.c    | 2 ++
+ 3 files changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
+index d9a5d82550fd..5e9576c09612 100644
+--- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
++++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
+@@ -28,6 +28,7 @@ [Defines]
+   # FdtBusDxe-based build options.
+   #
+   FBP_SERIAL_DXE                = TRUE
++  FBP_VIRTIO_DXE                = TRUE
+ 
+   #
+   # Enable below options may cause build error or may not work on
+@@ -121,6 +122,9 @@ [BuildOptions]
+ !if $(FBP_SERIAL_DXE) == TRUE
+   GCC:*_*_*_CC_FLAGS             = -DFBP_SERIAL_DXE
+ !endif
++!if $(FBP_VIRTIO_DXE) == TRUE
++  GCC:*_*_*_CC_FLAGS             = -DFBP_VIRTIO_DXE
++!endif
+ !ifdef $(SOURCE_DEBUG_ENABLE)
+   GCC:*_*_RISCV64_GENFW_FLAGS    = --keepexceptiontable
+ !endif
+@@ -422,7 +426,11 @@ [Components]
+   #
+   # Platform Driver
+   #
++!if $(FBP_VIRTIO_DXE) == TRUE
++  FdtBusPkg/Drivers/VirtioFdtDxe/VirtioFdtDxe.inf
++!else
+   OvmfPkg/Fdt/VirtioFdtDxe/VirtioFdtDxe.inf
++!endif
+   EmbeddedPkg/Drivers/FdtClientDxe/FdtClientDxe.inf {
+     <LibraryClasses>
+       DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
+diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
+index 6ebd986c6698..aff49852a45a 100644
+--- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
++++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf
+@@ -69,7 +69,11 @@ [FV.DXEFV]
+ INF  MdeModulePkg/Core/Dxe/DxeMain.inf
+ INF  MdeModulePkg/Universal/PCD/Dxe/Pcd.inf
+ INF  MdeModulePkg/Universal/DevicePathDxe/DevicePathDxe.inf
+-INF  OvmfPkg/Fdt/VirtioFdtDxe/VirtioFdtDxe.inf
++!if $(FBP_VIRTIO_DXE) == TRUE
++  INF  FdtBusPkg/Drivers/VirtioFdtDxe/VirtioFdtDxe.inf
++!else
++  INF  OvmfPkg/Fdt/VirtioFdtDxe/VirtioFdtDxe.inf
++!endif
+ INF  EmbeddedPkg/Drivers/FdtClientDxe/FdtClientDxe.inf
+ INF  OvmfPkg/Fdt/HighMemDxe/HighMemDxe.inf
+ 
+diff --git a/OvmfPkg/RiscVVirt/Sec/Platform.c b/OvmfPkg/RiscVVirt/Sec/Platform.c
+index c66432473067..78e659d99c85 100644
+--- a/OvmfPkg/RiscVVirt/Sec/Platform.c
++++ b/OvmfPkg/RiscVVirt/Sec/Platform.c
+@@ -140,7 +140,9 @@ PlatformPeimInitialization (
+ 
+   PopulateIoResources (Base, "ns16550a");
+   PopulateIoResources (Base, "qemu,fw-cfg-mmio");
++#ifndef FBP_VIRTIO_DXE
+   PopulateIoResources (Base, "virtio,mmio");
++#endif /* FBP_VIRTIO_DXE */
+ 
+   return EFI_SUCCESS;
+ }
+-- 
+2.34.1
+

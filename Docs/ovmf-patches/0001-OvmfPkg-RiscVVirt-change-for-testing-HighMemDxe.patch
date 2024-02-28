@@ -1,7 +1,7 @@
-From 10a19d64eff3a21dfba11342294730a24ee17bf8 Mon Sep 17 00:00:00 2001
+From db13574300bd170202dd8a8dc79fab611d3a07e6 Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Thu, 15 Feb 2024 23:25:47 -0600
-Subject: [PATCH 1/1] OvmfPkg/RiscVVirt: change for testing HighMemDxe
+Subject: [PATCH 1/8] OvmfPkg/RiscVVirt: change for testing HighMemDxe
 
 Since MemoryPeimInitialization loops over all "memory"
 devices, HighMemDxe does nothing. Stop after the first

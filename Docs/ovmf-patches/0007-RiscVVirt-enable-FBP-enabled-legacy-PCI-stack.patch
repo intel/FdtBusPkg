@@ -1,0 +1,85 @@
+From 0de02f06df2e0c98f4d3bd474c2d376e51ed4dca Mon Sep 17 00:00:00 2001
+From: Andrei Warkentin <andrei.warkentin@intel.com>
+Date: Mon, 26 Feb 2024 18:16:36 -0600
+Subject: [PATCH 7/9] RiscVVirt: enable FBP-enabled legacy PCI stack
+
+Build with FBP_PCI_LEGACY=TRUE (default) to use FBP-based
+PCI support libraries Build with FALSE for old behavior
+(which use FdtClientDxe).
+
+Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
+---
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc | 27 +++++++++++++++++++++++----
+ 1 file changed, 23 insertions(+), 4 deletions(-)
+
+diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
+index 810836692446..8dfef9c3c9ec 100644
+--- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
++++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
+@@ -32,6 +32,7 @@ [Defines]
+   FBP_NORFLASH_DXE              = TRUE
+   FBP_HIGHMEM_DXE               = TRUE
+   FBP_HIGHMEM_BINDING           = TRUE
++  FBP_PCI_LEGACY                = TRUE
+ 
+   #
+   # Enable below options may cause build error or may not work on
+@@ -170,14 +171,20 @@ [LibraryClasses.common]
+   FrameBufferBltLib|MdeModulePkg/Library/FrameBufferBltLib/FrameBufferBltLib.inf
+   QemuBootOrderLib|OvmfPkg/Library/QemuBootOrderLib/QemuBootOrderLib.inf
+   FileExplorerLib|MdeModulePkg/Library/FileExplorerLib/FileExplorerLib.inf
++!if $(FBP_PCI_LEGACY) == TRUE
++  PciPcdProducerLib|FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++  PciHostBridgeLib|FdtBusPkg/Library/PciHostBridgeLibEcam/PciHostBridgeLibEcam.inf
++!else
+   PciPcdProducerLib|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
+-  PciSegmentLib|MdePkg/Library/BasePciSegmentLibPci/BasePciSegmentLibPci.inf
+   PciHostBridgeLib|OvmfPkg/Fdt/FdtPciHostBridgeLib/FdtPciHostBridgeLib.inf
++!endif
++  PciSegmentLib|MdePkg/Library/BasePciSegmentLibPci/BasePciSegmentLibPci.inf
+   PciHostBridgeUtilityLib|OvmfPkg/Library/PciHostBridgeUtilityLib/PciHostBridgeUtilityLib.inf
+   PeiHardwareInfoLib|OvmfPkg/Library/HardwareInfoLib/PeiHardwareInfoLib.inf
+   PlatformHookLib|MdeModulePkg/Library/BasePlatformHookLibNull/BasePlatformHookLibNull.inf
+   ImagePropertiesRecordLib|MdeModulePkg/Library/ImagePropertiesRecordLib/ImagePropertiesRecordLib.inf
+   FbpUtilsLib|FdtBusPkg/Library/FbpUtilsLib/FbpUtilsLib.inf
++  FbpPciUtilsLib|FdtBusPkg/Library/FbpPciUtilsLib/FbpPciUtilsLib.inf
+ 
+ !if $(TPM2_ENABLE) == TRUE
+   Tpm2CommandLib|SecurityPkg/Library/Tpm2CommandLib/Tpm2CommandLib.inf
+@@ -546,12 +553,20 @@ [Components]
+   #
+   OvmfPkg/RiscVVirt/PciCpuIo2Dxe/PciCpuIo2Dxe.inf {
+     <LibraryClasses>
+-      NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++      !if $(FBP_PCI_LEGACY) == TRUE
++        NULL|FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++      !else
++        NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++      !endif
+   }
+   MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe.inf
+   MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe.inf {
+     <LibraryClasses>
+-      NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++      !if $(FBP_PCI_LEGACY) == TRUE
++        NULL|FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++      !else
++        NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++      !endif
+   }
+   OvmfPkg/PciHotPlugInitDxe/PciHotPlugInit.inf
+   OvmfPkg/VirtioPciDeviceDxe/VirtioPciDeviceDxe.inf
+@@ -601,5 +616,9 @@ [Components]
+   MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
+   OvmfPkg/AcpiPlatformDxe/AcpiPlatformDxe.inf {
+     <LibraryClasses>
+-      NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++      !if $(FBP_PCI_LEGACY) == TRUE
++        NULL|FdtBusPkg/Library/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++      !else
++        NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
++      !endif
+   }
+-- 
+2.34.1
+

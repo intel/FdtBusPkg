@@ -261,6 +261,99 @@ GetTranslationByResourceType (
 }
 
 /**
+  Ensure the compatibility of an IO space descriptor with the IO aperture.
+
+  The IO space descriptor can come from the GCD IO space map, or it can
+  represent a gap between two neighboring IO space descriptors. In the latter
+  case, the GcdIoType field is expected to be EfiGcdIoTypeNonExistent.
+
+  If the IO space descriptor already has type EfiGcdIoTypeIo, then no action is
+  taken -- it is by definition compatible with the aperture.
+
+  Otherwise, the intersection of the IO space descriptor is calculated with the
+  aperture. If the intersection is the empty set (no overlap), no action is
+  taken; the IO space descriptor is compatible with the aperture.
+
+  Otherwise, the type of the descriptor is investigated again. If the type is
+  EfiGcdIoTypeNonExistent (representing a gap, or a genuine descriptor with
+  such a type), then an attempt is made to add the intersection as IO space to
+  the GCD IO space map. This ensures continuity for the aperture, and the
+  descriptor is deemed compatible with the aperture.
+
+  Otherwise, the IO space descriptor is incompatible with the IO aperture.
+
+  @param[in] Base        Base address of the aperture.
+  @param[in] Length      Length of the aperture.
+  @param[in] Descriptor  The descriptor to ensure compatibility with the
+                         aperture for.
+
+  @retval EFI_SUCCESS            The descriptor is compatible. The GCD IO space
+                                 map may have been updated, for continuity
+                                 within the aperture.
+  @retval EFI_INVALID_PARAMETER  The descriptor is incompatible.
+  @return                        Error codes from gDS->AddIoSpace().
+**/
+STATIC
+EFI_STATUS
+IntersectIoDescriptor (
+  IN  UINT64                             Base,
+  IN  UINT64                             Length,
+  IN  CONST EFI_GCD_IO_SPACE_DESCRIPTOR  *Descriptor
+  )
+{
+  UINT64      IntersectionBase;
+  UINT64      IntersectionEnd;
+  EFI_STATUS  Status;
+
+  if (Descriptor->GcdIoType == EfiGcdIoTypeIo) {
+    return EFI_SUCCESS;
+  }
+
+  IntersectionBase = MAX (Base, Descriptor->BaseAddress);
+  IntersectionEnd  = MIN (
+                       Base + Length,
+                       Descriptor->BaseAddress + Descriptor->Length
+                       );
+  if (IntersectionBase >= IntersectionEnd) {
+    //
+    // The descriptor and the aperture don't overlap.
+    //
+    return EFI_SUCCESS;
+  }
+
+  if (Descriptor->GcdIoType == EfiGcdIoTypeNonExistent) {
+    Status = gDS->AddIoSpace (
+                    EfiGcdIoTypeIo,
+                    IntersectionBase,
+                    IntersectionEnd - IntersectionBase
+                    );
+
+    DEBUG ((
+      EFI_ERROR (Status) ? DEBUG_ERROR : DEBUG_VERBOSE,
+      "%a: add [0x%lx-0x%lx]: %r\n",
+      __func__,
+      IntersectionBase,
+      IntersectionEnd - 1,
+      Status
+      ));
+    return Status;
+  }
+
+  DEBUG ((
+    DEBUG_ERROR,
+    "%a: desc [0x%lx-0x%lx] type %u conflicts with "
+    "aperture [0x%lx, 0x%lx]\n",
+    __func__,
+    Descriptor->BaseAddress,
+    Descriptor->BaseAddress + Descriptor->Length - 1,
+    (UINT32)Descriptor->GcdIoType,
+    Base,
+    Base + Length - 1
+    ));
+  return EFI_INVALID_PARAMETER;
+}
+
+/**
   Add IO space to GCD.
 
   Only adds the space if it doesn't exist already.
@@ -275,10 +368,12 @@ AddIoSpace (
   IN  EFI_DT_RANGE  *Range
   )
 {
+  UINTN                        Index;
   EFI_STATUS                   Status;
   EFI_PHYSICAL_ADDRESS         Address;
   UINTN                        Length;
-  EFI_GCD_IO_SPACE_DESCRIPTOR  GcdDescriptor;
+  UINTN                        NumberOfDescriptors;
+  EFI_GCD_IO_SPACE_DESCRIPTOR  *IoSpaceMap;
 
   //
   // The EFI_DT_RANGE describes the translation of PCI I/O
@@ -311,55 +406,49 @@ AddIoSpace (
   Address = RB (*Range);
   Length  = RS (*Range);
 
-  Status = gDS->GetIoSpaceDescriptor (
-                  Address,
-                  &GcdDescriptor
-                  );
+  Status = gDS->GetIoSpaceMap (&NumberOfDescriptors, &IoSpaceMap);
   if (EFI_ERROR (Status)) {
-    //
-    // This can happen if Address exceeds the Gcd limits as set
-    // by the Cpu HOB. You'll get an EFI_NOT_FOUND and it's really
-    // a programmer error since the Address is clearly invalid.
-    // ("programmer" here refers in the wider sense to the platform
-    // firmware as a whole).
-    //
     DEBUG ((
       DEBUG_ERROR,
-      "%a: GetIoSpaceDescriptor(0x%lx-0x%lx): %r\n",
+      "%a: GetIoSpaceMap(): %r\n",
       __func__,
-      Address,
-      Address + Length - 1,
       Status
       ));
-    if (Status == EFI_NOT_FOUND) {
-      Status = EFI_INVALID_PARAMETER;
+    return Status;
+  }
+
+  for (Index = 0; Index < NumberOfDescriptors; Index++) {
+    Status = IntersectIoDescriptor (Address, Length, &IoSpaceMap[Index]);
+    if (EFI_ERROR (Status)) {
+      goto FreeIoSpaceMap;
     }
-
-    return Status;
   }
 
-  if ((Address + Length - 1) >
-      (GcdDescriptor.BaseAddress + GcdDescriptor.Length - 1))
+  DEBUG_CODE_BEGIN ();
+  //
+  // Make sure there are adjacent descriptors covering [Base, Base + Length).
+  // It is possible that they have not been merged; merging can be prevented
+  // by allocation.
+  //
+  UINT64                       CheckBase;
+  EFI_STATUS                   CheckStatus;
+  EFI_GCD_IO_SPACE_DESCRIPTOR  Descriptor;
+
+  for (CheckBase = Address;
+       CheckBase < Address + Length;
+       CheckBase = Descriptor.BaseAddress + Descriptor.Length)
   {
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: [0x%lx, 0x%lx) straddles multiple GCD entries\n",
-      __func__,
-      Address,
-      Address + Length - 1
-      ));
-    Status = EFI_ACCESS_DENIED;
-    return Status;
+    CheckStatus = gDS->GetIoSpaceDescriptor (CheckBase, &Descriptor);
+    ASSERT_EFI_ERROR (CheckStatus);
+    ASSERT (Descriptor.GcdIoType == EfiGcdIoTypeIo);
   }
 
-  if (GcdDescriptor.GcdIoType == EfiGcdIoTypeIo) {
-    //
-    // Already present.
-    //
-    return EFI_SUCCESS;
-  }
+  DEBUG_CODE_END ();
 
-  return gDS->AddIoSpace (EfiGcdIoTypeIo, Address, Length);
+FreeIoSpaceMap:
+  FreePool (IoSpaceMap);
+
+  return Status;
 }
 
 /**

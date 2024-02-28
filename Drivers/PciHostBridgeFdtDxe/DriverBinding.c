@@ -328,6 +328,15 @@ DriverStop (
     return Status;
   }
 
+  //
+  // Installed after PciBusDxe enumeration. Remove if it exists.
+  //
+  gBS->UninstallProtocolInterface (
+         ControllerHandle,
+         &gEfiPciEnumerationCompleteProtocolGuid,
+         NULL
+         );
+
   RootBridgeFree (RootBridge);
 
   gBS->CloseProtocol (

@@ -48,6 +48,7 @@
   gEfiDtIoProtocolGuid                            ## CONSUMES
   gEfiPciHostBridgeResourceAllocationProtocolGuid ## PRODUCES
   gEfiPciRootBridgeIoProtocolGuid                 ## PRODUCES
+  gEfiPciEnumerationCompleteProtocolGuid          ## CONSUMES
 
 [Pcd]
   gEfiMdePkgTokenSpaceGuid.PcdPciIoTranslation                ## PRODUCES

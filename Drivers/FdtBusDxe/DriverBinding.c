@@ -101,13 +101,28 @@ DriverSupported (
 
   DtDevice = DT_DEV_FROM_THIS (DtIo);
 
-  if (((DtDevice->Flags & DT_DEVICE_TEST_UNIT) != 0) ||
-      (AsciiStrCmp (
-         DtIo->Name,
-         GetDtRootNameFromDeviceFlags (DtDevice->Flags)
-         ) == 0) ||
-      (DtIo->IsCompatible (DtIo, "simple-bus") == EFI_SUCCESS))
+  if (DtIo->ParentDevice == NULL) {
+    //
+    // DT root.
+    //
+    ASSERT (AsciiStrCmp (DtIo->Name, GetDtRootNameFromDeviceFlags (DtDevice->Flags)) == 0);
+    Status = EFI_SUCCESS;
+  } else if (DtIo->IsCompatible (DtIo, "simple-bus") == EFI_SUCCESS) {
+    //
+    // Device container.
+    //
+    Status = EFI_SUCCESS;
+  } else if ((AsciiStrCmp (DtIo->Name, "cpus") == 0) &&
+             (DtDevice->Parent == GetDtRootFromDeviceFlags (DtDevice->Flags)))
   {
+    //
+    // CPUs container.
+    //
+    Status = EFI_SUCCESS;
+  } else if ((DtDevice->Flags & DT_DEVICE_TEST_UNIT) != 0) {
+    //
+    // Test device.
+    //
     Status = EFI_SUCCESS;
   } else {
     //

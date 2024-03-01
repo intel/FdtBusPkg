@@ -386,7 +386,7 @@ PrintMemTypeAttrs (
         Str = "??";
     }
 
-    Print (L"%a ", Str);
+    Print (L"%a", Str);
   }
 
   if (NewLine) {

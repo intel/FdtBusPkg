@@ -25,6 +25,7 @@
   DtIoProp.c
   DtIoPropParse.c
   DtIo.c
+  DtIoDma.c
   Entry.c
   Fdt.c
   Utils.c

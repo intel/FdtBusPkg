@@ -750,7 +750,7 @@ EFI_STATUS
   IN      VOID                              *HostAddress,
   IN      EFI_DT_IO_PROTOCOL_DMA_EXTRA      *ExtraConstraints OPTIONAL,
   IN  OUT UINTN                             *NumberOfBytes,
-  OUT     EFI_PHYSICAL_ADDRESS              *DeviceAddress,
+  OUT     EFI_DT_BUS_ADDRESS                *DeviceAddress,
   OUT     VOID                              **Mapping
   );
 

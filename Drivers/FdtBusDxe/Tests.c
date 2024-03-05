@@ -77,7 +77,6 @@ TEST_DEF (G0) {
   ASSERT (DtIo->IsCompatible (DtIo, "asldflkasjf") == EFI_NOT_FOUND);
   ASSERT (AsciiStrCmp (DtIo->DeviceType, "") == 0);
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_OKAY);
-  ASSERT (!DtIo->IsDmaCoherent);
 
   ASSERT (
     DtIo->GetProp (NULL, "compatible", &Property) ==
@@ -118,7 +117,6 @@ TEST_DEF (G1) {
   EFI_HANDLE          FoundHandle;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
-  ASSERT (DtIo->IsDmaCoherent);
   ASSERT (AsciiStrCmp (DtIo->DeviceType, "bar") == 0);
 
   ASSERT (DtIo->Lookup (NULL, "/unit-test-devices/G0", FALSE, &FoundHandle) == EFI_INVALID_PARAMETER);
@@ -664,6 +662,30 @@ TEST_DEF (G7P0) {
   return TRUE;
 }
 
+//
+// DMA-related tests.
+//
+TEST_DEF (Dma0) {
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+  ASSERT (!DtIo->IsDmaCoherent);
+
+  return TRUE;
+}
+
+TEST_DEF (Dma1) {
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+  ASSERT (DtIo->IsDmaCoherent);
+
+  return TRUE;
+}
+
+TEST_DEF (Dma2) {
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+  ASSERT (!DtIo->IsDmaCoherent);
+
+  return TRUE;
+}
+
 STATIC TestDesc  TestDescs[] = {
   TEST_DECL (DtTestRoot),
   TEST_DECL (G0),
@@ -687,6 +709,9 @@ STATIC TestDesc  TestDescs[] = {
   TEST_DECL (G5P3),
   TEST_DECL (G6),
   TEST_DECL (G7P0),
+  TEST_DECL (Dma0),
+  TEST_DECL (Dma1),
+  TEST_DECL (Dma2),
 };
 
 /**

@@ -1,12 +1,28 @@
 /** @file
 
-    Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
+    Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
 
     SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "FdtBusDxe.h"
+
+#define KNOWN_CONSTRAINTS  (EFI_DT_IO_DMA_WITH_MAX_ADDRESS)
+#define NO_MAPPING         (VOID *) (UINTN) -1
+
+#define MAP_INFO_SIGNATURE  SIGNATURE_32 ('_', 'm', 'a', 'p')
+typedef struct {
+  UINT32                              Signature;
+  LIST_ENTRY                          Link;
+  EFI_DT_IO_PROTOCOL_DMA_OPERATION    Operation;
+  UINTN                               NumberOfBytes;
+  UINTN                               NumberOfPages;
+  EFI_PHYSICAL_ADDRESS                HostAddress;
+  EFI_PHYSICAL_ADDRESS                MappedHostAddress;
+} MAP_INFO;
+
+#define MAP_INFO_FROM_LINK(a)  CR (a, MAP_INFO, Link, MAP_INFO_SIGNATURE)
 
 /**
   Provides the device-specific addresses needed to access system memory.
@@ -40,7 +56,104 @@ DtIoMap (
   OUT     VOID                              **Mapping
   )
 {
-  return EFI_UNSUPPORTED;
+  EFI_STATUS            Status;
+  EFI_PHYSICAL_ADDRESS  MaxAddress;
+  EFI_PHYSICAL_ADDRESS  PhysicalAddress;
+  MAP_INFO              *MapInfo;
+  DT_DEVICE             *DtDevice;
+
+  if ((This == NULL) ||
+      (Operation >= EfiDtIoDmaOperationMaximum) ||
+      (HostAddress == NULL) ||
+      (NumberOfBytes == NULL) ||
+      (DeviceAddress == NULL) ||
+      (Mapping == NULL))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DtDevice = DT_DEV_FROM_THIS (This);
+
+  MaxAddress = -1;
+  if (ExtraConstraints != NULL) {
+    if ((ExtraConstraints->Flags & ~KNOWN_CONSTRAINTS) != 0)
+    {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    if ((ExtraConstraints->Flags & EFI_DT_IO_DMA_WITH_MAX_ADDRESS) != 0) {
+      MaxAddress = ExtraConstraints->MaxAddress;
+    }
+  }
+
+  PhysicalAddress = (EFI_PHYSICAL_ADDRESS)HostAddress;
+  if ((PhysicalAddress + *NumberOfBytes - 1) > MaxAddress) {
+    if (Operation == EfiDtIoDmaOperationBusMasterCommonBuffer) {
+      //
+      // Common buffer operations cannot be remapped.... in the sense
+      // that the driver expecting to use common buffer operations won't
+      // be calling map/unmap on I/O, so this is a user error. The buffer
+      // should have gotten created with the correct constraints and
+      // it was not.
+      //
+      return EFI_INVALID_PARAMETER;
+    }
+
+    //
+    // Bounce here.
+    //
+    MapInfo = AllocatePool (sizeof (MAP_INFO));
+    if (MapInfo == NULL) {
+      *NumberOfBytes = 0;
+      Status         = EFI_OUT_OF_RESOURCES;
+      DEBUG ((DEBUG_ERROR, "%a: MAP_INFO: %r\n", Status));
+      return Status;
+    }
+
+    MapInfo->Signature         = MAP_INFO_SIGNATURE;
+    MapInfo->Operation         = Operation;
+    MapInfo->NumberOfBytes     = *NumberOfBytes;
+    MapInfo->NumberOfPages     = EFI_SIZE_TO_PAGES (*NumberOfBytes);
+    MapInfo->HostAddress       = PhysicalAddress;
+    MapInfo->MappedHostAddress = MaxAddress;
+
+    Status = gBS->AllocatePages (
+                    AllocateMaxAddress,
+                    EfiBootServicesData,
+                    MapInfo->NumberOfPages,
+                    &MapInfo->MappedHostAddress
+                    );
+    if (EFI_ERROR (Status)) {
+      FreePool (MapInfo);
+      *NumberOfBytes = 0;
+      DEBUG ((DEBUG_ERROR, "%a: AllocatePages: %r\n", Status));
+      return Status;
+    }
+
+    ZeroMem (
+      (VOID *)MapInfo->MappedHostAddress,
+      EFI_PAGES_TO_SIZE (MapInfo->NumberOfPages)
+      );
+
+    if (Operation == EfiDtIoDmaOperationBusMasterRead) {
+      CopyMem (
+        (VOID *)MapInfo->MappedHostAddress,
+        (VOID *)MapInfo->HostAddress,
+        MapInfo->NumberOfBytes
+        );
+    }
+
+    InsertTailList (&DtDevice->Maps, &MapInfo->Link);
+
+    *DeviceAddress = MapInfo->MappedHostAddress;
+    *Mapping       = MapInfo;
+    return EFI_SUCCESS;
+  }
+
+  *DeviceAddress = PhysicalAddress;
+  *Mapping       = NO_MAPPING;
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -60,6 +173,60 @@ DtIoUnmap (
   IN  VOID                *Mapping
   )
 {
+  MAP_INFO    *MapInfo;
+  LIST_ENTRY  *Link;
+  DT_DEVICE   *DtDevice;
+
+  if (This == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DtDevice = DT_DEV_FROM_THIS (This);
+
+  if (Mapping == NO_MAPPING) {
+    return EFI_SUCCESS;
+  }
+
+  MapInfo = NO_MAPPING;
+  for (Link = GetFirstNode (&DtDevice->Maps)
+       ; !IsNull (&DtDevice->Maps, Link)
+       ; Link = GetNextNode (&DtDevice->Maps, Link)
+       )
+  {
+    MapInfo = MAP_INFO_FROM_LINK (Link);
+    if (MapInfo == Mapping) {
+      break;
+    }
+  }
+
+  //
+  // Mapping is not a valid value returned by Map().
+  //
+  if (MapInfo != Mapping) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  RemoveEntryList (&MapInfo->Link);
+
+  //
+  // If this is a write operation from the Bus Master's point of view,
+  // then copy the contents of the mapped buffer into the real buffer
+  // so the processor can read the contents of the real buffer.
+  //
+  if (MapInfo->Operation == EfiDtIoDmaOperationBusMasterRead) {
+    CopyMem (
+      (VOID *)MapInfo->HostAddress,
+      (VOID *)MapInfo->MappedHostAddress,
+      MapInfo->NumberOfBytes
+      );
+  }
+
+  //
+  // Free the mapped buffer and the MAP_INFO structure.
+  //
+  gBS->FreePages (MapInfo->MappedHostAddress, MapInfo->NumberOfPages);
+  FreePool (Mapping);
+
   return EFI_UNSUPPORTED;
 }
 
@@ -90,7 +257,47 @@ DtIoAllocateBuffer (
   OUT VOID                          **HostAddress
   )
 {
-  return EFI_UNSUPPORTED;
+  EFI_STATUS            Status;
+  EFI_PHYSICAL_ADDRESS  Address;
+
+  if (This == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if ((MemoryType != EfiBootServicesData) &&
+      (MemoryType != EfiRuntimeServicesData))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Address = -1;
+  if (ExtraConstraints != NULL) {
+    if ((ExtraConstraints->Flags & ~KNOWN_CONSTRAINTS) != 0)
+    {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    if ((ExtraConstraints->Flags & EFI_DT_IO_DMA_WITH_MAX_ADDRESS) != 0) {
+      Address = ExtraConstraints->MaxAddress;
+    }
+  }
+
+  Status = gBS->AllocatePages (
+                  AllocateMaxAddress,
+                  MemoryType,
+                  Pages,
+                  &Address
+                  );
+  if (!EFI_ERROR (Status)) {
+    ZeroMem (
+      (VOID *)Address,
+      EFI_PAGES_TO_SIZE (Pages)
+      );
+
+    *HostAddress = (VOID *)Address;
+  }
+
+  return Status;
 }
 
 /**
@@ -113,5 +320,9 @@ DtIoFreeBuffer (
   IN  VOID                *HostAddress
   )
 {
-  return EFI_UNSUPPORTED;
+  if (This == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  return gBS->FreePages ((EFI_PHYSICAL_ADDRESS)HostAddress, Pages);
 }

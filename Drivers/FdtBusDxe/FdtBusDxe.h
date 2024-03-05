@@ -81,6 +81,10 @@ struct _DT_DEVICE {
   // Set via DtIoSetCallbacks.
   //
   EFI_DT_IO_PROTOCOL_CB      *Callbacks;
+  //
+  // DMA maps.
+  //
+  LIST_ENTRY                 Maps;
 };
 
 VOID *

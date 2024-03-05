@@ -157,6 +157,8 @@ DtDeviceCreate (
     InsertTailList (&gCriticalDevices, &DtDevice->Link);
   }
 
+  InitializeListHead (&DtDevice->Maps);
+
   //
   // Core.
   //
@@ -353,11 +355,22 @@ DtDeviceRemove (
   }
 
   DtDevice = DT_DEV_FROM_THIS (DtIo);
-  Status   = DtDeviceUnregister (
-               DtDevice,
-               ParentHandle,
-               DriverBindingHandle
-               );
+
+  if (!IsListEmpty (&DtDevice->Maps)) {
+    Status = EFI_ACCESS_DENIED;
+    DEBUG ((
+      DEBUG_ERROR,
+      "%s: DMA mappings still present\n",
+      DtIo->ComponentName
+      ));
+    return Status;
+  }
+
+  Status = DtDeviceUnregister (
+             DtDevice,
+             ParentHandle,
+             DriverBindingHandle
+             );
   if (EFI_ERROR (Status)) {
     DEBUG ((
       DEBUG_ERROR,

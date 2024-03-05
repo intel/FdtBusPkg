@@ -98,7 +98,6 @@ struct _PCI_ROOT_BRIDGE_INSTANCE {
   EFI_DT_IO_PROTOCOL                                  *DtIo;
   CHAR16                                              *DevicePathStr;
   VOID                                                *ConfigBuffer;
-  LIST_ENTRY                                          Maps;
   EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL                     RootBridgeIo;
 
   UINT32                                              Segment;
@@ -126,19 +125,6 @@ struct _PCI_ROOT_BRIDGE_INSTANCE {
 #define PCI_ROOT_BRIDGE_FROM_THIS(a)  CR (a, PCI_ROOT_BRIDGE_INSTANCE, RootBridgeIo, PCI_ROOT_BRIDGE_SIGNATURE)
 
 #define PCI_ROOT_BRIDGE_FROM_RES_ALLOC(a)  CR (a, PCI_ROOT_BRIDGE_INSTANCE, ResAlloc, PCI_ROOT_BRIDGE_SIGNATURE)
-
-#define MAP_INFO_SIGNATURE  SIGNATURE_32 ('_', 'm', 'a', 'p')
-typedef struct {
-  UINT32                                       Signature;
-  LIST_ENTRY                                   Link;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION    Operation;
-  UINTN                                        NumberOfBytes;
-  UINTN                                        NumberOfPages;
-  EFI_PHYSICAL_ADDRESS                         HostAddress;
-  EFI_PHYSICAL_ADDRESS                         MappedHostAddress;
-} MAP_INFO;
-
-#define MAP_INFO_FROM_LINK(a)  CR (a, MAP_INFO, Link, MAP_INFO_SIGNATURE)
 
 VOID
 HostBridgeInit (

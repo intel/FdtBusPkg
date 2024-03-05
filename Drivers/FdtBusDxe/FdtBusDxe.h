@@ -64,6 +64,14 @@ extern LIST_ENTRY                    gCriticalDevices;
 #endif /* MDEPKG_NDEBUG */
 #define DT_DEVICE_INHERITED  (DT_DEVICE_TEST | DT_DEVICE_TEST_UNIT)
 
+#if defined(MDE_CPU_AARCH64)
+#define DMA_DEFAULT_IS_COHERENT FALSE
+#elif defined(MDE_CPU_RISCV64)
+#define DMA_DEFAULT_IS_COHERENT FALSE
+#else
+#error Define DMA_DEFAULT_IS_COHERENT for your architecture!
+#endif
+
 struct _DT_DEVICE {
   UINTN                      Signature;
   EFI_HANDLE                 Handle;

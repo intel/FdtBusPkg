@@ -195,6 +195,19 @@ typedef enum {
   EfiDtIoDmaOperationMaximum
 } EFI_DT_IO_PROTOCOL_DMA_OPERATION;
 
+typedef struct {
+#define EFI_DT_IO_DMA_WITH_MAX_ADDRESS BIT0
+  ///
+  /// When EFI_DT_IO_DMA_WITH_MAX_ADDRESS is set, the MaxAddress
+  /// field will be honored.
+  ///
+  UINT64                Flags;
+  ///
+  /// Maximum address viable for DMA operations.
+  ///
+  EFI_PHYSICAL_ADDRRESS MaxAddress;
+} EFI_DT_IO_PROTOCOL_DMA_EXTRA;
+
 typedef enum {
   EfiDtIoRegTypeInvalid,
   //
@@ -1503,6 +1516,7 @@ EFI_STATUS
   IN      EFI_DT_IO_PROTOCOL                *This,
   IN      EFI_DT_IO_PROTOCOL_DMA_OPERATION  Operation,
   IN      VOID                              *HostAddress,
+  IN      EFI_DT_IO_PROTOCOL_DMA_EXTRA      *ExtraConstraints OPTIONAL,
   IN  OUT UINTN                             *NumberOfBytes,
   OUT     EFI_PHYSICAL_ADDRESS              *DeviceAddress,
   OUT     VOID                              **Mapping
@@ -1516,6 +1530,7 @@ EFI_STATUS
 | `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
 | `Operation` | Indicates if the bus master is going to read or write to system memory. |
 | `HostAddress` | The system memory address to map to the device. |
+| `ExtraConstraints` | Addtitional optional DMA constraints. |
 | `NumberOfBytes` | On input the number of bytes to map. On output the number of bytes that were mapped.|
 | `DeviceAddress` | The resulting map address for the bus master device to use to access the host's HostAddress.|
 | `Mapping` | A resulting value to pass to `Unmap()`.|
@@ -1593,6 +1608,7 @@ EFI_STATUS
   IN  EFI_DT_IO_PROTOCOL           *This,
   IN  EFI_MEMORY_TYPE              MemoryType,
   IN  UINTN                        Pages,
+  IN  EFI_DT_IO_PROTOCOL_DMA_EXTRA *ExtraConstraints OPTIONAL,
   OUT VOID                         **HostAddress
   );
 ```
@@ -1604,6 +1620,7 @@ EFI_STATUS
 | `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
 | `MemoryType` | The type of memory to allocate, `EfiBootServicesData` or `EfiRuntimeServicesData.` |
 | `Pages` | The number of pages to allocate. |
+| `ExtraConstraints` | Addtitional optional DMA constraints. |
 | `HostAddress` | A pointer to store the base system memory address of the allocated range. |
 
 #### Status Codes Returned

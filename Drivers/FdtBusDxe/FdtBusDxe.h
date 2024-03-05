@@ -81,6 +81,10 @@ struct _DT_DEVICE {
   // Set via DtIoSetCallbacks.
   //
   EFI_DT_IO_PROTOCOL_CB      *Callbacks;
+  //
+  // DMA maps.
+  //
+  LIST_ENTRY                 Maps;
 };
 
 VOID *
@@ -392,6 +396,7 @@ DtIoMap (
   IN      EFI_DT_IO_PROTOCOL                *This,
   IN      EFI_DT_IO_PROTOCOL_DMA_OPERATION  Operation,
   IN      VOID                              *HostAddress,
+  IN      EFI_DT_IO_PROTOCOL_DMA_EXTRA      *ExtraConstraints OPTIONAL,
   IN  OUT UINTN                             *NumberOfBytes,
   OUT     EFI_PHYSICAL_ADDRESS              *DeviceAddress,
   OUT     VOID                              **Mapping
@@ -407,10 +412,11 @@ DtIoUnmap (
 EFI_STATUS
 EFIAPI
 DtIoAllocateBuffer (
-  IN  EFI_DT_IO_PROTOCOL  *This,
-  IN  EFI_MEMORY_TYPE     MemoryType,
-  IN  UINTN               Pages,
-  OUT VOID                **HostAddress
+  IN  EFI_DT_IO_PROTOCOL            *This,
+  IN  EFI_MEMORY_TYPE               MemoryType,
+  IN  UINTN                         Pages,
+  IN  EFI_DT_IO_PROTOCOL_DMA_EXTRA  *ExtraConstraints OPTIONAL,
+  OUT VOID                          **HostAddress
   );
 
 EFI_STATUS

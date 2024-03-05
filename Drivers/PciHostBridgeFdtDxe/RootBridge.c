@@ -1936,7 +1936,6 @@ RootBridgeDtInit (
   // (valid for PC-like systems).
   //
   ASSERT (Status == EFI_NOT_FOUND);
-  ASSERT (DtIo->IsDmaCoherent);
   RootBridge->DmaAbove4G = TRUE;
 
   return EFI_SUCCESS;

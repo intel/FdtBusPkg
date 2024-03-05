@@ -74,9 +74,13 @@ typedef enum {
 
 typedef struct {
   #define EFI_DT_IO_DMA_WITH_MAX_ADDRESS  BIT0
+  #define EFI_DT_IO_DMA_NON_COHERENT      BIT1
   ///
   /// When EFI_DT_IO_DMA_WITH_MAX_ADDRESS is set, the MaxAddress
   /// field will be honored.
+  ///
+  /// When EFI_DT_IO_DMA_NON_COHERENT is set, the bus master
+  /// will be treated as not supporting cache coherency.
   ///
   UINT64                  Flags;
   ///

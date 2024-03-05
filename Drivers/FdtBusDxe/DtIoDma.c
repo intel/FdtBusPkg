@@ -8,7 +8,7 @@
 
 #include "FdtBusDxe.h"
 
-#define KNOWN_CONSTRAINTS  (EFI_DT_IO_DMA_WITH_MAX_ADDRESS)
+#define KNOWN_CONSTRAINTS  (EFI_DT_IO_DMA_WITH_MAX_ADDRESS | EFI_DT_IO_DMA_NON_COHERENT)
 #define NO_MAPPING         (VOID *) (UINTN) -1
 
 #define MAP_INFO_SIGNATURE  SIGNATURE_32 ('_', 'm', 'a', 'p')
@@ -61,6 +61,7 @@ DtIoMap (
   EFI_PHYSICAL_ADDRESS  PhysicalAddress;
   MAP_INFO              *MapInfo;
   DT_DEVICE             *DtDevice;
+  BOOLEAN               IsCoherent;
 
   if ((This == NULL) ||
       (Operation >= EfiDtIoDmaOperationMaximum) ||
@@ -75,15 +76,24 @@ DtIoMap (
   DtDevice = DT_DEV_FROM_THIS (This);
 
   MaxAddress = -1;
+  IsCoherent = This->IsDmaCoherent;
   if (ExtraConstraints != NULL) {
-    if ((ExtraConstraints->Flags & ~KNOWN_CONSTRAINTS) != 0)
-    {
+    if ((ExtraConstraints->Flags & ~KNOWN_CONSTRAINTS) != 0) {
       return EFI_INVALID_PARAMETER;
     }
 
     if ((ExtraConstraints->Flags & EFI_DT_IO_DMA_WITH_MAX_ADDRESS) != 0) {
       MaxAddress = ExtraConstraints->MaxAddress;
     }
+
+    if ((ExtraConstraints->Flags & EFI_DT_IO_DMA_NON_COHERENT) != 0) {
+      IsCoherent = FALSE;
+    }
+  }
+
+  if (!IsCoherent) {
+    DEBUG ((DEBUG_ERROR, "%s: non-coherent DMA Map is unsupported\n", This->ComponentName));
+    return EFI_UNSUPPORTED;
   }
 
   PhysicalAddress = (EFI_PHYSICAL_ADDRESS)HostAddress;
@@ -259,6 +269,7 @@ DtIoAllocateBuffer (
 {
   EFI_STATUS            Status;
   EFI_PHYSICAL_ADDRESS  Address;
+  BOOLEAN               IsCoherent;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -270,16 +281,25 @@ DtIoAllocateBuffer (
     return EFI_INVALID_PARAMETER;
   }
 
-  Address = -1;
+  Address    = -1;
+  IsCoherent = This->IsDmaCoherent;
   if (ExtraConstraints != NULL) {
-    if ((ExtraConstraints->Flags & ~KNOWN_CONSTRAINTS) != 0)
-    {
+    if ((ExtraConstraints->Flags & ~KNOWN_CONSTRAINTS) != 0) {
       return EFI_INVALID_PARAMETER;
     }
 
     if ((ExtraConstraints->Flags & EFI_DT_IO_DMA_WITH_MAX_ADDRESS) != 0) {
       Address = ExtraConstraints->MaxAddress;
     }
+
+    if ((ExtraConstraints->Flags & EFI_DT_IO_DMA_NON_COHERENT) != 0) {
+      IsCoherent = FALSE;
+    }
+  }
+
+  if (!IsCoherent) {
+    DEBUG ((DEBUG_ERROR, "%s: non-coherent DMA AllocateBuffer is unsupported\n", This->ComponentName));
+    return EFI_UNSUPPORTED;
   }
 
   Status = gBS->AllocatePages (

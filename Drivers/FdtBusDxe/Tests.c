@@ -77,7 +77,6 @@ TEST_DEF (G0) {
   ASSERT (DtIo->IsCompatible (DtIo, "asldflkasjf") == EFI_NOT_FOUND);
   ASSERT (AsciiStrCmp (DtIo->DeviceType, "") == 0);
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_OKAY);
-  ASSERT (!DtIo->IsDmaCoherent);
 
   ASSERT (
     DtIo->GetProp (NULL, "compatible", &Property) ==
@@ -118,7 +117,6 @@ TEST_DEF (G1) {
   EFI_HANDLE          FoundHandle;
   EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
 
-  ASSERT (DtIo->IsDmaCoherent);
   ASSERT (AsciiStrCmp (DtIo->DeviceType, "bar") == 0);
 
   ASSERT (DtIo->Lookup (NULL, "/unit-test-devices/G0", FALSE, &FoundHandle) == EFI_INVALID_PARAMETER);
@@ -664,6 +662,295 @@ TEST_DEF (G7P0) {
   return TRUE;
 }
 
+//
+// DMA-related tests.
+//
+TEST_DEF (Dma0) {
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
+  ASSERT (!DtIo->IsDmaCoherent);
+
+  return TRUE;
+}
+
+TEST_DEF (Dma1) {
+  UINTN                         Index;
+  VOID                          *TestAddress;
+  VOID                          *TestAddress2;
+  EFI_DT_BUS_ADDRESS            BusAddress;
+  VOID                          *Mapping;
+  UINTN                         NumberOfBytes;
+  EFI_DT_IO_PROTOCOL_DMA_EXTRA  Constraints;
+  EFI_DT_IO_PROTOCOL            *DtIo = &(DtDevice->DtIo);
+
+  ASSERT (DtIo->IsDmaCoherent);
+
+  TestAddress   = (VOID *)(UINTN)0x1337;
+  NumberOfBytes = 4;
+
+  //
+  // Basic map/unmap.
+  //
+  ASSERT (DtIo->Unmap (NULL, NULL) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->Unmap (DtIo, NULL) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->Unmap (DtIo, (VOID *)(UINTN)0xabcd) == EFI_INVALID_PARAMETER);
+
+  ASSERT (
+    DtIo->Map (
+            NULL,
+            EfiDtIoDmaOperationMaximum,
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            NULL
+            ) == EFI_INVALID_PARAMETER
+    );
+
+  ASSERT (
+    DtIo->Map (
+            DtIo,
+            EfiDtIoDmaOperationMaximum,
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            NULL
+            ) == EFI_INVALID_PARAMETER
+    );
+
+  ASSERT (
+    DtIo->Map (
+            DtIo,
+            EfiDtIoDmaOperationBusMasterRead,
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            NULL
+            ) == EFI_INVALID_PARAMETER
+    );
+
+  ASSERT (
+    DtIo->Map (
+            DtIo,
+            EfiDtIoDmaOperationBusMasterRead,
+            TestAddress,
+            NULL,
+            NULL,
+            NULL,
+            NULL
+            ) == EFI_INVALID_PARAMETER
+    );
+
+  ASSERT (
+    DtIo->Map (
+            DtIo,
+            EfiDtIoDmaOperationBusMasterRead,
+            TestAddress,
+            NULL,
+            &NumberOfBytes,
+            NULL,
+            NULL
+            ) == EFI_INVALID_PARAMETER
+    );
+
+  ASSERT (
+    DtIo->Map (
+            DtIo,
+            EfiDtIoDmaOperationBusMasterRead,
+            TestAddress,
+            NULL,
+            &NumberOfBytes,
+            &BusAddress,
+            NULL
+            ) == EFI_INVALID_PARAMETER
+    );
+
+  ASSERT (
+    DtIo->Map (
+            DtIo,
+            EfiDtIoDmaOperationBusMasterRead,
+            TestAddress,
+            NULL,
+            &NumberOfBytes,
+            &BusAddress,
+            &Mapping
+            ) == EFI_SUCCESS
+    );
+  ASSERT ((UINTN)TestAddress == BusAddress);
+  ASSERT (DtIo->Unmap (DtIo, Mapping) == EFI_SUCCESS);
+
+  ASSERT (
+    DtIo->Map (
+            DtIo,
+            EfiDtIoDmaOperationBusMasterWrite,
+            TestAddress,
+            NULL,
+            &NumberOfBytes,
+            &BusAddress,
+            &Mapping
+            ) == EFI_SUCCESS
+    );
+  ASSERT ((UINTN)TestAddress == BusAddress);
+  ASSERT (DtIo->Unmap (DtIo, Mapping) == EFI_SUCCESS);
+
+  ASSERT (
+    DtIo->Map (
+            DtIo,
+            EfiDtIoDmaOperationBusMasterCommonBuffer,
+            TestAddress,
+            NULL,
+            &NumberOfBytes,
+            &BusAddress,
+            &Mapping
+            ) == EFI_SUCCESS
+    );
+  ASSERT ((UINTN)TestAddress == BusAddress);
+  ASSERT (DtIo->Unmap (DtIo, Mapping) == EFI_SUCCESS);
+
+  //
+  // Map constraints.
+  //
+  Constraints.Flags = -1;
+  ASSERT (
+    DtIo->Map (
+            DtIo,
+            EfiDtIoDmaOperationBusMasterCommonBuffer,
+            TestAddress,
+            &Constraints,
+            &NumberOfBytes,
+            &BusAddress,
+            &Mapping
+            ) == EFI_INVALID_PARAMETER
+    );
+  Constraints.Flags = EFI_DT_IO_DMA_NON_COHERENT;
+  ASSERT (
+    DtIo->Map (
+            DtIo,
+            EfiDtIoDmaOperationBusMasterCommonBuffer,
+            TestAddress,
+            &Constraints,
+            &NumberOfBytes,
+            &BusAddress,
+            &Mapping
+            ) == EFI_UNSUPPORTED
+    );
+  Constraints.Flags = 0;
+  ASSERT (
+    DtIo->Map (
+            DtIo,
+            EfiDtIoDmaOperationBusMasterCommonBuffer,
+            TestAddress,
+            &Constraints,
+            &NumberOfBytes,
+            &BusAddress,
+            &Mapping
+            ) == EFI_SUCCESS
+    );
+  ASSERT ((UINTN)TestAddress == BusAddress);
+  ASSERT (DtIo->Unmap (DtIo, Mapping) == EFI_SUCCESS);
+
+  //
+  // Test for bounce buffering.
+  //
+  TestAddress = AllocatePages (1);
+  ASSERT (TestAddress != NULL);
+  NumberOfBytes = EFI_PAGE_SIZE;
+  SetMem (TestAddress, NumberOfBytes, 0xAA);
+  Constraints.Flags      = EFI_DT_IO_DMA_WITH_MAX_ADDRESS;
+  Constraints.MaxAddress = (EFI_PHYSICAL_ADDRESS)TestAddress;
+  ASSERT (
+    DtIo->Map (
+            DtIo,
+            EfiDtIoDmaOperationBusMasterCommonBuffer,
+            TestAddress,
+            &Constraints,
+            &NumberOfBytes,
+            &BusAddress,
+            &Mapping
+            ) == EFI_INVALID_PARAMETER
+    );
+  ASSERT (
+    DtIo->Map (
+            DtIo,
+            EfiDtIoDmaOperationBusMasterRead,
+            TestAddress,
+            &Constraints,
+            &NumberOfBytes,
+            &BusAddress,
+            &Mapping
+            ) == EFI_SUCCESS
+    );
+  ASSERT (Mapping != NO_MAPPING);
+  ASSERT (BusAddress < Constraints.MaxAddress);
+  ASSERT (CompareMem (TestAddress, (VOID *)(UINTN)BusAddress, NumberOfBytes) == 0);
+  ASSERT (DtIo->Unmap (DtIo, Mapping) == EFI_SUCCESS);
+  ASSERT (
+    DtIo->Map (
+            DtIo,
+            EfiDtIoDmaOperationBusMasterWrite,
+            TestAddress,
+            &Constraints,
+            &NumberOfBytes,
+            &BusAddress,
+            &Mapping
+            ) == EFI_SUCCESS
+    );
+  ASSERT (Mapping != NO_MAPPING);
+  ASSERT (BusAddress < Constraints.MaxAddress);
+  SetMem ((VOID *)(UINTN)BusAddress, NumberOfBytes, 0xBB);
+  ASSERT (DtIo->Unmap (DtIo, Mapping) == EFI_SUCCESS);
+  for (Index = 0; Index < EFI_PAGE_SIZE; Index++) {
+    ASSERT (*((CHAR8 *)TestAddress + Index) == 0xBB);
+  }
+
+  FreePages (TestAddress, 1);
+
+  //
+  // Test for AllocateBuffer.
+  //
+  ASSERT (DtIo->AllocateBuffer (NULL, EfiMaxMemoryType, 0, NULL, NULL) == EFI_INVALID_PARAMETER);
+
+  ASSERT (DtIo->AllocateBuffer (DtIo, EfiMaxMemoryType, 0, NULL, NULL) == EFI_INVALID_PARAMETER);
+
+  ASSERT (DtIo->AllocateBuffer (DtIo, EfiBootServicesData, 0, NULL, &TestAddress) == EFI_INVALID_PARAMETER);
+
+  ASSERT (DtIo->AllocateBuffer (DtIo, EfiBootServicesData, 1, NULL, &TestAddress) == EFI_SUCCESS);
+
+  ASSERT (DtIo->FreeBuffer (NULL, 0, NULL) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->FreeBuffer (DtIo, 0, NULL) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->FreeBuffer (DtIo, 0, TestAddress) == EFI_INVALID_PARAMETER);
+  ASSERT (DtIo->FreeBuffer (DtIo, 1, NULL) == EFI_NOT_FOUND);
+  ASSERT (DtIo->FreeBuffer (DtIo, 1, TestAddress) == EFI_SUCCESS);
+
+  //
+  // Allocation constraints.
+  //
+  Constraints.Flags = -1;
+  ASSERT (DtIo->AllocateBuffer (DtIo, EfiRuntimeServicesData, 1, &Constraints, &TestAddress) == EFI_INVALID_PARAMETER);
+  Constraints.Flags = EFI_DT_IO_DMA_NON_COHERENT;
+  ASSERT (DtIo->AllocateBuffer (DtIo, EfiRuntimeServicesData, 1, &Constraints, &TestAddress) == EFI_UNSUPPORTED);
+  Constraints.Flags = 0;
+  ASSERT (DtIo->AllocateBuffer (DtIo, EfiRuntimeServicesData, 1, &Constraints, &TestAddress) == EFI_SUCCESS);
+  Constraints.Flags      = EFI_DT_IO_DMA_WITH_MAX_ADDRESS;
+  Constraints.MaxAddress = (EFI_PHYSICAL_ADDRESS)TestAddress;
+  ASSERT (DtIo->AllocateBuffer (DtIo, EfiRuntimeServicesData, 1, &Constraints, &TestAddress2) == EFI_SUCCESS);
+  ASSERT (TestAddress2 < TestAddress);
+  ASSERT (DtIo->FreeBuffer (DtIo, 1, TestAddress) == EFI_SUCCESS);
+  ASSERT (DtIo->FreeBuffer (DtIo, 1, TestAddress2) == EFI_SUCCESS);
+
+  return TRUE;
+}
+
+TEST_DEF (Dma2) {
+  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+
+  ASSERT (!DtIo->IsDmaCoherent);
+
+  return TRUE;
+}
+
 STATIC TestDesc  TestDescs[] = {
   TEST_DECL (DtTestRoot),
   TEST_DECL (G0),
@@ -687,6 +974,9 @@ STATIC TestDesc  TestDescs[] = {
   TEST_DECL (G5P3),
   TEST_DECL (G6),
   TEST_DECL (G7P0),
+  TEST_DECL (Dma0),
+  TEST_DECL (Dma1),
+  TEST_DECL (Dma2),
 };
 
 /**

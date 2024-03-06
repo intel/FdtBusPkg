@@ -168,7 +168,11 @@ FdtGetDmaCoherency (
   IN  INTN  FdtNode
   )
 {
-  return fdt_getprop (TreeBase, FdtNode, "dma-coherent", NULL) != NULL;
+  if (DMA_DEFAULT_IS_COHERENT) {
+    return fdt_getprop (TreeBase, FdtNode, "dma-noncoherent", NULL) == NULL;
+  } else {
+    return fdt_getprop (TreeBase, FdtNode, "dma-coherent", NULL) != NULL;
+  }
 }
 
 /**

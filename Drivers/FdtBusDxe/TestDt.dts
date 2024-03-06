@@ -25,7 +25,6 @@
       compatible = "test1_compatible";
     };
     G1 {
-      dma-coherent;
       device_type = "bar";
     };
     G2 {
@@ -101,6 +100,13 @@ l1:   G2P0 {
               <0xD 0x0000000E 0xF 0x00000011>,
               <0x12 0x00000013 0x14 0x00000015>;
         reg-names = "apple", "banana", "orange", "grape", "peach";
+      };
+    };
+    Dma0 {
+      Dma1 {
+        dma-coherent;
+        Dma2 {
+        };
       };
     };
   };

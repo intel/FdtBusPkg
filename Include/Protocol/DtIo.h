@@ -750,7 +750,7 @@ EFI_STATUS
   IN      VOID                              *HostAddress,
   IN      EFI_DT_IO_PROTOCOL_DMA_EXTRA      *ExtraConstraints OPTIONAL,
   IN  OUT UINTN                             *NumberOfBytes,
-  OUT     EFI_PHYSICAL_ADDRESS              *DeviceAddress,
+  OUT     EFI_DT_BUS_ADDRESS                *DeviceAddress,
   OUT     VOID                              **Mapping
   );
 
@@ -781,7 +781,7 @@ EFI_STATUS
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  MemoryType            The type of memory to allocate, EfiBootServicesData or
                                 EfiRuntimeServicesData.
-  @param  Pages                 The number of pages to allocate.
+  @param  Pages                 The number of pages to allocate (> 0).
   @param  ExtraConstraints      Additional optional DMA constraints.
   @param  HostAddress           A pointer to store the base system memory address of the
                                 allocated range.
@@ -805,11 +805,12 @@ EFI_STATUS
   Frees memory that was allocated with AllocateBuffer().
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
-  @param  Pages                 The number of pages to free.
+  @param  Pages                 The number of pages to free (> 0).
   @param  HostAddress           The base system memory address of the allocated range.
 
   @retval EFI_SUCCESS           The requested memory pages were freed.
-  @retval EFI_INVALID_PARAMETER The memory range specified by HostAddress and Pages
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+  @retval EFI_NOT_FOUND         The memory range specified by HostAddress and Pages
                                 was not allocated with AllocateBuffer().
 
 **/

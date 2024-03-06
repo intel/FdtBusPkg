@@ -28,10 +28,6 @@
 #include <libfdt.h>
 #include <Library/TimerLib.h>
 
-#define DT_DEV_SIGNATURE  SIGNATURE_32 ('d', 't', 'i', 'o')
-#define DT_DEV_FROM_THIS(a)  CR(a, DT_DEVICE, DtIo, DT_DEV_SIGNATURE)
-#define DT_DEV_FROM_LINK(a)  CR(a, DT_DEVICE, Link, DT_DEV_SIGNATURE)
-
 #define ROUND_UP(x, n)    (((x) + n - 1) & ~(n - 1))
 #define ROUND_DOWN(x, n)  ((x) & ~(n - 1))
 
@@ -64,6 +60,14 @@ extern LIST_ENTRY                    gCriticalDevices;
 #endif /* MDEPKG_NDEBUG */
 #define DT_DEVICE_INHERITED  (DT_DEVICE_TEST | DT_DEVICE_TEST_UNIT)
 
+#if defined (MDE_CPU_AARCH64)
+#define DMA_DEFAULT_IS_COHERENT  FALSE
+#elif defined (MDE_CPU_RISCV64)
+#define DMA_DEFAULT_IS_COHERENT  FALSE
+#else
+  #error Define DMA_DEFAULT_IS_COHERENT for your architecture!
+#endif
+
 struct _DT_DEVICE {
   UINTN                      Signature;
   EFI_HANDLE                 Handle;
@@ -86,6 +90,24 @@ struct _DT_DEVICE {
   //
   LIST_ENTRY                 Maps;
 };
+
+#define DT_DEV_SIGNATURE  SIGNATURE_32 ('d', 't', 'i', 'o')
+#define DT_DEV_FROM_THIS(a)  CR(a, DT_DEVICE, DtIo, DT_DEV_SIGNATURE)
+#define DT_DEV_FROM_LINK(a)  CR(a, DT_DEVICE, Link, DT_DEV_SIGNATURE)
+
+typedef struct {
+  UINT32                              Signature;
+  LIST_ENTRY                          Link;
+  EFI_DT_IO_PROTOCOL_DMA_OPERATION    Operation;
+  UINTN                               NumberOfBytes;
+  UINTN                               NumberOfPages;
+  EFI_PHYSICAL_ADDRESS                HostAddress;
+  EFI_PHYSICAL_ADDRESS                MappedHostAddress;
+} MAP_INFO;
+
+#define MAP_INFO_SIGNATURE  SIGNATURE_32 ('_', 'm', 'a', 'p')
+#define MAP_INFO_FROM_LINK(a)  CR (a, MAP_INFO, Link, MAP_INFO_SIGNATURE)
+#define NO_MAPPING  (VOID *) (UINTN) -1
 
 VOID *
 GetTreeBaseFromDeviceFlags (
@@ -398,7 +420,7 @@ DtIoMap (
   IN      VOID                              *HostAddress,
   IN      EFI_DT_IO_PROTOCOL_DMA_EXTRA      *ExtraConstraints OPTIONAL,
   IN  OUT UINTN                             *NumberOfBytes,
-  OUT     EFI_PHYSICAL_ADDRESS              *DeviceAddress,
+  OUT     EFI_DT_BUS_ADDRESS                *DeviceAddress,
   OUT     VOID                              **Mapping
   );
 

@@ -1116,6 +1116,8 @@ RootBridgeIoMap (
   PCI_ROOT_BRIDGE_INSTANCE          *RootBridge;
   EFI_DT_IO_PROTOCOL_DMA_EXTRA      Constraints;
   EFI_DT_IO_PROTOCOL_DMA_OPERATION  DtOperation;
+  EFI_DT_BUS_ADDRESS                BusAddress;
+  EFI_STATUS                        Status;
 
   if ((HostAddress == NULL) || (NumberOfBytes == NULL) || (DeviceAddress == NULL) ||
       (Mapping == NULL))
@@ -1177,15 +1179,21 @@ RootBridgeIoMap (
     Constraints.Flags     |= EFI_DT_IO_DMA_WITH_MAX_ADDRESS;
   }
 
-  return DtIo->Map (
+  Status = DtIo->Map (
                  DtIo,
                  DtOperation,
                  HostAddress,
                  &Constraints,
                  NumberOfBytes,
-                 DeviceAddress,
+                 &BusAddress,
                  Mapping
                  );
+  if (!EFI_ERROR (Status)) {
+    ASSERT (BusAddress <= MAX_ADDRESS);
+    *DeviceAddress = BusAddress;
+  }
+
+  return Status;
 }
 
 /**

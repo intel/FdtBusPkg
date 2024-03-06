@@ -1623,7 +1623,7 @@ EFI_STATUS
 | --------- | ----------- |
 | `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
 | `MemoryType` | The type of memory to allocate, `EfiBootServicesData` or `EfiRuntimeServicesData.` |
-| `Pages` | The number of pages to allocate. |
+| `Pages` | The number of pages to allocate (> 0). |
 | `ExtraConstraints` | Addtitional optional DMA constraints. |
 | `HostAddress` | A pointer to store the base system memory address of the allocated range. |
 
@@ -1660,7 +1660,7 @@ EFI_STATUS
 | Parameter | Description |
 | --------- | ----------- |
 | `This` | A pointer to the `EFI_DT_IO_PROTOCOL` instance. |
-| `Pages` | The number of pages to free. |
+| `Pages` | The number of pages to free (> 0). |
 | `HostAddress` | The base system memory address of the allocated range. |
 
 #### Status Codes Returned
@@ -1668,4 +1668,5 @@ EFI_STATUS
 | Status Code | Description |
 | ----------- | ----------- |
 | `EFI_SUCCESS` | The requested memory pages were freed. |
-| `EFI_INVALID_PARAMETER` | The memory range specified by `HostAddress` and `Pages` was not allocated with `AllocateBuffer()`. |
+| `EFI_INVALID_PARAMETER` | One or more parameters are invalid. |
+| `EFI_NOT_FOUND` | The memory range specified by `HostAddress` and `Pages` was not allocated with `AllocateBuffer()`. |

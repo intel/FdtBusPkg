@@ -9,20 +9,6 @@
 #include "FdtBusDxe.h"
 
 #define KNOWN_CONSTRAINTS  (EFI_DT_IO_DMA_WITH_MAX_ADDRESS | EFI_DT_IO_DMA_NON_COHERENT)
-#define NO_MAPPING         (VOID *) (UINTN) -1
-
-#define MAP_INFO_SIGNATURE  SIGNATURE_32 ('_', 'm', 'a', 'p')
-typedef struct {
-  UINT32                              Signature;
-  LIST_ENTRY                          Link;
-  EFI_DT_IO_PROTOCOL_DMA_OPERATION    Operation;
-  UINTN                               NumberOfBytes;
-  UINTN                               NumberOfPages;
-  EFI_PHYSICAL_ADDRESS                HostAddress;
-  EFI_PHYSICAL_ADDRESS                MappedHostAddress;
-} MAP_INFO;
-
-#define MAP_INFO_FROM_LINK(a)  CR (a, MAP_INFO, Link, MAP_INFO_SIGNATURE)
 
 /**
   Provides the device-specific addresses needed to access system memory.
@@ -114,8 +100,7 @@ DtIoMap (
     //
     MapInfo = AllocatePool (sizeof (MAP_INFO));
     if (MapInfo == NULL) {
-      *NumberOfBytes = 0;
-      Status         = EFI_OUT_OF_RESOURCES;
+      Status = EFI_OUT_OF_RESOURCES;
       DEBUG ((DEBUG_ERROR, "%a: MAP_INFO: %r\n", Status));
       return Status;
     }
@@ -135,7 +120,6 @@ DtIoMap (
                     );
     if (EFI_ERROR (Status)) {
       FreePool (MapInfo);
-      *NumberOfBytes = 0;
       DEBUG ((DEBUG_ERROR, "%a: AllocatePages: %r\n", Status));
       return Status;
     }
@@ -187,7 +171,7 @@ DtIoUnmap (
   LIST_ENTRY  *Link;
   DT_DEVICE   *DtDevice;
 
-  if (This == NULL) {
+  if ((This == NULL) || (Mapping == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -223,7 +207,7 @@ DtIoUnmap (
   // then copy the contents of the mapped buffer into the real buffer
   // so the processor can read the contents of the real buffer.
   //
-  if (MapInfo->Operation == EfiDtIoDmaOperationBusMasterRead) {
+  if (MapInfo->Operation == EfiDtIoDmaOperationBusMasterWrite) {
     CopyMem (
       (VOID *)MapInfo->HostAddress,
       (VOID *)MapInfo->MappedHostAddress,
@@ -237,7 +221,7 @@ DtIoUnmap (
   gBS->FreePages (MapInfo->MappedHostAddress, MapInfo->NumberOfPages);
   FreePool (Mapping);
 
-  return EFI_UNSUPPORTED;
+  return EFI_SUCCESS;
 }
 
 /**
@@ -247,7 +231,7 @@ DtIoUnmap (
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  MemoryType            The type of memory to allocate, EfiBootServicesData or
                                 EfiRuntimeServicesData.
-  @param  Pages                 The number of pages to allocate.
+  @param  Pages                 The number of pages to allocate (> 0).
   @param  ExtraConstraints      Additional optional DMA constraints.
   @param  HostAddress           A pointer to store the base system memory address of the
                                 allocated range.
@@ -271,7 +255,7 @@ DtIoAllocateBuffer (
   EFI_PHYSICAL_ADDRESS  Address;
   BOOLEAN               IsCoherent;
 
-  if (This == NULL) {
+  if ((This == NULL) || (Pages == 0) || (HostAddress == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -324,11 +308,12 @@ DtIoAllocateBuffer (
   Frees memory that was allocated with AllocateBuffer().
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
-  @param  Pages                 The number of pages to free.
+  @param  Pages                 The number of pages to free (> 0).
   @param  HostAddress           The base system memory address of the allocated range.
 
   @retval EFI_SUCCESS           The requested memory pages were freed.
-  @retval EFI_INVALID_PARAMETER The memory range specified by HostAddress and Pages
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+  @retval EFI_NOT_FOUND         The memory range specified by HostAddress and Pages
                                 was not allocated with AllocateBuffer().
 
 **/
@@ -340,7 +325,7 @@ DtIoFreeBuffer (
   IN  VOID                *HostAddress
   )
 {
-  if (This == NULL) {
+  if ((This == NULL) || (Pages == 0)) {
     return EFI_INVALID_PARAMETER;
   }
 

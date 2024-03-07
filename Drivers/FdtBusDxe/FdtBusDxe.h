@@ -50,15 +50,16 @@ extern LIST_ENTRY                    gCriticalDevices;
 #define DT_DEVICE_CRITICAL           (1UL << 0)
 #define DT_DEVICE_HAS_SIZE_CELLS     (1UL << 1)
 #define DT_DEVICE_HAS_ADDRESS_CELLS  (1UL << 2)
+#define DT_DEVICE_NON_IDENTITY_DMA   (1UL << 3)
 #ifndef MDEPKG_NDEBUG
-#define DT_DEVICE_TEST           (1UL << 3)
-#define DT_DEVICE_TEST_UNIT      (1UL << 4)
-#define DT_DEVICE_TEST_UNIT_RAN  (1UL << 5)
+#define DT_DEVICE_TEST           (1UL << 4)
+#define DT_DEVICE_TEST_UNIT      (1UL << 5)
+#define DT_DEVICE_TEST_UNIT_RAN  (1UL << 6)
 #else
 #define DT_DEVICE_TEST       0
 #define DT_DEVICE_TEST_UNIT  0
 #endif /* MDEPKG_NDEBUG */
-#define DT_DEVICE_INHERITED  (DT_DEVICE_TEST | DT_DEVICE_TEST_UNIT)
+#define DT_DEVICE_INHERITED  (DT_DEVICE_NON_IDENTITY_DMA | DT_DEVICE_TEST | DT_DEVICE_TEST_UNIT)
 
 #if defined (MDE_CPU_AARCH64)
 #define DMA_DEFAULT_IS_COHERENT  FALSE
@@ -221,6 +222,12 @@ FdtGetDmaCoherency (
 
 BOOLEAN
 FdtIsDeviceCritical (
+  IN  VOID  *TreeBase,
+  IN  INTN  FdtNode
+  );
+
+BOOLEAN
+FdtIsDmaIdentity (
   IN  VOID  *TreeBase,
   IN  INTN  FdtNode
   );

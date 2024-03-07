@@ -132,6 +132,15 @@ DtDeviceCreate (
     Broken = TRUE;
   }
 
+  if (!FdtIsDmaIdentity (TreeBase, FdtNode)) {
+    //
+    // DT_DEVICE_NON_IDENTITY_DMA is "sticky", being inherited. This allows
+    // optimizing for the common scenario of non-crazy hardware (which don't
+    // narrow or translate DMA).
+    //
+    DtDevice->Flags |= DT_DEVICE_NON_IDENTITY_DMA;
+  }
+
   DtDevice->DtIo.IsDmaCoherent = FdtGetDmaCoherency (TreeBase, FdtNode);
   DtDevice->DtIo.ParentDevice  = Parent == NULL ? NULL : Parent->Handle;
 

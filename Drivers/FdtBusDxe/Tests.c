@@ -605,6 +605,7 @@ TEST_DEF (G7P0) {
 //
 TEST_DEF (Dma0) {
   ASSERT (!DtIo->IsDmaCoherent);
+  ASSERT ((DtDevice->Flags & DT_DEVICE_NON_IDENTITY_DMA) == 0);
 }
 
 TEST_DEF (Dma1) {
@@ -876,6 +877,15 @@ TEST_DEF (Dma1) {
 
 TEST_DEF (Dma2) {
   ASSERT (!DtIo->IsDmaCoherent);
+  ASSERT ((DtDevice->Flags & DT_DEVICE_NON_IDENTITY_DMA) == 0);
+}
+
+TEST_DEF (Dma3) {
+  ASSERT ((DtDevice->Flags & DT_DEVICE_NON_IDENTITY_DMA) != 0);
+}
+
+TEST_DEF (Dma4) {
+  ASSERT ((DtDevice->Flags & DT_DEVICE_NON_IDENTITY_DMA) != 0);
 }
 
 STATIC TestDesc  TestDescs[] = {
@@ -904,6 +914,8 @@ STATIC TestDesc  TestDescs[] = {
   TEST_DECL (Dma0),
   TEST_DECL (Dma1),
   TEST_DECL (Dma2),
+  TEST_DECL (Dma3),
+  TEST_DECL (Dma4)
 };
 
 /**

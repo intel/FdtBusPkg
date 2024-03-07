@@ -106,6 +106,12 @@ l1:   G2P0 {
       Dma1 {
         dma-coherent;
         Dma2 {
+          dma-ranges;
+        };
+        Dma3 {
+          dma-ranges = <0x1 0x2 0x3 0x4 0x5>;
+          Dma4 {
+          };
         };
       };
     };

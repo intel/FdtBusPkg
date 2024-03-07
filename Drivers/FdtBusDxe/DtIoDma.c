@@ -61,6 +61,11 @@ DtIoMap (
 
   DtDevice = DT_DEV_FROM_THIS (This);
 
+  if ((DtDevice->Flags & DT_DEVICE_NON_IDENTITY_DMA) != 0) {
+    DEBUG ((DEBUG_ERROR, "%s: non-identity DMA Map is unsupported\n", This->ComponentName));
+    return EFI_UNSUPPORTED;
+  }
+
   MaxAddress = -1;
   IsCoherent = This->IsDmaCoherent;
   if (ExtraConstraints != NULL) {
@@ -254,9 +259,17 @@ DtIoAllocateBuffer (
   EFI_STATUS            Status;
   EFI_PHYSICAL_ADDRESS  Address;
   BOOLEAN               IsCoherent;
+  DT_DEVICE             *DtDevice;
 
   if ((This == NULL) || (Pages == 0) || (HostAddress == NULL)) {
     return EFI_INVALID_PARAMETER;
+  }
+
+  DtDevice = DT_DEV_FROM_THIS (This);
+
+  if ((DtDevice->Flags & DT_DEVICE_NON_IDENTITY_DMA) != 0) {
+    DEBUG ((DEBUG_ERROR, "%s: non-identity DMA Map is unsupported\n", This->ComponentName));
+    return EFI_UNSUPPORTED;
   }
 
   if ((MemoryType != EfiBootServicesData) &&

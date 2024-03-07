@@ -1180,14 +1180,14 @@ RootBridgeIoMap (
   }
 
   Status = DtIo->Map (
-                 DtIo,
-                 DtOperation,
-                 HostAddress,
-                 &Constraints,
-                 NumberOfBytes,
-                 &BusAddress,
-                 Mapping
-                 );
+                   DtIo,
+                   DtOperation,
+                   HostAddress,
+                   &Constraints,
+                   NumberOfBytes,
+                   &BusAddress,
+                   Mapping
+                   );
   if (!EFI_ERROR (Status)) {
     ASSERT (BusAddress <= MAX_ADDRESS);
     *DeviceAddress = BusAddress;
@@ -1742,6 +1742,48 @@ RootBridgeValidate (
 
 /**
 
+  Identifies support for DMA above 4G.
+
+  @param DtIo  EFI_DT_IO_PROTOCOL *.
+
+  @retval TRUE                  Supports DMA above 4G.
+  @retval FALSE                 32-bit DMA only.
+
+**/
+STATIC
+BOOLEAN
+RootBridgeDmaAbove4G (
+  IN  EFI_DT_IO_PROTOCOL  *DtIo
+  )
+{
+  VOID                *Mapping;
+  EFI_STATUS          Status;
+  UINTN               NumberOfBytes;
+  EFI_DT_BUS_ADDRESS  DeviceAddress;
+
+  NumberOfBytes = 1;
+  Status        = DtIo->Map (
+                          DtIo,
+                          EfiDtIoDmaOperationBusMasterCommonBuffer,
+                          (VOID *)(UINTN)SIZE_4GB,
+                          NULL,
+                          &NumberOfBytes,
+                          &DeviceAddress,
+                          &Mapping
+                          );
+
+  if (EFI_ERROR (Status)) {
+    return FALSE;
+  }
+
+  Status = DtIo->Unmap (DtIo, Mapping);
+  ASSERT_EFI_ERROR (Status);
+
+  return TRUE;
+}
+
+/**
+
   Parses actual DT controller info into RootBridge.
 
   @param RootBridge  PCI_ROOT_BRIDGE_INSTANCE *.
@@ -1938,14 +1980,7 @@ RootBridgeDtInit (
     RootBridge->AllocationAttributes |= EFI_PCI_HOST_BRIDGE_MEM64_DECODE;
   }
 
-  Status = DtIo->GetRange (DtIo, "dma-ranges", 0, &Range);
-  //
-  // Not handled yet, and we don't know the format. Assume TRUE
-  // (valid for PC-like systems).
-  //
-  ASSERT (Status == EFI_NOT_FOUND);
-  RootBridge->DmaAbove4G = TRUE;
-
+  RootBridge->DmaAbove4G = RootBridgeDmaAbove4G (DtIo);
   return EFI_SUCCESS;
 }
 

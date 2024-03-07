@@ -15,15 +15,16 @@
 
 #define TEST_DEF(x)                             \
   STATIC                                        \
-  BOOLEAN                                       \
+  VOID                                          \
   EFIAPI                                        \
   Test ## x ## Fn (                             \
-    IN  DT_DEVICE  *DtDevice                    \
+    IN  DT_DEVICE          *DtDevice,           \
+    IN  EFI_DT_IO_PROTOCOL *DtIo                \
   )                                             \
 
 typedef struct {
   const char    *Name;
-  BOOLEAN EFIAPI (*Fn)(IN  DT_DEVICE *DtDevice);
+  VOID EFIAPI (*Fn)(IN  DT_DEVICE *DtDevice, IN  EFI_DT_IO_PROTOCOL *DtIo);
 } TestDesc;
 
 VOID  *gTestTreeBase;
@@ -52,21 +53,16 @@ STATIC UINT32  Dt_DeviceRegs_TestTemplate00[] = {
 
 **/
 TEST_DEF (DtTestRoot) {
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-
   //
   // Check default values as per 2.3.5 of DT spec.
   //
   ASSERT (DtIo->AddressCells == 2);
   ASSERT (DtIo->SizeCells == 1);
-
-  return TRUE;
 }
 
 TEST_DEF (G0) {
-  EFI_DT_REG          Reg;
-  EFI_DT_PROPERTY     Property;
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+  EFI_DT_REG       Reg;
+  EFI_DT_PROPERTY  Property;
 
   ASSERT (
     DtIo->IsCompatible (NULL, "test1_compatible") ==
@@ -109,13 +105,10 @@ TEST_DEF (G0) {
   ASSERT (DtIo->GetReg (NULL, 0, &Reg) == EFI_INVALID_PARAMETER);
   ASSERT (DtIo->GetReg (DtIo, 0, NULL) == EFI_INVALID_PARAMETER);
   ASSERT (DtIo->GetReg (DtIo, 0, &Reg) == EFI_NOT_FOUND);
-
-  return TRUE;
 }
 
 TEST_DEF (G1) {
-  EFI_HANDLE          FoundHandle;
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+  EFI_HANDLE  FoundHandle;
 
   ASSERT (AsciiStrCmp (DtIo->DeviceType, "bar") == 0);
 
@@ -128,13 +121,10 @@ TEST_DEF (G1) {
   // Should return NOT_FOUND as it's not connected yet.
   //
   ASSERT (DtIo->Lookup (DtIo, "/unit-test-devices/G2/G2P1", FALSE, &FoundHandle) == EFI_NOT_FOUND);
-
-  return TRUE;
 }
 
 TEST_DEF (G2) {
-  EFI_HANDLE          FoundHandle;
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+  EFI_HANDLE  FoundHandle;
 
   //
   // #address-cells and #size-cells apply to children,
@@ -146,8 +136,6 @@ TEST_DEF (G2) {
   ASSERT (DtIo->Lookup (DtIo, "somethingrelativeinvalid", FALSE, &FoundHandle) == EFI_NOT_FOUND);
   ASSERT (DtIo->Lookup (DtIo, "G2P0", FALSE, &FoundHandle) == EFI_SUCCESS);
   ASSERT (DtIo->Lookup (DtIo, "alias-G2P0", FALSE, &FoundHandle) == EFI_SUCCESS);
-
-  return TRUE;
 }
 
 STATIC
@@ -173,12 +161,11 @@ EFI_DT_IO_PROTOCOL_CB  TestG2P0Callbacks = {
 };
 
 TEST_DEF (G2P0) {
-  UINT8               Buffer;
-  EFI_DT_REG          Reg;
-  EFI_DT_PROPERTY     Property;
-  UINT32              U32;
-  UINT64              U64;
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+  UINT8            Buffer;
+  EFI_DT_REG       Reg;
+  EFI_DT_PROPERTY  Property;
+  UINT32           U32;
+  UINT64           U64;
 
   ZeroMem (&Property, sizeof (EFI_DT_PROPERTY));
   //
@@ -289,14 +276,11 @@ TEST_DEF (G2P0) {
 
   // For TestG2P0C1Fn.
   ASSERT (DtIo->SetCallbacks (DtIo, gDriverBinding.DriverBindingHandle, &TestG2P0Callbacks) == EFI_SUCCESS);
-
-  return TRUE;
 }
 
 TEST_DEF (G2P0C1) {
-  UINT32              Buffer;
-  EFI_DT_REG          Reg;
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+  UINT32      Buffer;
+  EFI_DT_REG  Reg;
 
   //
   // These should be the defaults, as Parent1 doesn't
@@ -318,72 +302,45 @@ TEST_DEF (G2P0C1) {
     );
 
   ASSERT (Buffer == 0xc0ff33c0);
-
-  return TRUE;
 }
 
 TEST_DEF (G2P1) {
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_BROKEN);
-  return TRUE;
 }
 
 TEST_DEF (G2P2) {
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_BROKEN);
-  return TRUE;
 }
 
 TEST_DEF (G3P0) {
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_DISABLED);
-  return TRUE;
 }
 
 TEST_DEF (G3P1) {
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_RESERVED);
-  return TRUE;
 }
 
 TEST_DEF (G3P2) {
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_FAIL);
-  return TRUE;
 }
 
 TEST_DEF (G3P3) {
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_FAIL_WITH_CONDITION);
-  return TRUE;
 }
 
 TEST_DEF (G3P4) {
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_OKAY);
-  return TRUE;
 }
 
 TEST_DEF (G3P5) {
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-
   ASSERT (DtIo->DeviceStatus == EFI_DT_STATUS_BROKEN);
-  return TRUE;
 }
 
 //
 // Tests GetRange.
 //
 TEST_DEF (G4) {
-  EFI_DT_RANGE        Range;
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+  EFI_DT_RANGE  Range;
 
   ASSERT (DtIo->ChildAddressCells == 3);
   ASSERT (DtIo->AddressCells == 2);
@@ -405,33 +362,27 @@ TEST_DEF (G4) {
   ASSERT (Range.ParentBase == 0xd0000000e);
   ASSERT (Range.ParentBase == Range.TranslatedParentBase);
   ASSERT (Range.Length == 0xf00000001);
-
-  return TRUE;
 }
 
 TEST_DEF (G5) {
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-
   //
   // #address-cells and #size-cells apply to children,
   // not the node itself.
   //
   ASSERT (DtIo->AddressCells == 2);
   ASSERT (DtIo->SizeCells == 1);
-  return TRUE;
 }
 
 //
 // ReadReg Test.
 //
 TEST_DEF (G5P0) {
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-  UINTN               TestRegionSize;
-  UINT8               *TempMemBuffer;
-  EFI_DT_REG          Reg00;
-  EFI_DT_REG          *Reg11;
-  UINT8               Array1[16];
-  UINT8               Array2[16];
+  UINTN       TestRegionSize;
+  UINT8       *TempMemBuffer;
+  EFI_DT_REG  Reg00;
+  EFI_DT_REG  *Reg11;
+  UINT8       Array1[16];
+  UINT8       Array2[16];
 
   Reg11          = NULL;
   TestRegionSize = sizeof (Dt_DeviceRegs_TestTemplate00);
@@ -462,20 +413,18 @@ TEST_DEF (G5P0) {
   ASSERT (DtIo->ReadReg (DtIo, EfiDtIoWidthUint64, Reg11, 0, 2, Array1) == EFI_INVALID_PARAMETER);
 
   FreePool (TempMemBuffer);
-  return TRUE;
 }
 
 //
 // WriteReg Test.
 //
 TEST_DEF (G5P1) {
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-  UINTN               TestRegionSize;
-  UINT8               *TempMemBuffer;
-  EFI_DT_REG          Reg00;
-  UINT8               Array1[32];
-  UINT8               Array2[32];
-  UINTN               Index;
+  UINTN       TestRegionSize;
+  UINT8       *TempMemBuffer;
+  EFI_DT_REG  Reg00;
+  UINT8       Array1[32];
+  UINT8       Array2[32];
+  UINTN       Index;
 
   TestRegionSize = sizeof (Dt_DeviceRegs_TestTemplate00);
   TempMemBuffer  = AllocateZeroPool (TestRegionSize);
@@ -500,18 +449,16 @@ TEST_DEF (G5P1) {
   ASSERT (DtIo->WriteReg (DtIo, EfiDtIoWidthUint32, &Reg00, 0x30, 8, Array1) == EFI_INVALID_PARAMETER);
 
   FreePool (TempMemBuffer);
-  return TRUE;
 }
 
 //
 // PollReg Test.
 //
 TEST_DEF (G5P2) {
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-  UINTN               TestRegionSize;
-  UINT8               *TempMemBuffer;
-  EFI_DT_REG          Reg00;
-  UINT64              Indicator;
+  UINTN       TestRegionSize;
+  UINT8       *TempMemBuffer;
+  EFI_DT_REG  Reg00;
+  UINT64      Indicator;
 
   TestRegionSize = sizeof (Dt_DeviceRegs_TestTemplate00);
   TempMemBuffer  = AllocateZeroPool (TestRegionSize);
@@ -529,19 +476,17 @@ TEST_DEF (G5P2) {
   ASSERT (DtIo->PollReg (DtIo, EfiDtIoWidthUint8, &Reg00, 0, 0xFF, 0x86, 1000000, &Indicator) == EFI_SUCCESS);
 
   FreePool (TempMemBuffer);
-  return TRUE;
 }
 
 //
 // CopyReg Test.
 //
 TEST_DEF (G5P3) {
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-  UINTN               TestRegionSize;
-  UINT8               *TempMemBuffer;
-  EFI_DT_REG          Reg00;
-  EFI_DT_REG          Reg11;
-  UINT8               Array2[32];
+  UINTN       TestRegionSize;
+  UINT8       *TempMemBuffer;
+  EFI_DT_REG  Reg00;
+  EFI_DT_REG  Reg11;
+  UINT8       Array2[32];
 
   TestRegionSize = sizeof (Dt_DeviceRegs_TestTemplate00);
   TempMemBuffer  = AllocateZeroPool (TestRegionSize);
@@ -559,18 +504,16 @@ TEST_DEF (G5P3) {
   ASSERT (CompareMem ((UINT8 *)(UINTN)Reg00.TranslatedBase, (UINT8 *)(UINTN)Reg11.TranslatedBase, 32) == 0);
 
   FreePool (TempMemBuffer);
-  return TRUE;
 }
 
 //
 // String properties.
 //
 TEST_DEF (G6) {
-  EFI_DT_PROPERTY     Property;
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-  CONST CHAR8         *String;
-  CONST CHAR8         *String2;
-  UINTN               Index;
+  EFI_DT_PROPERTY  Property;
+  CONST CHAR8      *String;
+  CONST CHAR8      *String2;
+  UINTN            Index;
 
   ZeroMem (&Property, sizeof (EFI_DT_PROPERTY));
   ASSERT (DtIo->GetProp (DtIo, "string", &Property) == EFI_SUCCESS);
@@ -633,16 +576,13 @@ TEST_DEF (G6) {
   ASSERT (Index == 0);
   ASSERT (DtIo->GetStringIndex (DtIo, "svals2", "1", &Index) == EFI_SUCCESS);
   ASSERT (Index == 2);
-
-  return TRUE;
 }
 
 //
 // GetRegByName.
 //
 TEST_DEF (G7P0) {
-  EFI_DT_REG          Reg;
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
+  EFI_DT_REG  Reg;
 
   ASSERT (DtIo->GetRegByName (NULL, "apple", &Reg) == EFI_INVALID_PARAMETER);
   ASSERT (DtIo->GetRegByName (DtIo, NULL, &Reg) == EFI_INVALID_PARAMETER);
@@ -658,19 +598,13 @@ TEST_DEF (G7P0) {
 
   ASSERT (DtIo->GetRegByName (DtIo, "gsdfsdfds", &Reg) == EFI_NOT_FOUND);
   ASSERT (DtIo->GetRegByName (DtIo, "", &Reg) == EFI_NOT_FOUND);
-
-  return TRUE;
 }
 
 //
 // DMA-related tests.
 //
 TEST_DEF (Dma0) {
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-
   ASSERT (!DtIo->IsDmaCoherent);
-
-  return TRUE;
 }
 
 TEST_DEF (Dma1) {
@@ -681,7 +615,6 @@ TEST_DEF (Dma1) {
   VOID                          *Mapping;
   UINTN                         NumberOfBytes;
   EFI_DT_IO_PROTOCOL_DMA_EXTRA  Constraints;
-  EFI_DT_IO_PROTOCOL            *DtIo = &(DtDevice->DtIo);
 
   ASSERT (DtIo->IsDmaCoherent);
 
@@ -939,16 +872,10 @@ TEST_DEF (Dma1) {
   ASSERT (TestAddress2 < TestAddress);
   ASSERT (DtIo->FreeBuffer (DtIo, 1, TestAddress) == EFI_SUCCESS);
   ASSERT (DtIo->FreeBuffer (DtIo, 1, TestAddress2) == EFI_SUCCESS);
-
-  return TRUE;
 }
 
 TEST_DEF (Dma2) {
-  EFI_DT_IO_PROTOCOL  *DtIo = &(DtDevice->DtIo);
-
   ASSERT (!DtIo->IsDmaCoherent);
-
-  return TRUE;
 }
 
 STATIC TestDesc  TestDescs[] = {
@@ -992,7 +919,8 @@ TestsInvoke (
   IN  DT_DEVICE  *DtDevice
   )
 {
-  UINTN  Index;
+  UINTN               Index;
+  EFI_DT_IO_PROTOCOL  *DtIo;
 
   if ((DtDevice->Flags & DT_DEVICE_TEST_UNIT_RAN) != 0) {
     //
@@ -1001,11 +929,12 @@ TestsInvoke (
     return;
   }
 
+  DtIo = &(DtDevice->DtIo);
   for (Index = 0; Index < ARRAY_SIZE (TestDescs); Index++) {
     TestDesc  *Test = &TestDescs[Index];
-    if (AsciiStrCmp (DtDevice->DtIo.Name, Test->Name) == 0) {
-      DEBUG ((DEBUG_ERROR, "%a: running unit test\n", DtDevice->DtIo.Name));
-      ASSERT (Test->Fn (DtDevice));
+    if (AsciiStrCmp (DtIo->Name, Test->Name) == 0) {
+      DEBUG ((DEBUG_ERROR, "%s: running unit test\n", DtIo->ComponentName));
+      Test->Fn (DtDevice, DtIo);
       DtDevice->Flags |= DT_DEVICE_TEST_UNIT_RAN;
       break;
     }

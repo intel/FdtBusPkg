@@ -293,7 +293,7 @@ V  VERSION  E G G #D #C DRIVER NAME                         IMAGE NAME
 27 0000000A B - - 28 19 Devicetree Bus Driver               FdtBusDxe
 ```
 
-The driver won't load if it is not able to locate the Devicetree blob via FDT HOB.
+The driver will load if it is not able to locate the Devicetree blob via FDT HOB. This is useful for testing.
 
 ### How do I know the FdtBusDxe driver successfully loaded?
 

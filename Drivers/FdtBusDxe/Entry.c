@@ -82,14 +82,16 @@ OnPlatformHasDeviceTree (
     return;
   }
 
-  DEBUG ((
-    DEBUG_INFO,
-    "%a: exposing DTB @ 0x%p to OS\n",
-    __FUNCTION__,
-    gDeviceTreeBase
-    ));
-  Status = gBS->InstallConfigurationTable (&gFdtTableGuid, gDeviceTreeBase);
-  ASSERT_EFI_ERROR (Status);
+  if (gDeviceTreeBase != NULL) {
+    DEBUG ((
+      DEBUG_INFO,
+      "%a: exposing DTB @ 0x%p to OS\n",
+      __FUNCTION__,
+      gDeviceTreeBase
+      ));
+    Status = gBS->InstallConfigurationTable (&gFdtTableGuid, gDeviceTreeBase);
+    ASSERT_EFI_ERROR (Status);
+  }
 
   gBS->CloseEvent (Event);
   mPlatformHasDeviceTreeEvent = NULL;
@@ -280,13 +282,12 @@ RegisterBusDriver (
 {
   EFI_STATUS  Status;
 
-  gRootDtDevice     = NULL;
-  gTestRootDtDevice = NULL;
-
-  Status = CreateRootHandle (0, &gRootDtDevice);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: CreateRootHandle: %r\n", __func__, Status));
-    goto done;
+  if (gDeviceTreeBase) {
+    Status = CreateRootHandle (0, &gRootDtDevice);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: CreateRootHandle: %r\n", __func__, Status));
+      goto done;
+    }
   }
 
   if (gTestTreeBase != NULL) {
@@ -411,8 +412,8 @@ EntryPoint (
 
   Hob = GetFirstGuidHob (&gFdtHobGuid);
   if ((Hob == NULL) || (GET_GUID_HOB_DATA_SIZE (Hob) != sizeof (UINT64))) {
-    DEBUG ((DEBUG_ERROR, "No FDT passed in to UEFI\n"));
-    return EFI_NOT_FOUND;
+    DEBUG ((DEBUG_WARN, "No FDT passed in to UEFI\n"));
+    Hob = NULL;
   }
 
   //
@@ -424,17 +425,21 @@ EntryPoint (
                   (VOID **)&gCpuIo2
                   );
   ASSERT_EFI_ERROR (Status);
-  DeviceTreeBase = (VOID *)(UINTN)*(UINT64 *)GET_GUID_HOB_DATA (Hob);
-  Status         = ValidateFdt (DeviceTreeBase);
-  if (EFI_ERROR (Status)) {
-    //
-    // Logged in ValidateFdt.
-    //
-    return Status;
+
+  if (Hob != NULL) {
+    DeviceTreeBase = (VOID *)(UINTN)*(UINT64 *)GET_GUID_HOB_DATA (Hob);
+    Status         = ValidateFdt (DeviceTreeBase);
+    if (EFI_ERROR (Status)) {
+      //
+      // Logged in ValidateFdt.
+      //
+      return Status;
+    }
+
+    gDeviceTreeBase = DeviceTreeBase;
   }
 
-  gDeviceTreeBase = DeviceTreeBase;
-  Status          = TestsInit ();
+  Status = TestsInit ();
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: TestsInit: %r\n", __func__, Status));
     return Status;

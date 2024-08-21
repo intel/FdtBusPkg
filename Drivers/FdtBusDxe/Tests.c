@@ -836,7 +836,7 @@ TEST_DEF (Dma1) {
   SetMem ((VOID *)(UINTN)BusAddress, NumberOfBytes, 0xBB);
   ASSERT (DtIo->Unmap (DtIo, Mapping) == EFI_SUCCESS);
   for (Index = 0; Index < EFI_PAGE_SIZE; Index++) {
-    ASSERT (*((CHAR8 *)TestAddress + Index) == 0xBB);
+    ASSERT (*((UINT8 *)TestAddress + Index) == 0xBB);
   }
 
   FreePages (TestAddress, 1);

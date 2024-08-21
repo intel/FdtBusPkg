@@ -604,7 +604,7 @@ TEST_DEF (G7P0) {
 // DMA-related tests.
 //
 TEST_DEF (Dma0) {
-  ASSERT (!DtIo->IsDmaCoherent);
+  ASSERT (DtIo->IsDmaCoherent == DMA_DEFAULT_IS_COHERENT);
   ASSERT ((DtDevice->Flags & DT_DEVICE_NON_IDENTITY_DMA) == 0);
 }
 
@@ -876,7 +876,7 @@ TEST_DEF (Dma1) {
 }
 
 TEST_DEF (Dma2) {
-  ASSERT (!DtIo->IsDmaCoherent);
+  ASSERT (DtIo->IsDmaCoherent == DMA_DEFAULT_IS_COHERENT);
   ASSERT ((DtDevice->Flags & DT_DEVICE_NON_IDENTITY_DMA) == 0);
 }
 

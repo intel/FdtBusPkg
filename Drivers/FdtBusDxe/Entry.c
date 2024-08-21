@@ -289,18 +289,18 @@ RegisterBusDriver (
 {
   EFI_STATUS  Status;
 
-  if (gDeviceTreeBase) {
-    Status = CreateRootHandle (0, &gRootDtDevice);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a: CreateRootHandle: %r\n", __func__, Status));
-      goto done;
-    }
-  }
-
   if (gTestTreeBase != NULL) {
     Status = CreateRootHandle (DT_DEVICE_TEST, &gTestRootDtDevice);
     if (EFI_ERROR (Status)) {
       DEBUG ((DEBUG_ERROR, "%a: CreateRootHandle(Test): %r\n", __func__, Status));
+      goto done;
+    }
+  }
+
+  if (gDeviceTreeBase) {
+    Status = CreateRootHandle (0, &gRootDtDevice);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: CreateRootHandle: %r\n", __func__, Status));
       goto done;
     }
   }
@@ -321,16 +321,16 @@ RegisterBusDriver (
 
 done:
   if (EFI_ERROR (Status)) {
-    if (gTestRootDtDevice != NULL) {
-      DtDeviceUnregister (gTestRootDtDevice, NULL, NULL);
-      DtDeviceCleanup (gTestRootDtDevice);
-      gTestRootDtDevice = NULL;
-    }
-
     if (gRootDtDevice != NULL) {
       DtDeviceUnregister (gRootDtDevice, NULL, NULL);
       DtDeviceCleanup (gRootDtDevice);
       gRootDtDevice = NULL;
+    }
+
+    if (gTestRootDtDevice != NULL) {
+      DtDeviceUnregister (gTestRootDtDevice, NULL, NULL);
+      DtDeviceCleanup (gTestRootDtDevice);
+      gTestRootDtDevice = NULL;
     }
   }
 

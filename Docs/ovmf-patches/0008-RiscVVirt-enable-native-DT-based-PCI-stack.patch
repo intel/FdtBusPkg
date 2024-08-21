@@ -1,4 +1,4 @@
-From bfad8fe8df168b40cae94dae919ea15f3b9a259a Mon Sep 17 00:00:00 2001
+From 3f80075e161e5f4276cb7bea5546788bb51494b4 Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Wed, 28 Feb 2024 00:39:31 -0600
 Subject: [PATCH 8/9] RiscVVirt: enable native DT-based PCI stack
@@ -24,7 +24,7 @@ Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
  2 files changed, 53 insertions(+), 12 deletions(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-index 8dfef9c3c9ec..2e556cc8d2bb 100644
+index fdc811ffe852..2ebf12caf403 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 @@ -32,7 +32,8 @@ [Defines]
@@ -91,7 +91,7 @@ index 8dfef9c3c9ec..2e556cc8d2bb 100644
  
  #!include NetworkPkg/NetworkBuildOptions.dsc.inc
  
-@@ -553,17 +572,29 @@ [Components]
+@@ -556,17 +575,29 @@ [Components]
    #
    OvmfPkg/RiscVVirt/PciCpuIo2Dxe/PciCpuIo2Dxe.inf {
      <LibraryClasses>
@@ -125,7 +125,7 @@ index 8dfef9c3c9ec..2e556cc8d2bb 100644
        !else
          NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
        !endif
-@@ -616,8 +647,10 @@ [Components]
+@@ -619,8 +650,10 @@ [Components]
    MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
    OvmfPkg/AcpiPlatformDxe/AcpiPlatformDxe.inf {
      <LibraryClasses>

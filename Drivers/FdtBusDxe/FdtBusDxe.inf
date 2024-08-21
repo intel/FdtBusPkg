@@ -44,11 +44,11 @@
   UefiBootServicesTableLib
   DxeServicesTableLib
   UefiDriverEntryPoint
-  HobLib
   FdtLib
   DevicePathLib
   TimerLib
   FbpUtilsLib
+  FbpPlatformDtLib
 
 [Protocols]
   gEfiDtIoProtocolGuid
@@ -56,7 +56,6 @@
   gEfiCpuIo2ProtocolGuid
 
 [Guids]
-  gFdtHobGuid
   gFdtTableGuid
   gEdkiiPlatformHasDeviceTreeGuid
   gEfiEndOfDxeEventGroupGuid

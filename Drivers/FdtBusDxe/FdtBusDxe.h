@@ -21,12 +21,11 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/DxeServicesTableLib.h>
 #include <Library/UefiDriverEntryPoint.h>
-#include <Library/HobLib.h>
 #include <Library/DevicePathLib.h>
-#include <Library/FbpUtilsLib.h>
-#include <Guid/FdtHob.h>
-#include <libfdt.h>
 #include <Library/TimerLib.h>
+#include <Library/FbpUtilsLib.h>
+#include <Library/FbpPlatformDtLib.h>
+#include <libfdt.h>
 
 #define ROUND_UP(x, n)    (((x) + n - 1) & ~(n - 1))
 #define ROUND_DOWN(x, n)  ((x) & ~(n - 1))

@@ -106,7 +106,10 @@
   FdtBusPkg/Drivers/SampleDeviceDxe/Driver.inf
   FdtBusPkg/Drivers/SampleBusDxe/Driver.inf
   FdtBusPkg/Drivers/PciHostBridgeFdtDxe/Driver.inf
-  FdtBusPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
+  FdtBusPkg/Drivers/FdtBusDxe/FdtBusDxe.inf {
+    <LibraryClasses>
+       FbpPlatformDtLib|FdtBusPkg/Library/FbpPlatformDtLib/FbpPlatformDtLib.inf
+  }
   FdtBusPkg/Drivers/VirtioFdtDxe/VirtioFdtDxe.inf {
     <LibraryClasses>
        IoLib|MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf

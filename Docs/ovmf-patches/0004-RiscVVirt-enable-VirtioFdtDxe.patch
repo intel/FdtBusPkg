@@ -1,4 +1,4 @@
-From 36e447f758b8191864dc8a242ea27ef73ea241a5 Mon Sep 17 00:00:00 2001
+From 76dcf43432ef37341ae860e87bc4189d02b33bcf Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Mon, 26 Feb 2024 17:27:05 -0600
 Subject: [PATCH 4/9] RiscVVirt: enable VirtioFdtDxe
@@ -14,7 +14,7 @@ Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
  3 files changed, 15 insertions(+), 1 deletion(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-index d9a5d82550fd..5e9576c09612 100644
+index aa1f4249edc6..adcb33b557e9 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 @@ -28,6 +28,7 @@ [Defines]

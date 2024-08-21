@@ -14,20 +14,21 @@ the existing Tiano FdtClientDxe component.
 
 On loading, `EntryPoint()`:
 
-- Looks for the Devicetree HOB (`gFdtHobGuid`).
-  - The driver bails if the Devicetree HOB is not present or if the Devicetree structure appears to be corrupt.
-  - On debug builds, check that the Devicetree is allocated in the UEFI memory map, i.e. not part of free memory.
+- Uses FbpPlatformGetDt to get the platform Devicetree. The [default implementation](../Library/FbpPlatformDtLib) looks
+  for the Devicetree HOB (`gFdtHobGuid`).
+- On debug builds, check that the Devicetree is allocated in the UEFI memory map, i.e. not part of free memory.
+- Bails if neither a platform Devicetree is available, nor regression tests are available (i.e. non-debug builds).
 - Locates `EFI_CPU_IO2_PROTOCOL` (`gEfiCpuIo2ProtocolGuid` is in the `[Depex]` list)
-- Registers a notification callback on
+- If a platform Devicetree is available, registers a notification callback on
 `gEdkiiPlatformHasDeviceTreeGuid`, which is the "UEFI will expose
 Devicetree to the OS" signal. The callback installs the managed
 Devicetree in the EFI Configuration Table, which matches FdtClientDxe behavior.
 - Registers an End-of-DXE notification callback. The callback ensures
 that controllers [marked as critical](DtBindings.md#fdtbuspkgcritical)
-are connected to their drivers and initialized when End-of-DXE is signalled
+are connected to their drivers and initialized when End-of-DXE is signaled
 during the BDS phase.
 - Registers as a bus driver, by:
-  - Creating the device handle for the Devicetree root.
+  - Creating the device handle for the Devicetree root, if a platform Devicetree is found.
   - On debug builds, creating the device handle for the test Devicetree root (used for regression testing).
   - Registering the Driver Binding and Component Name protocols.
 

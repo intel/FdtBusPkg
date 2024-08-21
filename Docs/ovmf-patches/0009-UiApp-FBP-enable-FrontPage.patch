@@ -1,4 +1,4 @@
-From 02a28142fd88f5a9634d5216aa93906d2556674a Mon Sep 17 00:00:00 2001
+From bf429cc673bce8044729210dfde29935f5b20967 Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Wed, 28 Feb 2024 09:10:53 -0600
 Subject: [PATCH 9/9] UiApp: FBP-enable FrontPage

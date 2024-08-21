@@ -1,4 +1,4 @@
-From 7ab9ab25e907ac6dbf220465d7f9c9b9d60cbb58 Mon Sep 17 00:00:00 2001
+From a8e7118dd0cb942fd528cb4d9ff76ec9dc2837a9 Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Mon, 26 Feb 2024 17:43:10 -0600
 Subject: [PATCH 5/9] RiscVVirt: enable VirtNorFlashDxe
@@ -13,7 +13,7 @@ Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
  2 files changed, 18 insertions(+), 1 deletion(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-index 5e9576c09612..feb58684d5d0 100644
+index adcb33b557e9..68894c90c753 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 @@ -29,6 +29,7 @@ [Defines]

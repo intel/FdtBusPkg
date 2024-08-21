@@ -82,16 +82,15 @@ OnPlatformHasDeviceTree (
     return;
   }
 
-  if (gDeviceTreeBase != NULL) {
-    DEBUG ((
-      DEBUG_INFO,
-      "%a: exposing DTB @ 0x%p to OS\n",
-      __FUNCTION__,
-      gDeviceTreeBase
-      ));
-    Status = gBS->InstallConfigurationTable (&gFdtTableGuid, gDeviceTreeBase);
-    ASSERT_EFI_ERROR (Status);
-  }
+  ASSERT (gDeviceTreeBase != NULL);
+  DEBUG ((
+    DEBUG_INFO,
+    "%a: exposing DTB @ 0x%p to OS\n",
+    __FUNCTION__,
+    gDeviceTreeBase
+    ));
+  Status = gBS->InstallConfigurationTable (&gFdtTableGuid, gDeviceTreeBase);
+  ASSERT_EFI_ERROR (Status);
 
   gBS->CloseEvent (Event);
   mPlatformHasDeviceTreeEvent = NULL;
@@ -110,6 +109,10 @@ UnregisterDtNotification (
   VOID
   )
 {
+  if (gDeviceTreeBase == NULL) {
+    return;
+  }
+
   gBS->CloseEvent (mPlatformHasDeviceTreeEvent);
   mPlatformHasDeviceTreeEvent = NULL;
 }
@@ -131,6 +134,10 @@ RegisterDtNotification (
 {
   EFI_STATUS  Status;
   VOID        *Registration;
+
+  if (gDeviceTreeBase == NULL) {
+    return EFI_SUCCESS;
+  }
 
   Status = gBS->CreateEvent (
                   EVT_NOTIFY_SIGNAL,
@@ -406,15 +413,8 @@ EntryPoint (
   IN  EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  VOID        *Hob;
   EFI_STATUS  Status;
   VOID        *DeviceTreeBase;
-
-  Hob = GetFirstGuidHob (&gFdtHobGuid);
-  if ((Hob == NULL) || (GET_GUID_HOB_DATA_SIZE (Hob) != sizeof (UINT64))) {
-    DEBUG ((DEBUG_WARN, "No FDT passed in to UEFI\n"));
-    Hob = NULL;
-  }
 
   //
   // gEfiCpuIo2ProtocolGuid is in the Depex list.
@@ -426,9 +426,9 @@ EntryPoint (
                   );
   ASSERT_EFI_ERROR (Status);
 
-  if (Hob != NULL) {
-    DeviceTreeBase = (VOID *)(UINTN)*(UINT64 *)GET_GUID_HOB_DATA (Hob);
-    Status         = ValidateFdt (DeviceTreeBase);
+  DeviceTreeBase = FbpPlatformGetDt ();
+  if (DeviceTreeBase != NULL) {
+    Status = ValidateFdt (DeviceTreeBase);
     if (EFI_ERROR (Status)) {
       //
       // Logged in ValidateFdt.
@@ -437,12 +437,19 @@ EntryPoint (
     }
 
     gDeviceTreeBase = DeviceTreeBase;
+  } else {
+    DEBUG ((DEBUG_WARN, "No FDT passed in to UEFI\n"));
   }
 
   Status = TestsInit ();
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: TestsInit: %r\n", __func__, Status));
     return Status;
+  }
+
+  if ((gDeviceTreeBase == NULL) && (gTestTreeBase == NULL)) {
+    DEBUG ((DEBUG_ERROR, "%a: no DT and no regression tests, bailing\n"));
+    return EFI_NOT_FOUND;
   }
 
   Status = RegisterDtNotification ();

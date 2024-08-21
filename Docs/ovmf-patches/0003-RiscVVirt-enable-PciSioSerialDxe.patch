@@ -1,4 +1,4 @@
-From d2ddf4348b8c0d7ebdcd7f1ee0dcbf64b4f2458c Mon Sep 17 00:00:00 2001
+From 2635252ca5ffb5f833c8badd56c235d27cd67cd3 Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Mon, 26 Feb 2024 17:20:41 -0600
 Subject: [PATCH 3/9] RiscVVirt: enable PciSioSerialDxe
@@ -15,7 +15,7 @@ Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
  4 files changed, 80 insertions(+), 5 deletions(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-index bca63deacf67..d9a5d82550fd 100644
+index 0a35b66539b0..aa1f4249edc6 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 @@ -24,6 +24,11 @@ [Defines]

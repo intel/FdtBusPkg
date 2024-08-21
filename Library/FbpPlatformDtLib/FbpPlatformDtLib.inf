@@ -1,0 +1,32 @@
+## @file
+#
+#  Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = FbpPlatformDtLib
+  FILE_GUID                      = 676a3958-7d91-4897-adc1-4ef22544b7a1
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = FbpPlatformDtLib
+
+[Sources]
+  FbpPlatformDtLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ShellPkg/ShellPkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  FdtBusPkg/FdtBusPkg.dec
+  EmbeddedPkg/EmbeddedPkg.dec
+
+[LibraryClasses]
+  UefiLib
+  HobLib
+
+[Guids]
+  gFdtHobGuid

@@ -1,4 +1,4 @@
-From 0de02f06df2e0c98f4d3bd474c2d376e51ed4dca Mon Sep 17 00:00:00 2001
+From bcb8e2a52e4192278505ffa31f59a76facfdbbb6 Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Mon, 26 Feb 2024 18:16:36 -0600
 Subject: [PATCH 7/9] RiscVVirt: enable FBP-enabled legacy PCI stack
@@ -13,7 +13,7 @@ Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
  1 file changed, 23 insertions(+), 4 deletions(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-index 810836692446..8dfef9c3c9ec 100644
+index b5bb31a746e8..fdc811ffe852 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 @@ -32,6 +32,7 @@ [Defines]
@@ -46,7 +46,7 @@ index 810836692446..8dfef9c3c9ec 100644
  
  !if $(TPM2_ENABLE) == TRUE
    Tpm2CommandLib|SecurityPkg/Library/Tpm2CommandLib/Tpm2CommandLib.inf
-@@ -546,12 +553,20 @@ [Components]
+@@ -549,12 +556,20 @@ [Components]
    #
    OvmfPkg/RiscVVirt/PciCpuIo2Dxe/PciCpuIo2Dxe.inf {
      <LibraryClasses>
@@ -69,7 +69,7 @@ index 810836692446..8dfef9c3c9ec 100644
    }
    OvmfPkg/PciHotPlugInitDxe/PciHotPlugInit.inf
    OvmfPkg/VirtioPciDeviceDxe/VirtioPciDeviceDxe.inf
-@@ -601,5 +616,9 @@ [Components]
+@@ -604,5 +619,9 @@ [Components]
    MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
    OvmfPkg/AcpiPlatformDxe/AcpiPlatformDxe.inf {
      <LibraryClasses>

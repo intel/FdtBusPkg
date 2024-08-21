@@ -66,7 +66,8 @@ extern LIST_ENTRY                    gCriticalDevices;
 #elif defined (MDE_CPU_RISCV64)
 #define DMA_DEFAULT_IS_COHERENT  FALSE
 #else
-  #error Define DMA_DEFAULT_IS_COHERENT for your architecture!
+#define DMA_DEFAULT_IS_COHERENT  TRUE
+  #warning Define DMA_DEFAULT_IS_COHERENT for your architecture. Assuming coherence!
 #endif
 
 struct _DT_DEVICE {

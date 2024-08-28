@@ -59,6 +59,7 @@ EntryPoint (
   AccessWidth = 1;
   RegIndex    = 0;
   RegName     = NULL;
+  Set         = FALSE;
   INIT_GET_OPT_CONTEXT (&GetOptContext);
   while ((Status = GetOpt (
                      Argc,
@@ -151,6 +152,8 @@ EntryPoint (
     } else {
       Print (L"Cannot get region by index %u: %r\n", RegIndex, Status);
     }
+
+    return Usage (Argv[0]);
   }
 
   if (RegName != NULL) {

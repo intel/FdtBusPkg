@@ -652,7 +652,11 @@ DtDeviceTranslateRangeToCpu (
     //
     // Ensure this is a valid CPU address range.
     //
-    if ((CurAddress > MAX_ADDRESS) ||
+    if (CurAddress > MAX_ADDRESS) {
+      return EFI_UNSUPPORTED;
+    }
+
+    if ((*Length != 0) &&
         ((CurAddress + *Length - 1) > MAX_ADDRESS))
     {
       return EFI_UNSUPPORTED;

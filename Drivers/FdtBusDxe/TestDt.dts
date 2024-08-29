@@ -13,7 +13,7 @@
     sample-device@1337 {
       compatible = "fdtbuspkg,sample-device";
 
-      reg = <0x1337 0x100>;
+      reg = < 0x1337 0x100 >;
     };
   };
 
@@ -32,11 +32,11 @@
       #size-cells = <3>;
 l1:   G2P0 {
         reg = < 0x1 0x2 0x3 0x4 0x5 0x6 0x7
-                0x1 0xa 0x3 0xb 0x5 0xc 0x7>;
+              0x1 0xa 0x3 0xb 0x5 0xc 0x7 >;
         G2P0C1 {
           reg = < 0 0 0x4 >;
         };
-     };
+      };
       G2P1 {
         #address-cells = <5>;
         #size-cells = <2>;
@@ -49,7 +49,7 @@ l1:   G2P0 {
     G3 {
       G3P0 {
         status = "disabled";
-     };
+      };
       G3P1 {
         status = "reserved";
       };
@@ -69,8 +69,8 @@ l1:   G2P0 {
     G4 {
       #address-cells = <3>;
       #size-cells = <2>;
-      ranges = <0x1 0x2 0x3 0x5 0x6 0x7 0x8
-                0xa 0xb 0xc 0xd 0xe 0xf 0x1>;
+      ranges = < 0x1 0x2 0x3 0x5 0x6 0x7 0x8
+               0xa 0xb 0xc 0xd 0xe 0xf 0x1 >;
     };
     G5 {
       #address-cells = <3>;
@@ -94,11 +94,11 @@ l1:   G2P0 {
       #address-cells = <2>;
       #size-cells = <2>;
       G7P0 {
-        reg = <0x1 0x00000002 0x3 0x00000004>,
-              <0x5 0x00000006 0x7 0x00000008>,
-              <0x9 0x0000000A 0xB 0x0000000C>,
-              <0xD 0x0000000E 0xF 0x00000011>,
-              <0x12 0x00000013 0x14 0x00000015>;
+        reg = < 0x1 0x00000002 0x3 0x00000004 >,
+        < 0x5 0x00000006 0x7 0x00000008 >,
+        < 0x9 0x0000000A 0xB 0x0000000C >,
+        < 0xD 0x0000000E 0xF 0x00000011 >,
+        < 0x12 0x00000013 0x14 0x00000015 >;
         reg-names = "apple", "banana", "orange", "grape", "peach";
       };
     };
@@ -109,17 +109,43 @@ l1:   G2P0 {
           dma-ranges;
         };
         Dma3 {
-          dma-ranges = <0x1 0x2 0x3 0x4 0x5>;
+          dma-ranges = < 0x1 0x2 0x3 0x4 0x5 >;
           Dma4 {
           };
         };
       };
     };
-   NodeToLookup: NodeToLookup {
-     test = "NodeToLookup";
-   };
-   LookupTest {
-     ref = <&NodeToLookup>;
-   };
+NodeToLookup: NodeToLookup {
+      test = "NodeToLookup";
+    };
+    LookupTest {
+      ref = < &NodeToLookup >;
+    };
+TestPic: TestPic {
+      interrupt-controller;
+      #address-cells = <0>;
+      #interrupt-cells = <2>;
+      test = "TestPic";
+    };
+    DevWithInterrupt {
+      interrupt-parent = < &TestPic >;
+      interrupts       = < 2 8 >;
+    };
+    InterruptNexus {
+      #address-cells = <2>;
+      #size-cells = <2>;
+      #interrupt-cells = <1>;
+      interrupt-map-mask = < 0 0 0xffffffff >;
+      interrupt-map      = <
+                           0 0 0xf &TestPic 0xff 4
+                           0 0 0x2 &TestPic 0x22 8
+                           0 0 0xe &TestPic 0xee 2
+                           2
+                           >;
+      DevWithInterruptUnderNexus {
+        reg        = < 0xaaaabbbb 0xccccdddd 0 0 >;
+        interrupts = < 2 0xe 0xf 0xd >;
+      };
+    };
   };
 };

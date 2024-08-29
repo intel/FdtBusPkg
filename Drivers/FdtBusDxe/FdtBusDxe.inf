@@ -49,6 +49,7 @@
   TimerLib
   FbpUtilsLib
   FbpPlatformDtLib
+  FbpInterruptUtilsLib
 
 [Protocols]
   gEfiDtIoProtocolGuid

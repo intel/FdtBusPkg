@@ -1,0 +1,34 @@
+## @file
+#
+#  Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = FbpInterruptUtilsLib
+  FILE_GUID                      = 6c09c086-4b9d-448c-aadb-1925a703d735
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = FbpInterruptUtilsLib
+
+[Sources]
+  Utils.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ShellPkg/ShellPkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  FdtBusPkg/FdtBusPkg.dec
+
+[LibraryClasses]
+  UefiLib
+  DebugLib
+  UefiBootServicesTableLib
+  FbpUtilsLib
+
+[Protocols]
+  gEfiDtIoProtocolGuid                    ## CONSUMES
+  gEfiDtInterruptProtocolGuid             ## CONSUMES

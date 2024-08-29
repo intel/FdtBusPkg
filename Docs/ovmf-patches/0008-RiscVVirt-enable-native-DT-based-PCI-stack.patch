@@ -1,4 +1,4 @@
-From 3f80075e161e5f4276cb7bea5546788bb51494b4 Mon Sep 17 00:00:00 2001
+From ad502e71292f5c71c6f9678fa0e38128281e5231 Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Wed, 28 Feb 2024 00:39:31 -0600
 Subject: [PATCH 8/9] RiscVVirt: enable native DT-based PCI stack
@@ -24,7 +24,7 @@ Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
  2 files changed, 53 insertions(+), 12 deletions(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-index fdc811ffe852..2ebf12caf403 100644
+index c2d0cf1af7c8..39476e0be971 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 @@ -32,7 +32,8 @@ [Defines]
@@ -63,7 +63,7 @@ index fdc811ffe852..2ebf12caf403 100644
    PeiHardwareInfoLib|OvmfPkg/Library/HardwareInfoLib/PeiHardwareInfoLib.inf
    PlatformHookLib|MdeModulePkg/Library/BasePlatformHookLibNull/BasePlatformHookLibNull.inf
    ImagePropertiesRecordLib|MdeModulePkg/Library/ImagePropertiesRecordLib/ImagePropertiesRecordLib.inf
-@@ -199,7 +206,13 @@ [LibraryClasses.common]
+@@ -200,7 +207,13 @@ [LibraryClasses.common]
  [LibraryClasses.common.DXE_DRIVER]
    AcpiPlatformLib|OvmfPkg/Library/AcpiPlatformLib/DxeAcpiPlatformLib.inf
    ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
@@ -77,7 +77,7 @@ index fdc811ffe852..2ebf12caf403 100644
  
  !if $(TPM2_ENABLE) == TRUE
    Tpm2DeviceLib|SecurityPkg/Library/Tpm2DeviceLibTcg2/Tpm2DeviceLibTcg2.inf
-@@ -207,7 +220,13 @@ [LibraryClasses.common.DXE_DRIVER]
+@@ -208,7 +221,13 @@ [LibraryClasses.common.DXE_DRIVER]
  
  [LibraryClasses.common.UEFI_DRIVER]
    UefiScsiLib|MdePkg/Library/UefiScsiLib/UefiScsiLib.inf
@@ -91,7 +91,7 @@ index fdc811ffe852..2ebf12caf403 100644
  
  #!include NetworkPkg/NetworkBuildOptions.dsc.inc
  
-@@ -556,17 +575,29 @@ [Components]
+@@ -557,17 +576,29 @@ [Components]
    #
    OvmfPkg/RiscVVirt/PciCpuIo2Dxe/PciCpuIo2Dxe.inf {
      <LibraryClasses>
@@ -125,7 +125,7 @@ index fdc811ffe852..2ebf12caf403 100644
        !else
          NULL|OvmfPkg/Fdt/FdtPciPcdProducerLib/FdtPciPcdProducerLib.inf
        !endif
-@@ -619,8 +650,10 @@ [Components]
+@@ -620,8 +651,10 @@ [Components]
    MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
    OvmfPkg/AcpiPlatformDxe/AcpiPlatformDxe.inf {
      <LibraryClasses>

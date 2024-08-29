@@ -332,7 +332,7 @@ directly look up a device, if the path to the device is known.
 ```
 
 The example first looks up the `EFI_DT_IO_PROTOCOL` for the root DT
-controller using the `FbpGetDtRoot ()` function provided by the
+controller using the `FbpGetDtRoot()` function provided by the
 convenience FbpUtilsLib library. The code then does a lookup by
 an absolute path or alias of a UART device, connecting any missing
 DT controllers along the way (provided they have UEFI Driver Model
@@ -425,15 +425,24 @@ Yes, legacy drivers are awkward and messy. This is why the UEFI Driver Model exi
 ## Adapting Existing Drivers to `EFI_DT_IO_PROTOCOL`
 
 Aside from figuring out device discovery (legacy vs. UEFI Driver Model) the
-next big question to solve is how to interact with a device. The `GetReg()`
-DT I/O Protocol function is similar to fetching the BAR info for a PCI
-device. `GetReg()` will populate an `EFI_DT_REG` descriptor.
+next big question to solve is how to interact with a device.
+
+### Accessing Device Registers
+
+The `GetReg()` DT I/O Protocol function is similar to fetching the BAR info for a PCI device.
+`GetReg()` will populate an `EFI_DT_REG` descriptor.
+
+#### Access via DT I/O Protocol Functions
 
 For some drivers, it will be easy enough to simply use appropriate DT
 I/O Protocol functions (`ReadReg()` and friends), which operate
 directly on the `EFI_DT_REG` descriptor.
 [PciSioSerialDxe](../Drivers/PciSioSerialDxe/SerialIo.c#L1371) is a
 good example.
+
+See notes on [register access API](DtIoProtocol.md#register-access).
+
+#### Direct Access
 
 Other drivers may be a bit more involved. Maybe you need the actual
 CPU address. Maybe you'll need the untranslated bus address. Maybe
@@ -452,7 +461,59 @@ can only perform I/O using the DT I/O Protocol functions (`ReadReg()` and
 friends, and [only if the ancestor device driver implements the I/O
 callbacks](../Drivers/FdtBusDxe/DtIo.c#L438)).
 
-See notes on [register access API](DtIoProtocol.md#register-access).
+### Interrupts
+
+Interrupts are not really used in the UEFI environment, outside of an
+mplementation of the `EFI_TIMER_ARCH_PROTOCOL`.
+
+The interrupt information is provided using the _interrupts_ and (optionally)
+_interrupt-parent_ properties for a DT controller. This information can be used
+to look up an `EFI_DT_INTERRUPT_PROTOCOL` instance and register a handler.
+
+In practice, the described interrupt may actually need to be looked up
+via an interrupt nexus before arriving at an interrupt controller.
+The `FbpInterruptGet()` in the convenience FbpInterruptUtilsLib implements
+this logic.
+
+> [!NOTE]
+> ``FbpInterruptGet()` is not part of `EFI_DT_IO_PROTOCOL`, as it is
+> functionality that is, in practice, used at _most_ by one DT controller
+> driver.
+
+Here's a code example:
+
+```
+...
+  //
+  // Grab the first interrupt described in the interrupts property,
+  // translating it into an EFI_HANDLE for the interrupt controller
+  // and the interrupt specifier.
+  //
+  Status = FbpInterruptGet (DtIo, 0, &InterruptParent, &InterruptData);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: FbpInterruptGet: %r\n", __func__, Status));
+    goto out;
+  }
+
+  //
+  // Interrupt controller drivers don't go away, so can use the simpler HandleProtocol instead of
+  // OpenProtocol.
+  //
+  Status = gBS->HandleProtocol (InterruptParent, &gEfiDtInterruptProtocolGuid, (VOID **)&TimerInstance->DtInterrupt);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: HandleProtocol(EfiDtInterruptProtocolGuid): %r\n", __func__, Status));
+    goto out;
+  }
+
+  Status = TimerInstance->DtInterrupt->RegisterInterrupt (
+                                         TimerInstance->DtInterrupt,
+                                         &InterruptData,
+                                         TimerInterruptHandler,
+                                         TimerInstance,
+                                         &TimerInstance->Cookie
+                                         );
+...
+```
 
 ## Critical Device Drivers
 
@@ -470,7 +531,13 @@ What about the devices that are not in the boot path?
 
 Sometimes the device needs to be initialized at an early phase. For example,
 VariableRuntimeDxe requires the flash to be accessible, which may introduce
-a dependency on the NOR flash driver. This can be resolved using the DXE
+a dependency on the NOR flash driver.
+
+Another example are drivers that implement architectural protocols, such
+as `EFI_TIMER_ARCH_PROTOCOL`. These need to be available prior to the
+BDS phase.
+
+This can be resolved using the DXE
 APRIORI list, which will load the specified drivers in the specified
 order before dispatching anything else. For example:
 
@@ -487,6 +554,33 @@ also ensures that the flash driver is loaded before the DT bus driver,
 ensuring that it binds to the flash device as soon as the DT bus
 driver loads. Overall this ensures the flash device is initialized
 before VariableRuntimeDxe.
+
+Here's an example for an environment, where the interrupt controller
+and timer drivers are DT controller drivers.
+
+```
+APRIORI DXE {
+  #
+  # ApicDxe has a depex on CPU arch protocol.
+  #
+  INF  UefiCpuPkg/Drivers/CpuDxe/CpuDxe.inf
+  #
+  # ApicDxe must be loaded before FdtBusDxe for early binding, as
+  # it is required by HpetTimerDxe.
+  #
+  INF  MyCrazyPkg/Drivers/ApicDxe/Driver.inf
+  #
+  # Needs ApicDxe, and must be loaded before
+  # FdtBusDxe for early binding, as it produces
+  # the timer architectural protocol.
+  #
+  INF  MyCrazyPkg/Drivers/HpetTimerDxe/Driver.inf
+  #
+  # One bus driver to rule them all...
+  #
+  INF  FdtBusPkg/Drivers/FdtBusDxe/FdtBusDxe.inf
+}
+```
 
 ### Manually Connecting during the BDS Phase
 

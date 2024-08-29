@@ -1,6 +1,6 @@
 ## @file
 #
-#  Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2023-2024, Intel Corporation. All rights reserved.<BR>
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -18,6 +18,8 @@
 [Protocols]
   ## Include/Protocol/DtIo.h
   gEfiDtIoProtocolGuid           = { 0x5ce5a2b0, 0x2838, 0x3c35, {0x1e, 0xe3, 0x42, 0x5e, 0x36, 0x50, 0xa2, 0x9b }}
+  ## Include/Protoco/DtInterrupt.h
+  gEfiDtInterruptProtocolGuid    = { 0x5ce5a2b0, 0x2838, 0x3c35, {0x1e, 0xe3, 0x42, 0x5e, 0x36, 0x50, 0xa3, 0x9c }}
 
 [Guids]
   gEfiDtDevicePathGuid           = { 0x5ce5a2b0, 0x2838, 0x3c35, {0x1e, 0xe3, 0x42, 0x5e, 0x36, 0x50, 0xa2, 0x9c }}

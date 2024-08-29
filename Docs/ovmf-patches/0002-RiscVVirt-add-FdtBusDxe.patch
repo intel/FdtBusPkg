@@ -1,4 +1,4 @@
-From e8d38a1916361b1b92c110382cb38bb1db410509 Mon Sep 17 00:00:00 2001
+From b1818d4cd4089de02c964757fff987b35985e59c Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Mon, 26 Feb 2024 17:01:39 -0600
 Subject: [PATCH 2/9] RiscVVirt: add FdtBusDxe
@@ -7,23 +7,24 @@ Not used by anything.
 
 Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
 ---
- OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc | 5 +++++
+ OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc | 6 ++++++
  OvmfPkg/RiscVVirt/RiscVVirtQemu.fdf | 1 +
- 2 files changed, 6 insertions(+)
+ 2 files changed, 7 insertions(+)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-index 024badebf250..0a35b66539b0 100644
+index 024badebf250..2d9dc2fbdc5a 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-@@ -160,6 +160,7 @@ [LibraryClasses.common]
+@@ -160,6 +160,8 @@ [LibraryClasses.common]
    PeiHardwareInfoLib|OvmfPkg/Library/HardwareInfoLib/PeiHardwareInfoLib.inf
    PlatformHookLib|MdeModulePkg/Library/BasePlatformHookLibNull/BasePlatformHookLibNull.inf
    ImagePropertiesRecordLib|MdeModulePkg/Library/ImagePropertiesRecordLib/ImagePropertiesRecordLib.inf
 +  FbpUtilsLib|FdtBusPkg/Library/FbpUtilsLib/FbpUtilsLib.inf
++  FbpInterruptUtilsLib|FdtBusPkg/Library/FbpInterruptUtilsLib/FbpInterruptUtilsLib.inf
  
  !if $(TPM2_ENABLE) == TRUE
    Tpm2CommandLib|SecurityPkg/Library/Tpm2CommandLib/Tpm2CommandLib.inf
-@@ -421,6 +422,10 @@ [Components]
+@@ -421,6 +423,10 @@ [Components]
    OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
    OvmfPkg/VirtioNetDxe/VirtioNet.inf
    OvmfPkg/VirtioRngDxe/VirtioRng.inf

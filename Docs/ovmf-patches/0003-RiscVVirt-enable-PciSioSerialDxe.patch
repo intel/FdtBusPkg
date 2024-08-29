@@ -1,4 +1,4 @@
-From 2635252ca5ffb5f833c8badd56c235d27cd67cd3 Mon Sep 17 00:00:00 2001
+From 982f26163abede6d6ce0b2c9e42c7591665c4a38 Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Mon, 26 Feb 2024 17:20:41 -0600
 Subject: [PATCH 3/9] RiscVVirt: enable PciSioSerialDxe
@@ -15,7 +15,7 @@ Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
  4 files changed, 80 insertions(+), 5 deletions(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-index 0a35b66539b0..aa1f4249edc6 100644
+index 2d9dc2fbdc5a..14661698c82e 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 @@ -24,6 +24,11 @@ [Defines]
@@ -40,7 +40,7 @@ index 0a35b66539b0..aa1f4249edc6 100644
  !ifdef $(SOURCE_DEBUG_ENABLE)
    GCC:*_*_RISCV64_GENFW_FLAGS    = --keepexceptiontable
  !endif
-@@ -393,7 +401,11 @@ [Components]
+@@ -394,7 +402,11 @@ [Components]
    MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe.inf
    MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
    MdeModulePkg/Universal/Console/TerminalDxe/TerminalDxe.inf

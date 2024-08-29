@@ -1,4 +1,4 @@
-From 76dcf43432ef37341ae860e87bc4189d02b33bcf Mon Sep 17 00:00:00 2001
+From 403acb4ac87113e40ea4391bba37831f52521b40 Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Mon, 26 Feb 2024 17:27:05 -0600
 Subject: [PATCH 4/9] RiscVVirt: enable VirtioFdtDxe
@@ -14,7 +14,7 @@ Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
  3 files changed, 15 insertions(+), 1 deletion(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-index aa1f4249edc6..adcb33b557e9 100644
+index 14661698c82e..6beac1671b4e 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 @@ -28,6 +28,7 @@ [Defines]
@@ -35,7 +35,7 @@ index aa1f4249edc6..adcb33b557e9 100644
  !ifdef $(SOURCE_DEBUG_ENABLE)
    GCC:*_*_RISCV64_GENFW_FLAGS    = --keepexceptiontable
  !endif
-@@ -422,7 +426,11 @@ [Components]
+@@ -423,7 +427,11 @@ [Components]
    #
    # Platform Driver
    #

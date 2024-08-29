@@ -88,6 +88,7 @@
   UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
   FbpUtilsLib|FdtBusPkg/Library/FbpUtilsLib/FbpUtilsLib.inf
   FbpPciUtilsLib|FdtBusPkg/Library/FbpPciUtilsLib/FbpPciUtilsLib.inf
+  FbpInterruptUtilsLib|FdtBusPkg/Library/FbpInterruptUtilsLib/FbpInterruptUtilsLib.inf
   DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
 
 [LibraryClasses.AARCH64]

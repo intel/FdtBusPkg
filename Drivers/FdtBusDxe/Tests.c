@@ -7,6 +7,7 @@
 **/
 
 #include "FdtBusDxe.h"
+#include <Library/FbpInterruptUtilsLib.h>
 
 #ifndef MDEPKG_NDEBUG
   #include "TestDt.dtbi"
@@ -899,6 +900,66 @@ TEST_DEF (LookupTest) {
   ASSERT (AsciiStrCmp (String, "NodeToLookup") == 0);
 }
 
+TEST_DEF (DevWithInterrupt) {
+  EFI_DT_PROPERTY     Interrupt;
+  EFI_HANDLE          InterruptParent;
+  EFI_DT_IO_PROTOCOL  *FoundDtIo;
+  CONST CHAR8         *String;
+  UINT32              Value;
+
+  ASSERT (FbpInterruptGet (DtIo, 0, &InterruptParent, &Interrupt) == EFI_SUCCESS);
+  ASSERT (gBS->HandleProtocol (InterruptParent, &gEfiDtIoProtocolGuid, (VOID **)&FoundDtIo) == EFI_SUCCESS);
+  ASSERT (FoundDtIo->GetString (FoundDtIo, "test", 0, &String) == EFI_SUCCESS);
+  ASSERT (AsciiStrCmp (String, "TestPic") == 0);
+  ASSERT (FoundDtIo->ParseProp (FoundDtIo, &Interrupt, EFI_DT_VALUE_U32, 0, &Value) == EFI_SUCCESS);
+  ASSERT (Value == 2);
+  ASSERT (FoundDtIo->ParseProp (FoundDtIo, &Interrupt, EFI_DT_VALUE_U32, 0, &Value) == EFI_SUCCESS);
+  ASSERT (Value == 8);
+
+  ASSERT (FbpInterruptGet (DtIo, 3, &InterruptParent, &Interrupt) == EFI_NOT_FOUND);
+}
+
+TEST_DEF (DevWithInterruptUnderNexus) {
+  EFI_DT_PROPERTY     Interrupt;
+  EFI_HANDLE          InterruptParent;
+  EFI_DT_IO_PROTOCOL  *FoundDtIo;
+  CONST CHAR8         *String;
+  UINT32              Value;
+
+  ASSERT (FbpInterruptGet (DtIo, 0, &InterruptParent, &Interrupt) == EFI_SUCCESS);
+  ASSERT (gBS->HandleProtocol (InterruptParent, &gEfiDtIoProtocolGuid, (VOID **)&FoundDtIo) == EFI_SUCCESS);
+  ASSERT (FoundDtIo->GetString (FoundDtIo, "test", 0, &String) == EFI_SUCCESS);
+  ASSERT (AsciiStrCmp (String, "TestPic") == 0);
+  ASSERT (FoundDtIo->ParseProp (FoundDtIo, &Interrupt, EFI_DT_VALUE_U32, 0, &Value) == EFI_SUCCESS);
+  ASSERT (Value == 0x22);
+  ASSERT (FoundDtIo->ParseProp (FoundDtIo, &Interrupt, EFI_DT_VALUE_U32, 0, &Value) == EFI_SUCCESS);
+  ASSERT (Value == 8);
+
+  ASSERT (FbpInterruptGet (DtIo, 1, &InterruptParent, &Interrupt) == EFI_SUCCESS);
+  ASSERT (gBS->HandleProtocol (InterruptParent, &gEfiDtIoProtocolGuid, (VOID **)&FoundDtIo) == EFI_SUCCESS);
+  ASSERT (FoundDtIo->GetString (FoundDtIo, "test", 0, &String) == EFI_SUCCESS);
+  ASSERT (AsciiStrCmp (String, "TestPic") == 0);
+  ASSERT (FoundDtIo->ParseProp (FoundDtIo, &Interrupt, EFI_DT_VALUE_U32, 0, &Value) == EFI_SUCCESS);
+  ASSERT (Value == 0xee);
+  ASSERT (FoundDtIo->ParseProp (FoundDtIo, &Interrupt, EFI_DT_VALUE_U32, 0, &Value) == EFI_SUCCESS);
+  ASSERT (Value == 2);
+
+  ASSERT (FbpInterruptGet (DtIo, 2, &InterruptParent, &Interrupt) == EFI_SUCCESS);
+  ASSERT (gBS->HandleProtocol (InterruptParent, &gEfiDtIoProtocolGuid, (VOID **)&FoundDtIo) == EFI_SUCCESS);
+  ASSERT (FoundDtIo->GetString (FoundDtIo, "test", 0, &String) == EFI_SUCCESS);
+  ASSERT (AsciiStrCmp (String, "TestPic") == 0);
+  ASSERT (FoundDtIo->ParseProp (FoundDtIo, &Interrupt, EFI_DT_VALUE_U32, 0, &Value) == EFI_SUCCESS);
+  ASSERT (Value == 0xff);
+  ASSERT (FoundDtIo->ParseProp (FoundDtIo, &Interrupt, EFI_DT_VALUE_U32, 0, &Value) == EFI_SUCCESS);
+  ASSERT (Value == 4);
+
+  //
+  // There's a malformed entry in InterruptNexus.
+  //
+  ASSERT (FbpInterruptGet (DtIo, 3, &InterruptParent, &Interrupt) == EFI_DEVICE_ERROR);
+  ASSERT (FbpInterruptGet (DtIo, 4, &InterruptParent, &Interrupt) == EFI_NOT_FOUND);
+}
+
 STATIC TestDesc  TestDescs[] = {
   TEST_DECL (DtTestRoot),
   TEST_DECL (G0),
@@ -927,7 +988,9 @@ STATIC TestDesc  TestDescs[] = {
   TEST_DECL (Dma2),
   TEST_DECL (Dma3),
   TEST_DECL (Dma4),
-  TEST_DECL (LookupTest)
+  TEST_DECL (LookupTest),
+  TEST_DECL (DevWithInterrupt),
+  TEST_DECL (DevWithInterruptUnderNexus)
 };
 
 /**

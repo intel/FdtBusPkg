@@ -146,4 +146,23 @@ FbpBusComponentName (
   OUT CHAR16      **ControllerName
   );
 
+BOOLEAN
+FbpPropertyCompare (
+  IN EFI_DT_PROPERTY  *What,
+  IN EFI_DT_PROPERTY  *Against,
+  IN UINTN            Cells,
+  IN EFI_DT_PROPERTY  *Mask
+  );
+
+VOID
+FbpPropertyFreeDeepCopy (
+  IN  EFI_DT_PROPERTY  *Property
+  );
+
+EFI_STATUS
+FbpPropertyDeepCopy (
+  IN EFI_DT_PROPERTY   *PropertyToCopy,
+  OUT EFI_DT_PROPERTY  *New
+  );
+
 #endif /* __FBP_UTILS_LIB_H__ */

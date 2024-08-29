@@ -1,4 +1,4 @@
-From a8e7118dd0cb942fd528cb4d9ff76ec9dc2837a9 Mon Sep 17 00:00:00 2001
+From 0f0249835d949ec082a4b6d42294b1e3f3c819f6 Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Mon, 26 Feb 2024 17:43:10 -0600
 Subject: [PATCH 5/9] RiscVVirt: enable VirtNorFlashDxe
@@ -13,7 +13,7 @@ Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
  2 files changed, 18 insertions(+), 1 deletion(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-index adcb33b557e9..68894c90c753 100644
+index 6beac1671b4e..b0ef45b5c22b 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 @@ -29,6 +29,7 @@ [Defines]
@@ -34,7 +34,7 @@ index adcb33b557e9..68894c90c753 100644
  
    CapsuleLib|MdeModulePkg/Library/DxeCapsuleLibNull/DxeCapsuleLibNull.inf
    BootLogoLib|MdeModulePkg/Library/BootLogoLib/BootLogoLib.inf
-@@ -414,7 +417,11 @@ [Components]
+@@ -415,7 +418,11 @@ [Components]
    MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
  
    UefiCpuPkg/CpuTimerDxeRiscV64/CpuTimerDxeRiscV64.inf

@@ -307,3 +307,129 @@ FbpBusComponentName (
   *ControllerName = DtIoProtocol->ComponentName;
   return EFI_SUCCESS;
 }
+
+/**
+  Perform a deep copy of an EFI_DT_PROPERTY, which is useful
+  when the underlying data needs to be mutated as part of processing.
+
+  @param  PropertyToCopy EFI_DT_PROPERTY *.
+  @param  New            EFI_DT_PROPERTY *.
+
+  @retval EFI_SUCCESS    Success.
+  @retval Others         EFI_STATUS.
+
+**/
+EFI_STATUS
+FbpPropertyDeepCopy (
+  IN EFI_DT_PROPERTY   *PropertyToCopy,
+  OUT EFI_DT_PROPERTY  *New
+  )
+{
+  VOID   *NewData;
+  UINTN  Size;
+
+  Size = PropertyToCopy->End - PropertyToCopy->Begin;
+  if (Size == 0) {
+    *New = *PropertyToCopy;
+  }
+
+  NewData = AllocateCopyPool (Size, PropertyToCopy->Begin);
+  if (NewData == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: AllocateCopyPool(%lu)\n", __func__, Size));
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  New->Begin = NewData;
+  New->End   = NewData + Size;
+  New->Iter  = PropertyToCopy->Iter - PropertyToCopy->Begin + New->Begin;
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Free a deep copy of an EFI_DT_PROPERTY.
+
+  @param  Property EFI_DT_PROPERTY *.
+
+**/
+VOID
+FbpPropertyFreeDeepCopy (
+  IN  EFI_DT_PROPERTY  *Property
+  )
+{
+  UINTN  Size;
+
+  Size = Property->End - Property->Begin;
+  if (Size == 0) {
+    return;
+  }
+
+  FreePool ((VOID *)Property->Begin);
+  Property->Begin = NULL;
+  Property->End   = NULL;
+  Property->Iter  = NULL;
+}
+
+/**
+  Compare cell-by-cell two properies (at their current iterator pointers),
+  optionally applying the AND mask, specified by a third property.
+
+  Checks if What == Against & Mask.
+
+  No iterators are advanced.
+
+  @param  What    EFI_DT_PROPERTY *.
+  @param  Against EFI_DT_PROPERTY *.
+  @param  Mask    Optional AND mask for Against.
+
+  @retval TRUE    What == Against & Mask.
+  @retval FALSE   What != Against & Mask.
+
+**/
+BOOLEAN
+FbpPropertyCompare (
+  IN EFI_DT_PROPERTY  *What,
+  IN EFI_DT_PROPERTY  *Against,
+  IN UINTN            Cells,
+  IN EFI_DT_PROPERTY  *Mask
+  )
+{
+  UINTN              WhatCells;
+  UINTN              AgainstCells;
+  UINTN              MaskCells;
+  CONST EFI_DT_CELL  *WhatBuf;
+  CONST EFI_DT_CELL  *AgainstBuf;
+  CONST EFI_DT_CELL  *MaskBuf;
+
+  WhatCells    = (What->End - What->Iter) / sizeof (EFI_DT_CELL);
+  AgainstCells = (Against->End - Against->Iter) / sizeof (EFI_DT_CELL);
+  MaskCells    = 0;
+  if (Mask != NULL) {
+    MaskCells = (Mask->End - Mask->Iter) / sizeof (EFI_DT_CELL);
+  }
+
+  WhatBuf    = What->Iter;
+  AgainstBuf = Against->Iter;
+  MaskBuf    = Mask != NULL ? Mask->Iter : NULL;
+
+  if ((WhatCells < Cells) ||
+      (AgainstCells < Cells) ||
+      ((MaskCells != 0) && (MaskCells < Cells)))
+  {
+    return FALSE;
+  }
+
+  while (Cells--) {
+    UINT32  Mask = -1;
+
+    if (MaskBuf != NULL) {
+      Mask = *MaskBuf++;
+    }
+
+    if (*WhatBuf++ != (*AgainstBuf++ & Mask)) {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}

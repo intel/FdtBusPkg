@@ -1,4 +1,4 @@
-From ad4b6443cbc769e0a7115127d6cb6c4a8b283eb0 Mon Sep 17 00:00:00 2001
+From 712f90e370f68765465dc386302a5230bf68e1fa Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Mon, 26 Feb 2024 18:01:14 -0600
 Subject: [PATCH 6/9] RiscVVirt: enable HighMemDxe
@@ -17,7 +17,7 @@ Signed-off-by: Andrei Warkentin <andrei.warkentin@intel.com>
  2 files changed, 20 insertions(+), 1 deletion(-)
 
 diff --git a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
-index 68894c90c753..b5bb31a746e8 100644
+index b0ef45b5c22b..a1a333acd8f2 100644
 --- a/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 +++ b/OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc
 @@ -30,6 +30,8 @@ [Defines]
@@ -29,7 +29,7 @@ index 68894c90c753..b5bb31a746e8 100644
  
    #
    # Enable below options may cause build error or may not work on
-@@ -444,7 +446,16 @@ [Components]
+@@ -445,7 +447,16 @@ [Components]
        PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
        DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
    }

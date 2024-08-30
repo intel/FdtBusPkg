@@ -13,7 +13,7 @@ set -e
 basedir=$(dirname -- "$0")
 
 cleanup () {
-  rm -f *.dtb *.dtbi
+  rm -f *.dtb
 }
 
 trap cleanup EXIT

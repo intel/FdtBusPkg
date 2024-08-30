@@ -115,5 +115,11 @@ l1:   G2P0 {
         };
       };
     };
+   NodeToLookup: NodeToLookup {
+     test = "NodeToLookup";
+   };
+   LookupTest {
+     ref = <&NodeToLookup>;
+   };
   };
 };

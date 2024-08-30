@@ -1,6 +1,6 @@
 /** @file
 
-    Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
+    Copyright (c) 2023-2024, Intel Corporation. All rights reserved.<BR>
 
     SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -716,6 +716,120 @@ DtIoParsePropString (
 }
 
 /**
+  Parses out a device property value, advancing Prop->Iter on success.
+
+  The value is a phandle, which is converted to a device path and connected
+  as necessary.
+
+  @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
+  @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
+                                current position.
+  @param  Type                  Type of the field to parse out.
+  @param  Index                 Index of the field to return, starting from the
+                                current buffer position within the EFI_DT_PROPERTY.
+  @param  Handle                Pointer to EFI_HANDLE.
+  @retval EFI_SUCCESS           Parsing successful.
+  @retval EFI_NOT_FOUND         Not enough remaining property buffer to contain
+                                the field of specified type.
+  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
+
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+DtIoParsePropDevice (
+  IN  DT_DEVICE            *DtDevice,
+  IN  OUT EFI_DT_PROPERTY  *Prop,
+  IN  UINTN                Index,
+  OUT EFI_HANDLE           *Handle
+  )
+{
+  UINT32             Phandle;
+  EFI_STATUS         Status;
+  INTN               NodeOffset;
+  INTN               FdtRet;
+  VOID               *TreeBase;
+  CHAR8              *Path;
+  UINTN              PathSize;
+  CONST EFI_DT_CELL  *OriginalIter;
+
+  OriginalIter = Prop->Iter;
+  Status       = DtIoParsePropU32 (DtDevice, Prop, Index, &Phandle);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // We have a phandle. What follows is an extremely suboptimal
+  // implementation. fdt_node_offset_by_phandle is slow, plus
+  // fdt_get_path builds a path (slowly, and with extra memory),
+  // plus DtIoLookup then builds a device path (with tons
+  // of pool churn).
+  //
+  // It should be possible to use fdt_get_path-like logic
+  // (comparing phandles instead of node offsets) and to build
+  // the DP directly. Instead of the awkward DP manipulation
+  // routines, instead keep the DP nodes in a linked list and
+  // flatten these when done.
+  //
+  // Of course, this is an optimization and may be entirely
+  // unwarranted.
+  //
+
+  TreeBase   = GetTreeBaseFromDeviceFlags (DtDevice->Flags);
+  NodeOffset = fdt_node_offset_by_phandle (TreeBase, Phandle);
+  if (NodeOffset < 0) {
+    Status = EFI_NOT_FOUND;
+    goto out;
+  }
+
+  //
+  // We have a node offset. Lookup a path.
+  //
+
+  Path     = NULL;
+  PathSize = 0;
+  FdtRet   = 0;
+  do {
+    PathSize += EFI_PAGE_SIZE;
+    if (Path != NULL) {
+      FreePool (Path);
+      Path = NULL;
+    }
+
+    Path = AllocatePool (PathSize);
+    if (Path == NULL) {
+      break;
+    }
+
+    FdtRet = fdt_get_path (TreeBase, NodeOffset, Path, PathSize);
+  } while (FdtRet == -FDT_ERR_NOSPACE);
+
+  if (Path == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto out;
+  }
+
+  if (FdtRet < 0) {
+    Status = EFI_DEVICE_ERROR;
+    goto out;
+  }
+
+  //
+  // Have a path string - build a UEFI path and connect to a handle.
+  //
+  Status = DtIoLookup (&DtDevice->DtIo, Path, TRUE, Handle);
+  FreePool (Path);
+
+out:
+  if (EFI_ERROR (Status)) {
+    Prop->Iter = OriginalIter;
+  }
+
+  return Status;
+}
+
+/**
   Parses out a field encoded in the property, advancing Prop->Iter on success.
 
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
@@ -772,7 +886,7 @@ DtIoParseProp (
     case EFI_DT_VALUE_STRING:
       return DtIoParsePropString (DtDevice, Prop, Index, Buffer);
     case EFI_DT_VALUE_DEVICE:
-      break;
+      return DtIoParsePropDevice (DtDevice, Prop, Index, Buffer);
   }
 
   return EFI_UNSUPPORTED;

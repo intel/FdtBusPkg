@@ -888,6 +888,17 @@ TEST_DEF (Dma4) {
   ASSERT ((DtDevice->Flags & DT_DEVICE_NON_IDENTITY_DMA) != 0);
 }
 
+TEST_DEF (LookupTest) {
+  EFI_HANDLE          Handle;
+  EFI_DT_IO_PROTOCOL  *FoundDtIo;
+  CONST CHAR8         *String;
+
+  ASSERT (DtIo->GetDevice (DtIo, "ref", 0, &Handle) == EFI_SUCCESS);
+  ASSERT (gBS->HandleProtocol (Handle, &gEfiDtIoProtocolGuid, (VOID **)&FoundDtIo) == EFI_SUCCESS);
+  ASSERT (FoundDtIo->GetString (FoundDtIo, "test", 0, &String) == EFI_SUCCESS);
+  ASSERT (AsciiStrCmp (String, "NodeToLookup") == 0);
+}
+
 STATIC TestDesc  TestDescs[] = {
   TEST_DECL (DtTestRoot),
   TEST_DECL (G0),
@@ -915,7 +926,8 @@ STATIC TestDesc  TestDescs[] = {
   TEST_DECL (Dma1),
   TEST_DECL (Dma2),
   TEST_DECL (Dma3),
-  TEST_DECL (Dma4)
+  TEST_DECL (Dma4),
+  TEST_DECL (LookupTest)
 };
 
 /**

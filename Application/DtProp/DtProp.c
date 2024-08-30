@@ -257,8 +257,21 @@ EntryPoint (
           Print (L"%a\n", Value.String);
           break;
         case L'd':
-          Print (L"%lx\n", Value.Handle);
+        {
+          EFI_DT_IO_PROTOCOL  *NewDtIo;
+
+          Status = gBS->HandleProtocol (Value.Handle, &gEfiDtIoProtocolGuid, (VOID **)&NewDtIo);
+          if (EFI_ERROR (Status)) {
+            //
+            // Weird (how did ParseProp succeed?), but let's not crash.
+            //
+            Print (L"%lx (no DtIo?)\n", Value.Handle);
+          } else {
+            Print (L"%s\n", NewDtIo->ComponentName);
+          }
+
           break;
+        }
         default:
           ASSERT (0);
       }

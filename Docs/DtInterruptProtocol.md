@@ -88,6 +88,8 @@ specifier valid in the context of the interrupt controller driver. Such
 an interrupt specifier could come from the _interrupts_ property for a DT
 controller, or from the _interrupt-map_ of an interrupt nexus Devicetree node.
 
+`InterruptData->Iter` is only updated on success.
+
 #### Prototype
 
 ```
@@ -116,7 +118,7 @@ EFI_STATUS
 
 | Status Code | Description |
 | ----------- | ----------- |
-| `EFI_SUCCESS` | Interrupt handler registered and cookie returned. |
+| `EFI_SUCCESS` | Interrupt handler registered, `*Cookie` set, `InterruptData->Iter` updated. |
 | `EFI_UNSUPPORTED` | Configuration not supported. |
 | `EFI_INVALID_PARAMETER` | Bad parameter. |
 | `EFI_DEVICE_ERROR` | Hardware could not be programmed. |

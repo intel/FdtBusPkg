@@ -451,20 +451,25 @@ region. [VirtioFdtDxe](../Drivers/VirtioFdtDxe/DriverBinding.c#L441) is a
 good example: it actually creates a child device for the managed DT
 controller, to which a generic (Virtio10) driver binds. This generic
 driver doesn't know anything about FDT or PCI controllers, so the
-`VIRTIO_MMIO_DEVICE` needs the actual CPU address of the device. The
-`TranslatedBase` field of a register descriptor is a CPU address
+`VIRTIO_MMIO_DEVICE` needs the actual CPU address of the device.
+
+The `TranslatedBase` field of a register descriptor is a CPU address
 if the `BusDtIo` field is NULL, meaning that FdtBusDxe was able
-to translate the bus address to a CPU address. If the field is not
-NULL, then `TranslatedBase` is a bus address that is valid in the
+to translate the bus address to a CPU address.
+
+If the field is not NULL, then `TranslatedBase` is a bus address that is valid in the
 context of the ancestor DT controller referenced by `BusDtIo`, and you
 can only perform I/O using the DT I/O Protocol functions (`ReadReg()` and
 friends, and [only if the ancestor device driver implements the I/O
 callbacks](../Drivers/FdtBusDxe/DtIo.c#L438)).
 
+You can use the `FbpRegToPhysicalAddress()` function in the convenience
+FbpUtilsLib library as a short cut.
+
 ### Interrupts
 
 Interrupts are not really used in the UEFI environment, outside of an
-mplementation of the `EFI_TIMER_ARCH_PROTOCOL`.
+implementation of the `EFI_TIMER_ARCH_PROTOCOL`.
 
 The interrupt information is provided using the _interrupts_ and (optionally)
 _interrupt-parent_ properties for a DT controller. This information can be used
@@ -472,11 +477,11 @@ to look up an `EFI_DT_INTERRUPT_PROTOCOL` instance and register a handler.
 
 In practice, the described interrupt may actually need to be looked up
 via an interrupt nexus before arriving at an interrupt controller.
-The `FbpInterruptGet()` in the convenience FbpInterruptUtilsLib implements
-this logic.
+The `FbpInterruptGet()` function in the convenience FbpInterruptUtilsLib
+library implements this fairly complicated logic.
 
 > [!NOTE]
-> ``FbpInterruptGet()` is not part of `EFI_DT_IO_PROTOCOL`, as it is
+> `FbpInterruptGet()` logic is not part of `EFI_DT_IO_PROTOCOL`, as it is
 > functionality that is, in practice, used at _most_ by one DT controller
 > driver.
 
@@ -589,7 +594,7 @@ to connect are usually well known ahead of time. A Tiano
 implementation using MdeModulePkg/Universal/BdsDxe typically sets
 these up in the PlatformBootManagerLib component.
 
-Here is an example of a `PlatformBootManagerBeforeConsole ()` excerpt,
+Here is an example of a `PlatformBootManagerBeforeConsole()` excerpt,
 that sets up a serial console (backed by
 [PciSioSerialDxe](../Drivers/PciSioSerialDxe)).
 
@@ -621,28 +626,28 @@ that sets up a serial console (backed by
 
 This is quite similar to [directly looking up devices in a legacy driver](#another-simple-approach).
 
-The third parameter to `Lookup ()` is `Connect == TRUE`:
+The third parameter to `Lookup()` is `Connect == TRUE`:
 as we want the path to be parsed and resolved, with all missing drivers
 bound to devices and all missing DT controllers enumerated. This
 accomplishes initializing the bare minimum required -
 a much better alternative to enumerating every devices (via
-`EfiBootManagerConnectAll ()`) and connecting every console (via
-`EfiBootManagerConnectAllConsoles ()`).
+`EfiBootManagerConnectAll()`) and connecting every console (via
+`EfiBootManagerConnectAllConsoles()`).
 
 > [!NOTE]
-> Prior to the `Lookup ()` with `Connect == TRUE`, the DT controller
+> Prior to the `Lookup()` with `Connect == TRUE`, the DT controller
 > for the UART may not even be enumerated, meaning that manually
 > iterating over all possible EFI handles matching the UART device
 > would come up short.
 
 The code then grabs the `EFI_DEVICE_PATH_PROTOCOL` for the
 `EFI_HANDLE` matching the UART. This is required by
-`EfiBootManagerUpdateConsoleVariable ()`. It also appends a few
+`EfiBootManagerUpdateConsoleVariable()`. It also appends a few
 configuration nodes to the EFI device path, required to correctly
 configure the UART and console drivers.
 
 > [!NOTE]
-> You don't have to use the DT I/O Protocol `Lookup ()` function. It
+> You don't have to use the DT I/O Protocol `Lookup()` function. It
 > just makes things much more convenient than manually hardcoding
 > an `EFI_DEVICE_PATH_PROTOCOL` to a device, especially since the DT
 > controller components have a variable-length structure (see
@@ -676,3 +681,15 @@ fragility involved.
 HighMemDxe, when
 [compiled](../Drivers/HighMemDxe/HighMemDxeNoBinding.inf) as a
 legacy driver, is an example of this approach.
+
+## Convenience Functions
+
+The I/O Protocol only implements core functionality that arguably
+would otherwise be duplicated in every driver. A few additional
+libraries exist with useful wrappers or highly-specific functionality.
+
+| Name | Description |
+| ---- | ----------- |
+| FbpUtilsLib | Generic useful functions. |
+| FbpPciUtilsLib | Specific to implementing PCIe root complex drivers. |
+| FbpInterruptUtilsLib | Specific to drivers that register interrupts. |

@@ -47,6 +47,7 @@ See the [presentation video](https://www.youtube.com/watch?v=2w9iQE8jA1w) and [s
 
 | When | What |
 | :-: | ------------ |
+| August 2024 | Various fixes, DtInterrupt protocol. |
 | February 2024 | Docs complete. DtInfo, DtProp and DtReg tools added. VirtNorFlashDxe, PciSioSerialDxe, PciHostBridgeFdtDxe drivers ported. Demo video at https://youtu.be/9RqKq4wGYZI. |
 | January 2024 | Open sourced. Work on documentation. |
 | October 2023 | Presented at the UEFI Fall 2023 Developers Conference and Plugfest. See the [presentation slides](Docs/Uefi2023/slides.pdf). |

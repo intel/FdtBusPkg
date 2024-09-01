@@ -44,7 +44,7 @@ VOID
 /**
   Register Handler for the specified interrupt source.
 
-  Interrupts->Iter is only modified on success.
+  InterruptData->Iter is only modified on success.
 
   @param This            Instance pointer for this protocol.
   @param InterruptData   Interrupt specifier.
@@ -52,7 +52,7 @@ VOID
   @param CookieContext   Additional context to pass to Handler.
   @param Cookie          A unique value used for further operations on a registered interrupt.
 
-  @retval EFI_SUCCESS            Interrupt handler registered, cookie returned.
+  @retval EFI_SUCCESS            Interrupt handler registered, *Cookie set, InterruptData->Iter updated.
   @retval EFI_UNSUPPORTED        Configuration not supported.
   @retval EFI_INVALID_PARAMETER  Bad parameter.
   @retval EFI_DEVICE_ERROR       Hardware could not be programmed.

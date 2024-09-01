@@ -1,4 +1,4 @@
-# Efi Devicetree Interrupt
+# EFI Devicetree Interrupt Protocol
 
 > [!NOTE]
 > See [FdtBusPkg Documentation Style and Terms Definitions](StyleAndTerms.md) first.
@@ -7,9 +7,9 @@ This section provides a detailed description of the `EFI_DT_INTERRUPT_PROTOCOL`.
 This protocol is used by DT controller drivers for interrupt controllers.
 
 The interfaces provided in the `EFI_DT_INTERRUPT_PROTOCOL` are for registering
-an interrupt handler, enabling and disabling the registered interrupt source. The
-protocol is specifically tailored to an environment which relies on describing
-the platform using a Devicetree, including the timer hardware exposed to UEFI via
+an interrupt handler and enabling and disabling the registered interrupt source. The
+protocol is specifically tailored to an environment, which relies on describing
+the platform devices using a Devicetree, including the timer hardware exposed to UEFI via
 the architectural timer protocol.
 
 ## EFI_DT_INTERRUPT_PROTOCOL
@@ -70,12 +70,16 @@ uniquely identifies the registered interrupt and is used with further API calls 
 and disable the interrupt. The actual interrupt configuration is entirely opaque, being specific
 to the interrupt controller implementation itself, and is passed via a DT property blob.
 
+### Interrupt Handler
+
+Interrupt completion (aka EOI, end-of-interrupt) is done automatically after the handler completes.
+
 ### `EFI_DT_INTERRUPT_PROTOCOL.RegisterInterrupt()`
 
 #### Description
 
 Registers an interrupt handler for an interrupt source. On success, populates
-`Cookie` with a value uniquely identifying the interrupt source.
+`*Cookie` with a value uniquely identifying the interrupt source.
 
 An `EFI_DT_INTERRUPT_PROTOCOL` implementation is only required to support one outstanding registered interrupt.
 
@@ -139,7 +143,7 @@ EFI_STATUS
 | Parameter | Description |
 | --------- | ----------- |
 | `This` |  Instance pointer for this protocol. |
-| `Cookie` | As provided by [`RegisterInterrupt`](#efi_dt_interrupt_protocolregisterinterrupt)  |
+| `Cookie` | As provided by [`RegisterInterrupt`](#efi_dt_interrupt_protocolregisterinterrupt). |
 
 #### Status Codes Returned
 
@@ -169,7 +173,7 @@ EFI_STATUS
 | Parameter | Description |
 | --------- | ----------- |
 | `This` |  Instance pointer for this protocol. |
-| `Cookie` | As provided by [`RegisterInterrupt`](#efi_dt_interrupt_protocolregisterinterrupt)  |
+| `Cookie` | As provided by [`RegisterInterrupt`](#efi_dt_interrupt_protocolregisterinterrupt). |
 
 #### Status Codes Returned
 
@@ -199,7 +203,7 @@ EFI_STATUS
 | Parameter | Description |
 | --------- | ----------- |
 | `This` |  Instance pointer for this protocol. |
-| `Cookie` | As provided by [`RegisterInterrupt`](#efi_dt_interrupt_protocolregisterinterrupt)  |
+| `Cookie` | As provided by [`RegisterInterrupt`](#efi_dt_interrupt_protocolregisterinterrupt). |
 
 #### Status Codes Returned
 

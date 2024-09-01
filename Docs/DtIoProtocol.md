@@ -1484,7 +1484,7 @@ memory for DMA. This function is used to map system memory for DT
 controller DMA accesses.
 
 > [!CAUTION]
-> Not implemented at the moment.
+> No support for non-coherent DMA at the moment.
 
 All DT controller bus master accesses must be performed through their
 mapped addresses and such mappings must be freed with
@@ -1557,9 +1557,6 @@ resources. If the operation was an
 `EfiDtIoDmaOperationBusMasterWrite`, the data is committed to the
 target system memory.
 
-> [!CAUTION]
-> Not implemented at the moment.
-
 #### Prototype
 
 ```
@@ -1589,9 +1586,6 @@ EFI_STATUS
 #### Description
 
 Allocates pages that are suitable for a common buffer mapping.
-
-> [!CAUTION]
-> Not implemented at the moment.
 
 The `AllocateBuffer()` function allocates pages that are suitable for an
 `EfiDtIoDmaOperationBusMasterCommonBuffer` mapping. This means that the
@@ -1639,9 +1633,6 @@ EFI_STATUS
 #### Description
 
 Frees memory allocated with `AllocateBuffer()`.
-
-> [!CAUTION]
-> Not implemented at the moment.
 
 #### Prototype
 

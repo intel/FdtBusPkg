@@ -240,7 +240,7 @@ Shell> FS0:\DtReg [-i reg index|name] [-n count] [-w access width] controller of
 * `-w`: access width (1, 2, 4 or 8). When not provded, 1 is used.
 * `controller`: a hex `EFI_HANDLE`, a hex device handle index (from
 `devtree`), an alias or absolute DT path. Just like [DtInfo.efi](#dtinfoefi).
-* `offset`: a region offset (decimal).
+* `offset`: a region offset (decimal or hex)).
 * `set value`: when provided, the value to write to register region.
 
 If the optional `set value` parameter is not provided, the tool reads

@@ -440,3 +440,43 @@ PrintDtRange (
     Print (L"\r\n");
   }
 }
+
+STATIC
+BOOLEAN
+StrIsHex (
+  IN CONST CHAR16  *String
+  )
+{
+  if (*String == L'-') {
+    String++;
+  }
+
+  //
+  // A number that begins with 0x or 0X is hex.
+  //
+  if (*String == L'0') {
+    String++;
+
+    if ((*String == L'x') || (*String == L'X')) {
+      String++;
+
+      if (*String != L'\0') {
+        return TRUE;
+      }
+    }
+  }
+
+  return FALSE;
+}
+
+UINTN
+StrHexOrDecToUintn (
+  IN CONST CHAR16  *String
+  )
+{
+  if (StrIsHex (String)) {
+    return StrHexToUintn (String);
+  } else {
+    return StrDecimalToUintn (String);
+  }
+}

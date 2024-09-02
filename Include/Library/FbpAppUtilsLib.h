@@ -70,4 +70,9 @@ PrintDtRange (
   IN BOOLEAN       NewLine
   );
 
+UINTN
+StrHexOrDecToUintn (
+  IN CONST CHAR16  *String
+  );
+
 #endif /* __FBP_APP_UTILS_LIB_H__ */

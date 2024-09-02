@@ -74,7 +74,7 @@ EntryPoint (
           return Usage (Argv[0]);
         }
 
-        RegIndex = StrDecimalToUintn (GetOptContext.OptArg);
+        RegIndex = StrHexOrDecToUintn (GetOptContext.OptArg);
         RegName  = UnicodeStrDupToAsciiStr (GetOptContext.OptArg);
         break;
       case L'n':
@@ -82,14 +82,14 @@ EntryPoint (
           return Usage (Argv[0]);
         }
 
-        Count = StrDecimalToUintn (GetOptContext.OptArg);
+        Count = StrHexOrDecToUintn (GetOptContext.OptArg);
         break;
       case L'w':
         if (GetOptContext.OptArg == NULL) {
           return Usage (Argv[0]);
         }
 
-        AccessWidth = StrDecimalToUintn (GetOptContext.OptArg);
+        AccessWidth = StrHexOrDecToUintn (GetOptContext.OptArg);
         break;
       default:
         Print (L"Unknown option '%c'\n", GetOptContext.Opt);
@@ -116,10 +116,10 @@ EntryPoint (
 
   if (Argc - GetOptContext.OptIndex == 3) {
     Set      = TRUE;
-    SetValue = StrHexToUintn (Argv[GetOptContext.OptIndex + 2]);
+    SetValue = StrHexOrDecToUintn (Argv[GetOptContext.OptIndex + 2]);
   }
 
-  Offset = StrDecimalToUintn (Argv[GetOptContext.OptIndex + 1]);
+  Offset = StrHexOrDecToUintn (Argv[GetOptContext.OptIndex + 1]);
   Status = FbpAppLookup (
              Argv[GetOptContext.OptIndex],
              &DtIo,

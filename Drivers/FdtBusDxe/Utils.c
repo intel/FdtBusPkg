@@ -321,8 +321,8 @@ AsciiStrChr (
   @param  Length                Range length.
   @param  Type                  EFI_GCD_MEMORY_TYPE.
   @param  Attributes            Memory region attributes.
-  @param  OutType               Where to store current EFI_GCD_MEMORY_TYPE.
-  @param  OutAttributes         Where to store current attributes.
+  @param  OutType               Where to store last seen EFI_GCD_MEMORY_TYPE.
+  @param  OutAttributes         Where to store last seen attributes.
   @param  OnConflictDoNothing   TRUE if a conflicting region/attributes
                                 should be left alone. FALSE if it should
                                 be corrected.
@@ -345,6 +345,8 @@ ApplyGcdTypeAndAttrs (
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR  GcdDescriptor;
   EFI_PHYSICAL_ADDRESS             AlignedAddress;
   UINTN                            AlignedLength;
+  EFI_PHYSICAL_ADDRESS             AlignedEnd;
+  EFI_PHYSICAL_ADDRESS             Next;
 
   ASSERT (Length != 0);
 
@@ -355,6 +357,7 @@ ApplyGcdTypeAndAttrs (
   AlignedAddress = ROUND_DOWN (Address, EFI_PAGE_SIZE);
   AlignedLength  = ROUND_UP (Address + Length, EFI_PAGE_SIZE) -
                    AlignedAddress;
+  AlignedEnd = AlignedAddress + AlignedLength;
 
   DEBUG ((
     DEBUG_VERBOSE,
@@ -366,105 +369,108 @@ ApplyGcdTypeAndAttrs (
     AlignedLength
     ));
 
-  Status = gDS->GetMemorySpaceDescriptor (
-                  AlignedAddress,
-                  &GcdDescriptor
-                  );
-  if (EFI_ERROR (Status)) {
-    //
-    // This can happen if AlignedAddress exceeds the Gcd limits as set
-    // by the Cpu HOB. You'll get an EFI_NOT_FOUND and it's really
-    // a programmer error since the AlignedAddress is clearly invalid.
-    //
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: GetMemorySpaceDescriptor(0x%lx-0x%lx): %r\n",
-      __func__,
-      AlignedAddress,
-      AlignedAddress + AlignedLength - 1,
-      Status
-      ));
-    if (Status == EFI_NOT_FOUND) {
-      Status = EFI_INVALID_PARAMETER;
-    }
+  for (Next = AlignedAddress; Next < AlignedEnd;) {
+    BOOLEAN               HaveConflict;
+    EFI_PHYSICAL_ADDRESS  OverlapRegionEnd;
 
-    return Status;
-  }
-
-  if ((AlignedAddress + AlignedLength - 1) >
-      (GcdDescriptor.BaseAddress + GcdDescriptor.Length - 1))
-  {
-    //
-    // Reg straddles multiple regions. This implies it is already
-    // mapped / in-use.
-    //
-    if (OnConflictDoNothing) {
-      Status = EFI_SUCCESS;
-      goto out;
-    }
-
-    //
-    // We could hypothetically support a situation where multiple
-    // GCD regions are to be replaced, but this points to an
-    // active conflict with some other component that is probably
-    // easier to resolve.
-    //
-
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: [0x%lx, 0x%lx) straddles multiple GCD entries\n",
-      __func__,
-      AlignedAddress,
-      AlignedAddress + AlignedLength - 1
-      ));
-    Status = EFI_ACCESS_DENIED;
-    return Status;
-  }
-
-  if (GcdDescriptor.GcdMemoryType != Type) {
-    if (GcdDescriptor.GcdMemoryType != EfiGcdMemoryTypeNonExistent) {
-      if (OnConflictDoNothing) {
-        //
-        // Already part of the GCD. Expect it to be mapped already
-        // with appropriate attributes.
-        //
-        Status = EFI_SUCCESS;
-        goto out;
+    Status = gDS->GetMemorySpaceDescriptor (
+                    Next,
+                    &GcdDescriptor
+                    );
+    if (EFI_ERROR (Status)) {
+      //
+      // This can happen if AlignedAddress exceeds the Gcd limits as set
+      // by the Cpu HOB. You'll get an EFI_NOT_FOUND and it's really
+      // a programmer error since the AlignedAddress is clearly invalid.
+      //
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: GetMemorySpaceDescriptor(0x%lx): %r\n",
+        __func__,
+        Next,
+        Status
+        ));
+      if (Status == EFI_NOT_FOUND) {
+        Status = EFI_INVALID_PARAMETER;
       }
 
-      Status = gDS->RemoveMemorySpace (AlignedAddress, AlignedLength);
+      return Status;
+    }
+
+    if (GcdDescriptor.BaseAddress + GcdDescriptor.Length > AlignedEnd) {
+      OverlapRegionEnd = AlignedEnd;
+    } else {
+      OverlapRegionEnd = GcdDescriptor.BaseAddress + GcdDescriptor.Length;
+    }
+
+    HaveConflict = FALSE;
+    if (GcdDescriptor.GcdMemoryType != EfiGcdMemoryTypeNonExistent) {
+      if ((GcdDescriptor.GcdMemoryType == Type) &&
+          ((GcdDescriptor.Attributes == 0) ||
+           (GcdDescriptor.Attributes == Attributes)))
+      {
+        DEBUG ((
+          DEBUG_VERBOSE,
+          "%a: consuming compatible existing range 0x%lx-0x%lx\n",
+          __func__,
+          Next,
+          OverlapRegionEnd - 1
+          ));
+      } else {
+        DEBUG ((
+          OnConflictDoNothing ? DEBUG_INFO : DEBUG_ERROR,
+          "%a: %a incompatible existing range 0x%lx-0x%lx type %u attributes 0x%x\n",
+          __func__,
+          OnConflictDoNothing ? "saw" : "overriding",
+          Next,
+          OverlapRegionEnd - 1,
+          GcdDescriptor.GcdMemoryType,
+          GcdDescriptor.Attributes
+          ));
+        HaveConflict = TRUE;
+      }
+    }
+
+    if (HaveConflict && !OnConflictDoNothing) {
+      Status = gDS->RemoveMemorySpace (Next, OverlapRegionEnd - Next);
       if (EFI_ERROR (Status)) {
+        //
+        // This means the region is in use and there are allocations made out of it.
+        //
         DEBUG ((
           DEBUG_ERROR,
-          "%a: couldn't remove stale [0x%lx, 0x%lx)\n",
+          "%a: couldn't remove conflicting [0x%lx, 0x%lx): %r\n",
           __func__,
-          AlignedAddress,
-          AlignedAddress + AlignedLength - 1
+          Next,
+          OverlapRegionEnd,
+          Status
           ));
         return Status;
       }
     }
 
-    Status = gDS->AddMemorySpace (
-                    Type,
-                    AlignedAddress,
-                    AlignedLength,
-                    Attributes
-                    );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((
-        DEBUG_ERROR,
-        "%a: failed to add [0x%lx, 0x%lx) to GCD: %r\n",
-        __func__,
-        AlignedAddress,
-        AlignedAddress + AlignedLength - 1,
-        Status
-        ));
-      return Status;
+    if ((GcdDescriptor.GcdMemoryType == EfiGcdMemoryTypeNonExistent) ||
+        (HaveConflict && !OnConflictDoNothing))
+    {
+      Status = gDS->AddMemorySpace (Type, Next, OverlapRegionEnd - Next, Attributes);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((
+          DEBUG_ERROR,
+          "%a: failed to add [0x%lx, 0x%lx) to GCD: %r\n",
+          __func__,
+          Next,
+          OverlapRegionEnd,
+          Status
+          ));
+        return Status;
+      }
     }
-  } else if (GcdDescriptor.Attributes != 0) {
+
     //
-    // Already part of the GCD.
+    // Setting attributes is only safe when:
+    // - adding new region.
+    // - safely resolved conflict (could re-add region)
+    // - no conflict, but the current attributes is 0:
     //
     // It looks like on some (RISC-V?) implementations the GCD
     // entries set up via HOBS have attributes 0 with the MMU code
@@ -480,43 +486,40 @@ ApplyGcdTypeAndAttrs (
     // it wasn't really mapped, which is resilient to this kind of
     // violation.
     //
-    if (OnConflictDoNothing) {
-      //
-      // Expect actual attributes to be the correct ones (if there any set).
-      //
-      Status = EFI_SUCCESS;
-      goto out;
-    }
-  }
-
-  Status = gDS->SetMemorySpaceAttributes (
-                  AlignedAddress,
-                  AlignedLength,
-                  Attributes
-                  );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: failed to set attributes for [0x%lx, 0x%lx): %r\n",
-      __func__,
-      AlignedAddress,
-      AlignedAddress + AlignedLength - 1,
-      Status
-      ));
-  }
-
-out:
-  if (!EFI_ERROR (Status)) {
-    if (OutType != NULL) {
-      *OutType = GcdDescriptor.GcdMemoryType;
+    if ((GcdDescriptor.GcdMemoryType == EfiGcdMemoryTypeNonExistent) ||
+        (!HaveConflict && (GcdDescriptor.Attributes == 0)) ||
+        (HaveConflict && !OnConflictDoNothing))
+    {
+      Status = gDS->SetMemorySpaceAttributes (
+                      Next,
+                      OverlapRegionEnd - Next,
+                      Attributes
+                      );
+      if (EFI_ERROR (Status)) {
+        DEBUG ((
+          DEBUG_ERROR,
+          "%a: failed to set attributes for [0x%lx, 0x%lx): %r\n",
+          __func__,
+          Next,
+          OverlapRegionEnd - Next,
+          Status
+          ));
+        return Status;
+      }
     }
 
-    if (OutAttributes != NULL) {
-      *OutAttributes = GcdDescriptor.Attributes;
-    }
+    Next = OverlapRegionEnd;
   }
 
-  return Status;
+  if (OutType != NULL) {
+    *OutType = GcdDescriptor.GcdMemoryType;
+  }
+
+  if (OutAttributes != NULL) {
+    *OutAttributes = GcdDescriptor.Attributes;
+  }
+
+  return EFI_SUCCESS;
 }
 
 #ifndef MDEPKG_NDEBUG

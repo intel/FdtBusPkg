@@ -250,6 +250,14 @@ HostBridgeNotifyPhase (
                               ALIGN_VALUE (RB (RootBridge->IoRange), Alignment + 1),
                               RL (RootBridge->IoRange)
                               );
+
+              if (BaseAddress != MAX_UINT64) {
+                //
+                // The root bridge reported resources always use CPU-side addresses.
+                //
+                BaseAddress = TO_HOST_ADDRESS (BaseAddress, RT (RootBridge->IoRange));
+              }
+
               break;
 
             case TypeMem64:
@@ -373,7 +381,10 @@ HostBridgeNotifyPhase (
           switch (Index) {
             case TypeIo:
               ReturnStatus = gDS->FreeIoSpace (
-                                    RootBridge->ResAllocNode[Index].Base,
+                                    TO_DEVICE_ADDRESS (
+                                      RootBridge->ResAllocNode[Index].Base,
+                                      RT (RootBridge->IoRange)
+                                      ),
                                     RootBridge->ResAllocNode[Index].Length
                                     );
               if (EFI_ERROR (ReturnStatus)) {
@@ -857,24 +868,17 @@ HostBridgeGetProposedResources (
       // instead of host address, or else PCI bus driver cannot set correct
       // address into PCI BAR registers.
       //
-      if (Index == TypeIo) {
-        //
-        // For PCI IO, the _device_ address is kept in ResAllocNode, so a
-        // conversion is not needed. See the big note in AddIoSpace as for
-        // why.
-        //
-        Descriptor->AddrRangeMin = RootBridge->ResAllocNode[Index].Base;
-      } else {
-        //
-        // For MMIO, the _host_ address is kept in ResAllocNode, so a conversion
-        // is needed.
-        //
-        Descriptor->AddrRangeMin = TO_DEVICE_ADDRESS (
-                                     RootBridge->ResAllocNode[Index].Base,
-                                     GetTranslationByResourceType (RootBridge, Index)
-                                     );
-      }
-
+      // For MMIO, the _host_ address is kept in ResAllocNode, so a conversion
+      // is needed.
+      //
+      // For PCI IO, the _host_ address is also kept in ResAllocNode, even
+      // through the _device_ address is keps in the GCD, so a
+      // conversion is needed.
+      //
+      Descriptor->AddrRangeMin = TO_DEVICE_ADDRESS (
+                                   RootBridge->ResAllocNode[Index].Base,
+                                   GetTranslationByResourceType (RootBridge, Index)
+                                   );
       Descriptor->AddrRangeMax          = 0;
       Descriptor->AddrTranslationOffset = (ResStatus == ResAllocated) ? EFI_RESOURCE_SATISFIED : PCI_RESOURCE_LESS;
       Descriptor->AddrLen               = RootBridge->ResAllocNode[Index].Length;
@@ -1032,6 +1036,9 @@ HostBridgeKeepExistingConfig (
       if (Index == TypeIo) {
         Base = RB (*Range);
         Base = AllocateResource (FALSE, RS (*Range), 1, Base, Base + RS (*Range) - 1);
+        if (Base != MAX_UINT64) {
+          Base = TO_HOST_ADDRESS (Base, RT (*Range));
+        }
       } else if (Index != TypeBus) {
         Base = TO_HOST_ADDRESS (RB (*Range), RT (*Range));
         Base = AllocateResource (TRUE, RS (*Range), 1, Base, Base + RS (*Range) - 1);
@@ -1074,7 +1081,10 @@ HostBridgeFreeExistingConfig (
     if (RootBridge->ResAllocNode[Index].Status == ResAllocated) {
       if (Index == TypeIo) {
         Status = gDS->FreeIoSpace (
-                        RootBridge->ResAllocNode[Index].Base,
+                        TO_DEVICE_ADDRESS (
+                          RootBridge->ResAllocNode[Index].Base,
+                          RT (RootBridge->IoRange)
+                          ),
                         RootBridge->ResAllocNode[Index].Length
                         );
       } else if (Index != TypeBus) {

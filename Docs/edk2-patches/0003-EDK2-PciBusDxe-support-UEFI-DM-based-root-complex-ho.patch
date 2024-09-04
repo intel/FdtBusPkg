@@ -1,8 +1,8 @@
-From 437c8ad7decb732060cae3048da9c87ea2a6a3d0 Mon Sep 17 00:00:00 2001
+From 6eaed8438905306130d6bbf73406460a8edfcdf9 Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Wed, 28 Feb 2024 10:37:52 -0600
-Subject: [PATCH 3/3] PciBusDxe: support UEFI DM-based root complex/host bridge
- drivers.
+Subject: [PATCH 3/5] EDK2: PciBusDxe: support UEFI DM-based root complex/host
+ bridge drivers.
 
 Fixes issue with connecting PciBusDxe after disconnecting PciBusDxe,
 caused by stale host bridge handle within gPciHostBridgeHandles. Now,

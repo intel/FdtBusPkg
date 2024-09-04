@@ -1,7 +1,8 @@
-From 08451bde01814c6f00c1a198a0a1bad88e042dbd Mon Sep 17 00:00:00 2001
+From bc2f352c07a7461cdfb62daae99f83167b05bf1d Mon Sep 17 00:00:00 2001
 From: Andrei Warkentin <andrei.warkentin@intel.com>
 Date: Tue, 13 Feb 2024 14:36:42 -0600
-Subject: [PATCH 2/3] UefiDevicePathLib: support DT(...) device path nodes
+Subject: [PATCH 2/5] EDK2: UefiDevicePathLib: support DT(...) device path
+ nodes
 
 This patch is entirely optional, it just gives a nicer experience
 within UEFI Shell and setup, e.g.:

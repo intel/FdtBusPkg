@@ -393,6 +393,8 @@ AddIoSpace (
   //
   // NOTE: HostBridge AllocateResource thus *also* is only
   // passed device addresses, not translated addreses, for PCI I/O.
+  // Of course the root bridge configuration values are still
+  // translated and AddrTranslationOffset is reported.
   //
   // For the sake of argument, if FdtBusPkg is ever used with x86,
   // then you're looking at PCI I/O to CPU I/O translation with

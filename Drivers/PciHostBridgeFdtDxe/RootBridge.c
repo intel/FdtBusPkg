@@ -9,8 +9,6 @@
 
 #include "Driver.h"
 
-#define RANGE_VALID(Range)  ((Range).Length != 0)
-
 typedef enum {
   IoOperation,
   MemOperation,
@@ -388,7 +386,7 @@ AddIoSpace (
   // keeping them in the GCD that way is at least consistent.
   //
   // NOTE: This is different from how the MdeModulePkg PciHostBridgeDxe
-  // does i in code, but not different from how it does it in
+  // does it in code, but not different from how it does it in
   // practice, seeing that PciHostBridgeDxe is never truly aware of
   // the IO->MMIO translation offset (which is reported OOB via
   // PcdPciIoTranslation).
@@ -1661,7 +1659,7 @@ RootBridgeValidate (
     (RootBridge->AllocationAttributes & EFI_PCI_HOST_BRIDGE_COMBINE_MEM_PMEM) != 0 ? L"CombineMemPMem " : L"",
     (RootBridge->AllocationAttributes & EFI_PCI_HOST_BRIDGE_MEM64_DECODE) != 0 ? L"Mem64Decode" : L""
     ));
-
+  DEBUG ((DEBUG_INFO, "   Keep config: %s\n", RootBridge->KeepExistingConfig ? L"Yes" : L"No"));
   PrintRangeInfo (14, "Bus", &RootBridge->BusRange);
   PrintRangeInfo (14, "Io", &RootBridge->IoRange);
   PrintRangeInfo (14, "Mem", &RootBridge->MemRange);
@@ -1804,6 +1802,7 @@ RootBridgeDtInit (
   EFI_DT_IO_PROTOCOL  *DtIo;
   EFI_DT_RANGE        Range;
   UINTN               Index;
+  EFI_DT_PROPERTY     Property;
 
   DtIo = RootBridge->DtIo;
 
@@ -1817,8 +1816,6 @@ RootBridgeDtInit (
   // - DT I/O Reg* acccessors are used to service configuration
   //   space and BAR reads/writes.
   //
-  // The driver does NOT yet use the DT I/O DMA API.
-  //
   // Have a DT node that looks like:
   //    pci@2c000000 {
   //            reg = <0x0 0x2C000000 0x0 0x1000000
@@ -1829,7 +1826,6 @@ RootBridgeDtInit (
   //            dma-coherent;
   //            bus-range = <0x00 0xff>;
   //            linux,pci-domain = <0x00>;
-  //            device_type = "pci";
   //            compatible = "pci-host-ecam-generic";
   //            #size-cells = <0x02>;
   //            #address-cells = <0x03>;
@@ -1981,6 +1977,12 @@ RootBridgeDtInit (
   }
 
   RootBridge->DmaAbove4G = RootBridgeDmaAbove4G (DtIo);
+
+  Status = DtIo->GetProp (DtIo, "fdtbuspkg,pci-keep-config", &Property);
+  if (!EFI_ERROR (Status)) {
+    RootBridge->KeepExistingConfig = TRUE;
+  }
+
   return EFI_SUCCESS;
 }
 
@@ -2121,7 +2123,7 @@ RootBridgeCreate (
       ));
   }
 
-  Status = PcdSetBoolS (PcdPciDisableBusEnumeration, FALSE);
+  Status = PcdSetBoolS (PcdPciDisableBusEnumeration, RootBridge->KeepExistingConfig);
   if (EFI_ERROR (Status)) {
     DEBUG ((
       DEBUG_ERROR,
@@ -2156,6 +2158,10 @@ RootBridgeCreate (
         goto out;
       }
     }
+  }
+
+  if (RootBridge->KeepExistingConfig) {
+    HostBridgeKeepExistingConfig (RootBridge);
   }
 
   RootBridge->RootBridgeIo.SegmentNumber  = RootBridge->Segment;
@@ -2213,6 +2219,10 @@ RootBridgeFree (
   )
 {
   ASSERT (RootBridge != NULL);
+
+  if (RootBridge->KeepExistingConfig) {
+    HostBridgeFreeExistingConfig (RootBridge);
+  }
 
   FreePool (RootBridge->ConfigBuffer);
   FreePool (RootBridge->DevicePathStr);

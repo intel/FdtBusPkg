@@ -240,10 +240,6 @@ HostBridgeNotifyPhase (
           switch (Index) {
             case TypeIo:
               //
-              // Base and Limit in PCI_ROOT_BRIDGE_APERTURE are device address.
-              // For AllocateResource is manipulating GCD resource, we need to use
-              // host address here.
-              //
               // See note in AddIoSpace for why the base/limits passed to
               // AllocateResource are not translated via TO_HOST_ADDRESS.
               //
@@ -979,4 +975,135 @@ HostBridgeInit (
   RootBridge->ResAlloc.SubmitResources      = HostBridgeSubmitResources;
   RootBridge->ResAlloc.GetProposedResources = HostBridgeGetProposedResources;
   RootBridge->ResAlloc.PreprocessController = HostBridgePreprocessController;
+}
+
+/**
+
+  If requested to keep current configuration, set ResAlloc based on current
+  reported apertures.
+
+  @param This              The EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_ PROTOCOL instance.
+
+  @retval EFI_SUCCESS            Succeed.
+  @retval Other                  EFI_STATUS.
+
+**/
+EFI_STATUS
+HostBridgeKeepExistingConfig (
+  IN  PCI_ROOT_BRIDGE_INSTANCE  *RootBridge
+  )
+{
+  UINTN  Index;
+
+  ASSERT (RootBridge->KeepExistingConfig);
+
+  for (Index = TypeIo; Index < TypeMax; Index++) {
+    EFI_DT_RANGE  *Range;
+
+    switch (Index) {
+      case TypeBus:
+        Range = &RootBridge->BusRange;
+        break;
+      case TypeIo:
+        Range = &RootBridge->IoRange;
+        break;
+      case TypeMem32:
+        Range = &RootBridge->MemRange;
+        break;
+      case TypeMem64:
+        Range = &RootBridge->MemAbove4GRange;
+        break;
+      case TypePMem32:
+        Range = &RootBridge->PMemRange;
+        break;
+      case TypePMem64:
+        Range = &RootBridge->PMemAbove4GRange;
+        break;
+      default:
+        Range = NULL;
+        break;
+    }
+
+    ASSERT (Range != NULL);
+
+    if (RANGE_VALID (*Range)) {
+      UINT64  Base;
+
+      if (Index == TypeIo) {
+        Base = RB (*Range);
+        Base = AllocateResource (FALSE, RS (*Range), 1, Base, Base + RS (*Range) - 1);
+      } else if (Index != TypeBus) {
+        Base = TO_HOST_ADDRESS (RB (*Range), RT (*Range));
+        Base = AllocateResource (TRUE, RS (*Range), 1, Base, Base + RS (*Range) - 1);
+      } else {
+        Base = RB (*Range);
+      }
+
+      if (Base != MAX_UINT64) {
+        RootBridge->ResAllocNode[Index].Base   = Base;
+        RootBridge->ResAllocNode[Index].Length = RS (*Range);
+        RootBridge->ResAllocNode[Index].Status = ResAllocated;
+      }
+    }
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+
+  Undoes HostBridgeKeepExistingConfig as part of DriverStop.
+
+  @param This              The EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_ PROTOCOL instance.
+
+  @retval EFI_SUCCESS            Succeed.
+  @retval Other                  EFI_STATUS.
+
+**/
+EFI_STATUS
+HostBridgeFreeExistingConfig (
+  IN  PCI_ROOT_BRIDGE_INSTANCE  *RootBridge
+  )
+{
+  UINTN       Index;
+  EFI_STATUS  Status;
+
+  ASSERT (RootBridge->KeepExistingConfig);
+
+  for (Index = TypeIo; Index < TypeMax; Index++) {
+    if (RootBridge->ResAllocNode[Index].Status == ResAllocated) {
+      if (Index == TypeIo) {
+        Status = gDS->FreeIoSpace (
+                        RootBridge->ResAllocNode[Index].Base,
+                        RootBridge->ResAllocNode[Index].Length
+                        );
+      } else if (Index != TypeBus) {
+        Status = gDS->FreeMemorySpace (
+                        RootBridge->ResAllocNode[Index].Base,
+                        RootBridge->ResAllocNode[Index].Length
+                        );
+      }
+
+      if (EFI_ERROR (Status)) {
+        DEBUG ((
+          DEBUG_ERROR,
+          "%s: Free%aSpace(0x%lx-0x%lx): %r\n",
+          RootBridge->DevicePathStr,
+          Index == TypeIo ? "Io" : "Memory",
+          RootBridge->ResAllocNode[Index].Base,
+          RootBridge->ResAllocNode[Index].Base +
+          RootBridge->ResAllocNode[Index].Length - 1,
+          Status
+          ));
+        return Status;
+      }
+
+      RootBridge->ResAllocNode[Index].Base      = 0;
+      RootBridge->ResAllocNode[Index].Length    = 0;
+      RootBridge->ResAllocNode[Index].Alignment = 0;
+      RootBridge->ResAllocNode[Index].Status    = ResNone;
+    }
+  }
+
+  return EFI_SUCCESS;
 }

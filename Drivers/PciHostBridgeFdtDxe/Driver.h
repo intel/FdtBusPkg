@@ -55,10 +55,11 @@ extern EFI_DRIVER_BINDING_PROTOCOL   gDriverBinding;
 // situation and makes the current resource allocation code in generic PCI
 // host bridge driver still work.
 //
-#define RT(Range)  ((UINT64)((Range).ChildBase - (Range).TranslatedParentBase))
-#define RB(Range)  ((UINT64)((Range).ChildBase))
-#define RS(Range)  ((UINT64)((Range).Length))
-#define RL(Range)  ((UINT64)((Range).ChildBase + (Range).Length - 1))
+#define RT(Range)           ((UINT64)((Range).ChildBase - (Range).TranslatedParentBase))
+#define RB(Range)           ((UINT64)((Range).ChildBase))
+#define RS(Range)           ((UINT64)((Range).Length))
+#define RL(Range)           ((UINT64)((Range).ChildBase + (Range).Length - 1))
+#define RANGE_VALID(Range)  ((Range).Length != 0)
 
 #define PCI_ROOT_BRIDGE_SIGNATURE  SIGNATURE_32 ('d', 't', 'r', 'b')
 
@@ -113,6 +114,7 @@ struct _PCI_ROOT_BRIDGE_INSTANCE {
   EFI_DT_RANGE                                        PMemAbove4GRange;
   BOOLEAN                                             DmaAbove4G;
   BOOLEAN                                             NoExtendedConfigSpace;
+  BOOLEAN                                             KeepExistingConfig;
   //
   // Manipulated by HostBridge.c.
   //
@@ -128,6 +130,16 @@ struct _PCI_ROOT_BRIDGE_INSTANCE {
 
 VOID
 HostBridgeInit (
+  IN  PCI_ROOT_BRIDGE_INSTANCE  *RootBridge
+  );
+
+EFI_STATUS
+HostBridgeKeepExistingConfig (
+  IN  PCI_ROOT_BRIDGE_INSTANCE  *RootBridge
+  );
+
+EFI_STATUS
+HostBridgeFreeExistingConfig (
   IN  PCI_ROOT_BRIDGE_INSTANCE  *RootBridge
   );
 

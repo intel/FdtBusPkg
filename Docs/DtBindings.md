@@ -5,6 +5,18 @@
 
 These apply on top of [Devicetree Specification, Chapter 4](https://devicetree-specification.readthedocs.io/en/stable/device-bindings.html).
 
+## PCIe Root Complex and PCI Host Bridge Properties
+
+### _fdtbuspkg,pci-keep-config_
+
+| Property | Value Type | Description |
+| -------- | :--------: | ----------- |
+| _fdtbuspkg,pci-keep-config_ | - | Keep existing PCI(e) BAR configuration. |
+
+When set, UEFI PCI bus driver will perform a lightweight enumeration, that skips
+resource (re)assignment. This requires the resource assignment to be performed
+elsewhere (e.g. before UEFI)..
+
 ## Miscellaneous Properties
 
 ### _fdtbuspkg,critical_

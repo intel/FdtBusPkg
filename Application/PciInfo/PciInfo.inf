@@ -1,0 +1,32 @@
+## @file
+#
+#  Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010019
+  BASE_NAME                      = PciInfo
+  FILE_GUID                      = A57F1751-649A-4581-B2A0-56D17E1B148C
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = EntryPoint
+
+[Sources]
+  PciInfo.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  FdtBusPkg/FdtBusPkg.dec
+
+[LibraryClasses]
+  UefiLib
+  FbpAppUtilsLib
+  UefiApplicationEntryPoint
+  UefiBootServicesTableLib
+
+[Protocols]
+  gEfiPciIoProtocolGuid

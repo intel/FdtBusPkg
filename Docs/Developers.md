@@ -265,6 +265,37 @@ Write 1 byte at offset 0:
 Shell> FS0:\DtReg soc/serial@10000000 0 41
 ```
 
+### PciInfo.efi
+
+Tool for dumping BAR info for PCI devices.
+
+This might seem a strange tool to have in FdtBusPkg, but it
+is very useful in diagnosing PciHostBridgeFdtDxe, as it
+shows BARs and both bus- and CPU-side addresses.
+
+#### Usage
+
+```
+Shell> FS0:\PciInfo [-v] [seg bus dev func]
+```
+
+#### Parameter
+
+* `-v`: verbose, dumping info for all PCI devices when a device is not specified.
+
+#### Examples
+
+Shows the BAR configuration (bus address, CPU address, region length).
+
+```
+Shell> PciInfo 0000 00 02 00
+0000:00:02.00 info:
+-------------------------
+Vendor: 1AF4 Device: 1005
+BAR0: IO    CPU 0x0000000003000020 -> PCI 0x0000000000000020 (0x20)
+BAR1: MEM32 CPU 0x0000000040045000 -> PCI 0x0000000040045000 (0x1000)
+```
+
 ## FAQ
 
 ### How do I load a standalone built driver?

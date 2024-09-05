@@ -1,6 +1,6 @@
 ## @file
 #
-#  Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2023-2024, Intel Corporation. All rights reserved.<BR>
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -93,4 +93,4 @@
   FdtBusPkg/Application/DtInfo/DtInfo.inf
   FdtBusPkg/Application/DtProp/DtProp.inf
   FdtBusPkg/Application/DtReg/DtReg.inf
-
+  FdtBusPkg/Application/PciInfo/PciInfo.inf

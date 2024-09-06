@@ -1661,7 +1661,7 @@ RootBridgeValidate (
     (RootBridge->AllocationAttributes & EFI_PCI_HOST_BRIDGE_COMBINE_MEM_PMEM) != 0 ? L"CombineMemPMem " : L"",
     (RootBridge->AllocationAttributes & EFI_PCI_HOST_BRIDGE_MEM64_DECODE) != 0 ? L"Mem64Decode" : L""
     ));
-  DEBUG ((DEBUG_INFO, "   Keep config: %s\n", RootBridge->KeepExistingConfig ? L"Yes" : L"No"));
+  DEBUG ((DEBUG_INFO, "    KeepConfig: %s\n", RootBridge->KeepExistingConfig ? L"Yes" : L"No"));
   PrintRangeInfo (14, "Bus", &RootBridge->BusRange);
   PrintRangeInfo (14, "Io", &RootBridge->IoRange);
   PrintRangeInfo (14, "Mem", &RootBridge->MemRange);

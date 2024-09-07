@@ -48,7 +48,7 @@ A critical controller is always connected at End-of-DXE event (`gEfiEndOfDxeEven
 ### _fdtbuspkg,reg-attrs_ and _fdtbuspkg,range-attrs_
 
 Provides optional `EFI_DT_IO_REG_TYPE` and mapping attribute information for
-CPU-accessible regions. When not provided, `reg` and `ranges` mmory regions returned from
+CPU-accessible regions. When not provided, `reg` and `ranges` memory regions returned from
 DtIo default to memory type `EfiDtIoRegTypeMemoryMappedIo` and and attributes `EFI_MEMORY_UC`.
 
 The `EFI_DT_IO_REG_TYPE` is encoded as a `<u32>`. The EFI memory attributes are encoded as a `<u64>`.

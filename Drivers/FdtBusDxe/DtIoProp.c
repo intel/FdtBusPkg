@@ -47,7 +47,7 @@ DtIoGetStringIndex (
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = This->GetProp (This, Name, &Property);
+  Status = DtIoGetProp (This, Name, &Property);
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -310,7 +310,7 @@ DtIoGetRegByName (
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = This->GetStringIndex (This, "reg-names", Name, &Index);
+  Status = DtIoGetStringIndex (This, "reg-names", Name, &Index);
   if (EFI_ERROR (Status)) {
     return Status;
   }

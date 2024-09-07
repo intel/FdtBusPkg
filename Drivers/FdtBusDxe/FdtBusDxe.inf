@@ -24,6 +24,7 @@
   DtDevice.c
   DtIoProp.c
   DtIoPropParse.c
+  DtProp.c
   DtIo.c
   DtIoDma.c
   Entry.c

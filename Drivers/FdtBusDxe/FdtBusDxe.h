@@ -464,6 +464,15 @@ DtIoSetCallbacks (
   IN  EFI_DT_IO_PROTOCOL_CB  *Callbacks
   );
 
+EFI_STATUS
+DtPropGetRegOrRangeEfiTypeAndAttrs (
+  IN  DT_DEVICE            *DtDevice,
+  IN  BOOLEAN              IsReg,
+  IN  UINTN                Index,
+  OUT EFI_GCD_MEMORY_TYPE  *GcdType,
+  OUT UINT64               *EfiMemoryAttributes
+  );
+
 UINT64
 MultThenDivU64x64x32 (
   IN  UINT64  Multiplicand,

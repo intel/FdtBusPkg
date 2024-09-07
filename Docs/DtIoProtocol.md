@@ -819,13 +819,13 @@ Parses out a property field as the specified `Type`, advancing the `EFI_DT_PROPE
 
 > [!NOTE]
 > When a `EFI_DT_REG` or `EFI_DT_RANGE` describe a CPU-accessible region,
-> `ParseProp ()` ensures the region is accessible (e.g. mapped for
+> `ParseProp()` ensures the region is accessible (e.g. mapped for
 > access). If the region is not known to the UEFI implementation, it is added
 > as a region of type `EfiDtIoRegTypeMemoryMappedIo` with attributes
-> `EFI_MEMORY_UC`. If a `EfiDtIoRegTypeMemoryMappedIo` region
-> already exists with different attributes, it is left unchanged.
-> [`SetRegType ()`](#efi_dt_io_protocolsetregtype) can be used to set
-> a different type and attributes.
+> `EFI_MEMORY_UC`. These defaults can be changed usin the _fdtbuspkg,reg-attrs_
+> and  _fdtbuspkg,range-attrs_ properties. If a region already exists with
+> different attributes, it is left unchanged. [`SetRegType()`](#efi_dt_io_protocolsetregtype)
+> can be used to set a different type and attributes.
 
 #### Prototype
 

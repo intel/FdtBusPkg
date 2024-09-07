@@ -62,7 +62,6 @@ DtIoGetProp (
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
                                 current position.
-  @param  Type                  Type of the field to parse out.
   @param  Index                 Index of the field to return, starting from the
                                 current buffer position within the EFI_DT_PROPERTY.
   @param  U32                   Pointer to a UINT32.
@@ -104,7 +103,6 @@ DtIoParsePropU32 (
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
                                 current position.
-  @param  Type                  Type of the field to parse out.
   @param  Index                 Index of the field to return, starting from the
                                 current buffer position within the EFI_DT_PROPERTY.
   @param  U64                   Pointer to a UINT64.
@@ -155,7 +153,6 @@ DtIoParsePropU64 (
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
                                 current position.
-  @param  Type                  Type of the field to parse out.
   @param  Index                 Index of the field to return, starting from the
                                 current buffer position within the EFI_DT_PROPERTY.
   @param  BusAddress            Pointer to EFI_DT_BUS_ADDRESS.
@@ -219,7 +216,6 @@ DtIoParsePropBusAddress (
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
                                 current position.
-  @param  Type                  Type of the field to parse out.
   @param  Index                 Index of the field to return, starting from the
                                 current buffer position within the EFI_DT_PROPERTY.
   @param  BusAddress            Pointer to EFI_DT_BUS_ADDRESS.
@@ -283,7 +279,6 @@ DtIoParsePropChildBusAddress (
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
                                 current position.
-  @param  Type                  Type of the field to parse out.
   @param  Index                 Index of the field to return, starting from the
                                 current buffer position within the EFI_DT_PROPERTY.
   @param  Size                  Pointer to EFI_DT_SIZE.
@@ -348,7 +343,6 @@ DtIoParsePropSize (
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
                                 current position.
-  @param  Type                  Type of the field to parse out.
   @param  Index                 Index of the field to return, starting from the
                                 current buffer position within the EFI_DT_PROPERTY.
   @param  Size                  Pointer to EFI_DT_SIZE.
@@ -413,7 +407,6 @@ DtIoParsePropChildSize (
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
                                 current position.
-  @param  Type                  Type of the field to parse out.
   @param  Index                 Index of the field to return, starting from the
                                 current buffer position within the EFI_DT_PROPERTY.
   @param  Reg                   Pointer to EFI_DT_REG.
@@ -440,11 +433,12 @@ DtIoParsePropReg (
   UINT8       AddressCells;
   UINT8       SizeCells;
   CONST VOID  *OriginalIter;
+  EFI_DT_REG  DtReg;
 
   AddressCells = DtDevice->DtIo.AddressCells;
   SizeCells    = DtDevice->DtIo.SizeCells;
 
-  SetMem (Reg, sizeof (EFI_DT_REG), 0);
+  SetMem (&DtReg, sizeof (EFI_DT_REG), 0);
 
   //
   // Enforced in FdtGetAddressCells/FdtGetSizeCells.
@@ -467,12 +461,12 @@ DtIoParsePropReg (
 
   Prop->Iter = (EFI_DT_CELL *)Prop->Iter + ElemCells * Index;
 
-  Status = DtIoParsePropBusAddress (DtDevice, Prop, 0, &Reg->BusBase);
+  Status = DtIoParsePropBusAddress (DtDevice, Prop, 0, &DtReg.BusBase);
   if (EFI_ERROR (Status)) {
     goto Out;
   }
 
-  Status = DtIoParsePropSize (DtDevice, Prop, 0, &Reg->Length);
+  Status = DtIoParsePropSize (DtDevice, Prop, 0, &DtReg.Length);
   if (EFI_ERROR (Status)) {
     goto Out;
   }
@@ -480,9 +474,9 @@ DtIoParsePropReg (
   BusDevice = NULL;
   Status    = DtDeviceTranslateRangeToCpu (
                 DtDevice,
-                &Reg->BusBase,
-                &Reg->Length,
-                &Reg->TranslatedBase,
+                &DtReg.BusBase,
+                &DtReg.Length,
+                &DtReg.TranslatedBase,
                 &BusDevice
                 );
   if (EFI_ERROR (Status)) {
@@ -496,13 +490,27 @@ DtIoParsePropReg (
   }
 
   if (BusDevice != NULL) {
-    Reg->BusDtIo = &BusDevice->DtIo;
-  } else if (Reg->Length != 0) {
+    DtReg.BusDtIo = &BusDevice->DtIo;
+  } else if (DtReg.Length != 0) {
+    EFI_GCD_MEMORY_TYPE  Type;
+    UINT64               Attributes;
+
+    Status = DtPropGetRegOrRangeEfiTypeAndAttrs (
+               DtDevice,
+               TRUE,
+               Index,
+               &Type,
+               &Attributes
+               );
+    if (EFI_ERROR (Status)) {
+      goto Out;
+    }
+
     Status = ApplyGcdTypeAndAttrs (
-               Reg->TranslatedBase,
-               Reg->Length,
-               EfiGcdMemoryTypeMemoryMappedIo,
-               EFI_MEMORY_UC,
+               DtReg.TranslatedBase,
+               DtReg.Length,
+               Type,
+               Attributes,
                NULL,
                NULL,
                TRUE
@@ -521,6 +529,8 @@ DtIoParsePropReg (
 Out:
   if (EFI_ERROR (Status)) {
     Prop->Iter = OriginalIter;
+  } else {
+    *Reg = DtReg;
   }
 
   return Status;
@@ -532,7 +542,6 @@ Out:
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
                                 current position.
-  @param  Type                  Type of the field to parse out.
   @param  Index                 Index of the field to return, starting from the
                                 current buffer position within the EFI_DT_PROPERTY.
   @param  Range                 Pointer to EFI_DT_RANGE.
@@ -552,20 +561,21 @@ DtIoParsePropRange (
   OUT EFI_DT_RANGE         *Range
   )
 {
-  UINTN       ElemCells;
-  UINTN       Cells;
-  EFI_STATUS  Status;
-  DT_DEVICE   *BusDevice;
-  UINT8       AddressCells;
-  UINT8       ChildAddressCells;
-  UINT8       ChildSizeCells;
-  CONST VOID  *OriginalIter;
+  UINTN         ElemCells;
+  UINTN         Cells;
+  EFI_STATUS    Status;
+  DT_DEVICE     *BusDevice;
+  UINT8         AddressCells;
+  UINT8         ChildAddressCells;
+  UINT8         ChildSizeCells;
+  CONST VOID    *OriginalIter;
+  EFI_DT_RANGE  DtRange;
 
   AddressCells      = DtDevice->DtIo.AddressCells;
   ChildAddressCells = DtDevice->DtIo.ChildAddressCells;
   ChildSizeCells    = DtDevice->DtIo.ChildSizeCells;
 
-  SetMem (Range, sizeof (EFI_DT_RANGE), 0);
+  SetMem (&DtRange, sizeof (EFI_DT_RANGE), 0);
 
   //
   // Enforced in FdtGetAddressCells/FdtGetSizeCells.
@@ -589,17 +599,17 @@ DtIoParsePropRange (
 
   Prop->Iter = (EFI_DT_CELL *)Prop->Iter + ElemCells * Index;
 
-  Status = DtIoParsePropChildBusAddress (DtDevice, Prop, 0, &Range->ChildBase);
+  Status = DtIoParsePropChildBusAddress (DtDevice, Prop, 0, &DtRange.ChildBase);
   if (EFI_ERROR (Status)) {
     goto Out;
   }
 
-  Status = DtIoParsePropBusAddress (DtDevice, Prop, 0, &Range->ParentBase);
+  Status = DtIoParsePropBusAddress (DtDevice, Prop, 0, &DtRange.ParentBase);
   if (EFI_ERROR (Status)) {
     goto Out;
   }
 
-  Status = DtIoParsePropChildSize (DtDevice, Prop, 0, &Range->Length);
+  Status = DtIoParsePropChildSize (DtDevice, Prop, 0, &DtRange.Length);
   if (EFI_ERROR (Status)) {
     goto Out;
   }
@@ -607,9 +617,9 @@ DtIoParsePropRange (
   BusDevice = NULL;
   Status    = DtDeviceTranslateRangeToCpu (
                 DtDevice,
-                &Range->ParentBase,
-                &Range->Length,
-                &Range->TranslatedParentBase,
+                &DtRange.ParentBase,
+                &DtRange.Length,
+                &DtRange.TranslatedParentBase,
                 &BusDevice
                 );
   if (EFI_ERROR (Status)) {
@@ -623,13 +633,27 @@ DtIoParsePropRange (
   }
 
   if (BusDevice != NULL) {
-    Range->BusDtIo = &BusDevice->DtIo;
-  } else if (Range->Length != 0) {
+    DtRange.BusDtIo = &BusDevice->DtIo;
+  } else if (DtRange.Length != 0) {
+    EFI_GCD_MEMORY_TYPE  Type;
+    UINT64               Attributes;
+
+    Status = DtPropGetRegOrRangeEfiTypeAndAttrs (
+               DtDevice,
+               FALSE,
+               Index,
+               &Type,
+               &Attributes
+               );
+    if (EFI_ERROR (Status)) {
+      goto Out;
+    }
+
     Status = ApplyGcdTypeAndAttrs (
-               Range->TranslatedParentBase,
-               Range->Length,
-               EfiGcdMemoryTypeMemoryMappedIo,
-               EFI_MEMORY_UC,
+               DtRange.TranslatedParentBase,
+               DtRange.Length,
+               Type,
+               Attributes,
                NULL,
                NULL,
                TRUE
@@ -648,6 +672,8 @@ DtIoParsePropRange (
 Out:
   if (EFI_ERROR (Status)) {
     Prop->Iter = OriginalIter;
+  } else {
+    *Range = DtRange;
   }
 
   return Status;
@@ -662,7 +688,6 @@ Out:
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
                                 current position.
-  @param  Type                  Type of the field to parse out.
   @param  Index                 Index of the field to return, starting from the
                                 current buffer position within the EFI_DT_PROPERTY.
   @param  String                Pointer to CHAR8.
@@ -724,7 +749,6 @@ DtIoParsePropString (
   @param  This                  A pointer to the EFI_DT_IO_PROTOCOL instance.
   @param  Prop                  EFI_DT_PROPERTY describing the property buffer and
                                 current position.
-  @param  Type                  Type of the field to parse out.
   @param  Index                 Index of the field to return, starting from the
                                 current buffer position within the EFI_DT_PROPERTY.
   @param  Handle                Pointer to EFI_HANDLE.

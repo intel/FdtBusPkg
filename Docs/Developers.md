@@ -267,7 +267,7 @@ Shell> FS0:\DtReg soc/serial@10000000 0 41
 
 ### PciInfo.efi
 
-Tool for dumping BAR info for PCI devices.
+Tool for dumping BAR info for PCI devices or a specific PCI device.
 
 This might seem a strange tool to have in FdtBusPkg, but it
 is very useful in diagnosing PciHostBridgeFdtDxe, as it
@@ -276,24 +276,40 @@ shows BARs and both bus- and CPU-side addresses.
 #### Usage
 
 ```
-Shell> FS0:\PciInfo [-v] [seg bus dev func]
+Shell> FS0:\pciinfo.EFI seg bus dev func
+Shell> FS0:\pciinfo.EFI handle
+Shell> FS0:\pciinfo.EFI [-v]
 ```
 
-#### Parameter
+#### Parameters
 
+* `seg`: a hex segment number.
+* `bus`: a hex bus number.
+* `dev`: a hex device number.
+* `func`: a hex function number.
+* `handle`: a hex `EFI_HANDLE`, a hex device handle index (from `devtree`).
 * `-v`: verbose, dumping info for all PCI devices when a device is not specified.
 
 #### Examples
 
-Shows the BAR configuration (bus address, CPU address, region length).
+Dump info about a given handle index (from `devtree` output):
 
 ```
-Shell> PciInfo 0000 00 02 00
-0000:00:02.00 info:
+Shell> PciInfo bd
+[BD] 0000:00:03.00 info:
 -------------------------
-Vendor: 1AF4 Device: 1005
-BAR0: IO    CPU 0x0000000003000020 -> PCI 0x0000000000000020 (0x20)
-BAR1: MEM32 CPU 0x0000000040045000 -> PCI 0x0000000040045000 (0x1000)
+     Vendor: 1AF4 Device: 1000
+  Supported: IO MEM BM ED ER DAC
+    Current: IO MEM BM
+       ROMs:
++0x00000000: BIOS (0x0000) image (0x10E00 bytes)
++0x00010E00: UEFI (0x8664) image (0x16600 bytes)
++0x00010E00:    Subsystem: 0xB
++0x00010E00:    InitializationSize: 0x16600 (bytes)
++0x00010E00:    EfiImageHeaderOffset: 0x38
++0x00010E00:    Compressed: yes
+       BAR0: IO    CPU 0x0000000003000000 -> PCI 0x0000000000000000 (0x20)
+       BAR1: MEM32 CPU 0x0000000040044000 -> PCI 0x0000000040044000 (0x1000)
 ```
 
 ## FAQ

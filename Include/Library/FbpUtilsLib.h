@@ -40,13 +40,16 @@ FbpPathNodeCreate (
   Convert an EFI_DT_RANGE to an EFI_DT_REG.
 
   If the EFI_DT_REG is going to be use with
-  ChildBase address offsets, pass ForChildSide
-  as TRUE.
+  ChildBase address offsets, pass the appropriate
+  ChildSideOffset to be subtracted. Note - this
+  function *cannot* just blindly subtract
+  ChildBase, as it could be more than an offset
+  (e.g. for PCI it encodes type info as well).
 
   Useful in a bus driver to do I/O on behalf of a child.
 
   @param[in]  Range            EFI_DT_RANGE *.
-  @param[in]  ForChildSide     BOOLEAN.
+  @param[in]  ChildSideOFfset  EFI_DT_SIZE.
   @param[out] Reg              EFI_DT_REG *.
 
 **/
@@ -55,21 +58,13 @@ inline
 VOID
 FbpRangeToReg (
   IN  CONST EFI_DT_RANGE  *Range,
-  IN  BOOLEAN             ForChildSide,
+  IN  EFI_DT_SIZE         ChildSideOffset,
   OUT EFI_DT_REG          *Reg
   )
 {
-  EFI_DT_SIZE  Offset;
-
-  if (ForChildSide) {
-    Offset = Range->ChildBase;
-  } else {
-    Offset = 0;
-  }
-
-  Reg->BusBase        = Range->ParentBase - Offset;
-  Reg->TranslatedBase = Range->TranslatedParentBase - Offset;
-  Reg->Length         = Range->Length + Offset;
+  Reg->BusBase        = Range->ParentBase - ChildSideOffset;
+  Reg->TranslatedBase = Range->TranslatedParentBase - ChildSideOffset;
+  Reg->Length         = Range->Length + ChildSideOffset;
   Reg->BusDtIo        = Range->BusDtIo;
 }
 

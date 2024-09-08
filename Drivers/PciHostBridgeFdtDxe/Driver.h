@@ -112,6 +112,9 @@ struct _PCI_ROOT_BRIDGE_INSTANCE {
   EFI_DT_RANGE                                        PMemRange;
   EFI_DT_RANGE                                        MemAbove4GRange;
   EFI_DT_RANGE                                        PMemAbove4GRange;
+  EFI_DT_RANGE                                        VgaMemRange;
+  EFI_DT_RANGE                                        VgaIo1Range;
+  EFI_DT_RANGE                                        VgaIo2Range;
   BOOLEAN                                             DmaAbove4G;
   BOOLEAN                                             NoExtendedConfigSpace;
   BOOLEAN                                             KeepExistingConfig;

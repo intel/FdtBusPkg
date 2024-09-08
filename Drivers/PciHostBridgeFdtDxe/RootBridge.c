@@ -9,6 +9,15 @@
 
 #include "Driver.h"
 
+#define VGA_MEM_BASE  0xa0000
+#define VGA_MEM_SIZE  (0xc0000 - VGA_MEM_BASE)
+
+#define VGA_IO1_BASE  0x3b0
+#define VGA_IO1_SIZE  (0x3bc - VGA_IO1_BASE)
+
+#define VGA_IO2_BASE  0x3c0
+#define VGA_IO2_SIZE  (0x3e0 - VGA_IO2_BASE)
+
 typedef enum {
   IoOperation,
   MemOperation,
@@ -152,10 +161,31 @@ RootBridgeIoCheckParameter (
   // range check must be adjusted to avoid all oveflow conditions.
   //
   if (OperationType == IoOperation) {
-    Base  = RB (RootBridge->IoRange);
-    Limit = RL (RootBridge->IoRange);
+    EFI_DT_RANGE  *Range;
 
-    FbpRangeToReg (&RootBridge->IoRange, TRUE, Reg);
+    //
+    // By comparing the Address against Limit we know which range to be used
+    // for checking
+    //
+    if ((Address >= RB (RootBridge->VgaIo1Range)) &&
+        (Address + Length <= RL (RootBridge->VgaIo1Range) + 1))
+    {
+      Base  = RB (RootBridge->VgaIo1Range);
+      Limit = RL (RootBridge->VgaIo1Range);
+      Range = &RootBridge->VgaIo1Range;
+    } else if ((Address >= RB (RootBridge->VgaIo2Range)) &&
+               (Address + Length <= RL (RootBridge->VgaIo2Range) + 1))
+    {
+      Base  = RB (RootBridge->VgaIo2Range);
+      Limit = RL (RootBridge->VgaIo2Range);
+      Range = &RootBridge->VgaIo2Range;
+    } else {
+      Base  = RB (RootBridge->IoRange);
+      Limit = RL (RootBridge->IoRange);
+      Range = &RootBridge->IoRange;
+    }
+
+    FbpRangeToReg (Range, RB (*Range), Reg);
   } else if ((OperationType == MemOperation) || (OperationType == MemOperationNoBuffer)) {
     EFI_DT_RANGE  *Range;
 
@@ -169,6 +199,12 @@ RootBridgeIoCheckParameter (
       Base  = RB (RootBridge->MemRange);
       Limit = RL (RootBridge->MemRange);
       Range = &RootBridge->MemRange;
+    } else if ((Address >= RB (RootBridge->VgaMemRange)) &&
+               (Address + Length <= RL (RootBridge->VgaMemRange) + 1))
+    {
+      Base  = RB (RootBridge->VgaMemRange);
+      Limit = RL (RootBridge->VgaMemRange);
+      Range = &RootBridge->VgaMemRange;
     } else if ((Address >= RB (RootBridge->PMemRange)) &&
                (Address + Length <= RL (RootBridge->PMemRange) + 1))
     {
@@ -187,7 +223,7 @@ RootBridgeIoCheckParameter (
       Range = &RootBridge->PMemAbove4GRange;
     }
 
-    FbpRangeToReg (Range, TRUE, Reg);
+    FbpRangeToReg (Range, RB (*Range), Reg);
   } else {
     PciRbAddr = (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS *)&Address;
     if ((PciRbAddr->Bus < RB (RootBridge->BusRange)) ||
@@ -1664,7 +1700,10 @@ RootBridgeValidate (
   DEBUG ((DEBUG_INFO, "    KeepConfig: %s\n", RootBridge->KeepExistingConfig ? L"Yes" : L"No"));
   PrintRangeInfo (14, "Bus", &RootBridge->BusRange);
   PrintRangeInfo (14, "Io", &RootBridge->IoRange);
+  PrintRangeInfo (14, "VgaIo1", &RootBridge->VgaIo1Range);
+  PrintRangeInfo (14, "VgaIo2", &RootBridge->VgaIo2Range);
   PrintRangeInfo (14, "Mem", &RootBridge->MemRange);
+  PrintRangeInfo (14, "VgaMem", &RootBridge->VgaMemRange);
   PrintRangeInfo (14, "MemAbove4G", &RootBridge->MemAbove4GRange);
   PrintRangeInfo (14, "PMem", &RootBridge->PMemRange);
   PrintRangeInfo (14, "PMemAbove4G", &RootBridge->PMemAbove4GRange);
@@ -1959,11 +1998,39 @@ RootBridgeDtInit (
     }
   }
 
+  //
+  // This is a bit hacky, but it's used in case of a VGA (MM)I/O access,
+  // and assumes the same translations that made IoRange/MemRange possible.
+  //
+  if (RANGE_VALID (RootBridge->IoRange)) {
+    RootBridge->VgaIo1Range                       = RootBridge->IoRange;
+    RootBridge->VgaIo1Range.ChildBase            -= RB (RootBridge->IoRange) - VGA_IO1_BASE;
+    RootBridge->VgaIo1Range.ParentBase           -= RB (RootBridge->IoRange) - VGA_IO1_BASE;
+    RootBridge->VgaIo1Range.TranslatedParentBase -= RB (RootBridge->IoRange) - VGA_IO1_BASE;
+    RootBridge->VgaIo1Range.Length                = VGA_IO1_SIZE;
+
+    RootBridge->VgaIo2Range                       = RootBridge->IoRange;
+    RootBridge->VgaIo2Range.ChildBase            -= RB (RootBridge->IoRange) - VGA_IO2_BASE;
+    RootBridge->VgaIo2Range.ParentBase           -= RB (RootBridge->IoRange) - VGA_IO2_BASE;
+    RootBridge->VgaIo2Range.TranslatedParentBase -= RB (RootBridge->IoRange) - VGA_IO2_BASE;
+    RootBridge->VgaIo2Range.Length                = VGA_IO2_SIZE;
+  }
+
+  if (RANGE_VALID (RootBridge->MemRange)) {
+    RootBridge->VgaMemRange                       = RootBridge->MemRange;
+    RootBridge->VgaMemRange.ChildBase            -= RB (RootBridge->MemRange) - VGA_MEM_BASE;
+    RootBridge->VgaMemRange.ParentBase           -= RB (RootBridge->MemRange) - VGA_MEM_BASE;
+    RootBridge->VgaMemRange.TranslatedParentBase -= RB (RootBridge->MemRange) - VGA_MEM_BASE;
+    RootBridge->VgaMemRange.Length                = VGA_MEM_SIZE;
+  }
+
   RootBridge->Supports     =
-    RootBridge->Attributes = EFI_PCI_ATTRIBUTE_ISA_IO_16 |
-                             EFI_PCI_ATTRIBUTE_ISA_MOTHERBOARD_IO |
-                             EFI_PCI_ATTRIBUTE_VGA_IO_16  |
-                             EFI_PCI_ATTRIBUTE_VGA_PALETTE_IO_16;
+    RootBridge->Attributes =
+      EFI_PCI_ATTRIBUTE_VGA_PALETTE_IO |
+      EFI_PCI_ATTRIBUTE_VGA_MEMORY |
+      EFI_PCI_ATTRIBUTE_VGA_IO |
+      EFI_PCI_ATTRIBUTE_VGA_IO_16 |
+      EFI_PCI_ATTRIBUTE_VGA_PALETTE_IO_16;
 
   RootBridge->AllocationAttributes = 0;
   if (!RANGE_VALID (RootBridge->PMemRange) &&

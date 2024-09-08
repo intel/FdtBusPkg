@@ -21,12 +21,14 @@
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
   FdtBusPkg/FdtBusPkg.dec
+  ShellPkg/ShellPkg.dec
 
 [LibraryClasses]
   UefiLib
   FbpAppUtilsLib
   UefiApplicationEntryPoint
   UefiBootServicesTableLib
+  HandleParsingLib
 
 [Protocols]
   gEfiPciIoProtocolGuid

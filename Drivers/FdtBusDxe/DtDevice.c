@@ -580,6 +580,91 @@ DtDeviceScan (
 }
 
 /**
+  Given an [In, In + Length) bus address range for a child of CurDevice, look up an
+  [*Out, *Out + Length) range in the range of CurDevice (that is, addresses that
+  are parent addresses for the child of CurDevice).
+
+  This function performs a translation by looking over the triplets encoded
+  in the ranges property. An empty property means an identity translation.
+
+  @param[in]    CurDevice            DtDevice to translate bus address range for.
+  @param[in]    In                   Bus address range base.
+  @param[in]    Length               Bus address range length.
+  @param[out]   Out                  Translated bus address range base.
+
+  @retval EFI_SUCCESS                Success.
+  @retval Other                      Errors.
+
+**/
+STATIC
+EFI_STATUS
+DtDeviceTranslateRangeInternal (
+  IN  DT_DEVICE                 *CurDevice,
+  IN  CONST EFI_DT_BUS_ADDRESS  *In,
+  IN  CONST EFI_DT_SIZE         *Length,
+  OUT EFI_DT_BUS_ADDRESS        *Out
+  )
+{
+  EFI_STATUS          Status;
+  EFI_DT_PROPERTY     Property;
+  EFI_DT_BUS_ADDRESS  ChildBase;
+  EFI_DT_BUS_ADDRESS  ParentBase;
+  EFI_DT_SIZE         ChildSize;
+
+  if (CurDevice->Parent == NULL) {
+    //
+    // Root node has no ranges. Treat as identity.
+    //
+    *Out = *In;
+    return EFI_SUCCESS;
+  }
+
+  Status = DtIoGetProp (&CurDevice->DtIo, "ranges", &Property);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  if (Property.End == Property.Begin) {
+    //
+    // Identity.
+    //
+    *Out = *In;
+    return EFI_SUCCESS;
+  }
+
+  //
+  // Could rely on DtIoParsePropRange, but this would cause recursion into DtDeviceTranslateRangeToCpu.
+  //
+  // This is smarter, as DtDeviceTranslateRangeToCpu already walks up the device tree.
+  //
+  while (Property.Iter < Property.End) {
+    Status = DtIoParseProp (&CurDevice->DtIo, &Property, EFI_DT_VALUE_CHILD_BUS_ADDRESS, 0, &ChildBase);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    Status = DtIoParseProp (&CurDevice->DtIo, &Property, EFI_DT_VALUE_BUS_ADDRESS, 0, &ParentBase);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    Status = DtIoParseProp (&CurDevice->DtIo, &Property, EFI_DT_VALUE_CHILD_SIZE, 0, &ChildSize);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    if ((*In >= ChildBase) &&
+        ((*In + *Length) <= (ChildBase + ChildSize)))
+    {
+      *Out = *In - ChildBase + ParentBase;
+      return EFI_SUCCESS;
+    }
+  }
+
+  return EFI_NOT_FOUND;
+}
+
+/**
   Given an [In, In + Length) bus address range for DtDevice, translate it going
   up the device hierarchy, stops once further translation is no longer possible, returning
   the translated address in *Out and the matching bus device in *BusDevice. *BusDevice == NULL
@@ -606,7 +691,6 @@ DtDeviceTranslateRangeToCpu (
   )
 {
   EFI_STATUS          Status;
-  EFI_DT_PROPERTY     Property;
   DT_DEVICE           *CurDevice;
   EFI_DT_BUS_ADDRESS  CurAddress;
 
@@ -617,32 +701,14 @@ DtDeviceTranslateRangeToCpu (
   CurAddress = *In;
   CurDevice  = DtDevice->Parent;
   while (CurDevice != NULL) {
-    BOOLEAN  IsIdentity;
-
-    IsIdentity = FALSE;
-    if (CurDevice->Parent == NULL) {
+    Status = DtDeviceTranslateRangeInternal (CurDevice, &CurAddress, Length, &CurAddress);
+    if (Status == EFI_NOT_FOUND) {
       //
-      // Root node has no ranges.
+      // Translation stops here.
       //
-      IsIdentity = TRUE;
-    } else {
-      Status = DtIoGetProp (&CurDevice->DtIo, "ranges", &Property);
-      if (Status == EFI_NOT_FOUND) {
-        //
-        // Translation stops here.
-        //
-        break;
-      } else if (EFI_ERROR (Status)) {
-        return Status;
-      }
-
-      if (Property.End == Property.Begin) {
-        IsIdentity = TRUE;
-      }
-    }
-
-    if (!IsIdentity) {
-      return EFI_UNSUPPORTED;
+      break;
+    } else if (EFI_ERROR (Status)) {
+      return Status;
     }
 
     CurDevice = CurDevice->Parent;

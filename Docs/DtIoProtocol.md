@@ -812,8 +812,8 @@ Parses out a property field as the specified `Type`, advancing the `EFI_DT_PROPE
 | `EFI_DT_VALUE_CHILD_BUS_ADDRESS` | |
 | `EFI_DT_VALUE_SIZE` | |
 | `EFI_DT_VALUE_CHILD_SIZE` | |
-| `EFI_DT_VALUE_REG` | Performs translation of bus addresses. Support direct translation only today (parent _ranges_ is empty). |
-| `EFI_DT_VALUE_RANGE` | Performs translation of parent bus addresses. Support direct translation only today (parent _ranges_ is empty). |
+| `EFI_DT_VALUE_REG` | Performs translation of bus addresses. |
+| `EFI_DT_VALUE_RANGE` | Performs translation of parent bus addresses. |
 | `EFI_DT_VALUE_STRING` | |
 | `EFI_DT_VALUE_DEVICE` | Slow, especially with large trees. Connects missing drivers along the way. |
 

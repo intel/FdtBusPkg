@@ -1953,6 +1953,25 @@ RootBridgeDtInit (
   {
     EFI_DT_CELL  SpaceCode;
 
+    //
+    // UEFI expects the apertures to be visible in CPU space, which I suppose
+    // isn't really a problem for well-written driver code. However,
+    // this driver relies on GCD functions (see AllocateResource in
+    // HostBridge.c) to allocate/validate ranges. To support
+    // apertures that aren't directly mapped to CPU addresses
+    // (e.g. that rely on access via EFI_DT_IO_PROTOCOL_CB),
+    // AllocateResource needs to use its own allocator/range tracker
+    // (probably need to look over PciBusDxe for any similar assumptions as
+    // well).
+    //
+    // This is mostly an interesting design/implementation anecdote that
+    // no one is likely to ever worry about.
+    //
+    // Note that this driver *does* support indirect access to configuration
+    // space. This means it *can* support all kinds of quirky PCIe RCs
+    // (provided the actual IP setup is done elsewhere). A good example
+    // is exposing PCIe devices via VFIO to a userspace emulation of UEFI.
+    //
     Status = FbpRangeToPhysicalAddress (&Range, NULL);
     if (EFI_ERROR (Status)) {
       DEBUG ((
@@ -2081,6 +2100,7 @@ RootBridgeCreate (
   PCI_ROOT_BRIDGE_INSTANCE  *RootBridge;
   CHAR16                    *DevicePathStr;
   VOID                      *ConfigBuffer;
+  EFI_PHYSICAL_ADDRESS      EcamBase;
 
   ASSERT (DtIo != NULL);
   ASSERT (Controller != NULL);
@@ -2156,20 +2176,19 @@ RootBridgeCreate (
     goto out;
   }
 
-  if (PcdGet64 (PcdPciExpressBaseAddress) == MAX_UINT64) {
-    EFI_PHYSICAL_ADDRESS  EcamBase;
-
-    Status = FbpRegToPhysicalAddress (&RootBridge->ConfigReg, &EcamBase);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((
-        DEBUG_ERROR,
-        "%s: couldn't get the ECAM window CPU address: %r\n",
-        RootBridge->DevicePathStr,
-        Status
-        ));
-      goto out;
-    }
-
+  if ((PcdGet64 (PcdPciExpressBaseAddress) == MAX_UINT64) &&
+      !EFI_ERROR (FbpRegToPhysicalAddress (&RootBridge->ConfigReg, &EcamBase)))
+  {
+    //
+    // This driver could hypothetically be used with a quirked/crazy PCIe RC
+    // implementation that doesn't allow direct (ECAM) access to configuration
+    // space.
+    //
+    // PcdPciExpressBaseAddress is really more for compatibility with PciLib.
+    //
+    // Don't use code that uses PcdPciExpressBaseAddress as it will only work on
+    // ECAM systems with only one segment.
+    //
     Status = PcdSet64S (
                PcdPciExpressBaseAddress,
                EcamBase

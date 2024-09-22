@@ -78,7 +78,6 @@ FdtGetStatus (
   @param[out]   Cells            UINTN
 
   @retval EFI_SUCCESS            *Out is populated.
-  @retval EFI_NOT_FOUND          No #size-cells property.
   @retval Others                 Errors.
 
 **/
@@ -95,7 +94,11 @@ FdtGetSizeCells (
 
   Buf = fdt_getprop (TreeBase, FdtNode, "#size-cells", &Len);
   if (!Buf) {
-    return EFI_NOT_FOUND;
+    //
+    // Default value in 2.3.5 #address-cells and #size-cells.
+    //
+    *Cells = 1;
+    return EFI_SUCCESS;
   }
 
   if (Len != sizeof (EFI_DT_CELL)) {
@@ -119,7 +122,6 @@ FdtGetSizeCells (
   @param[out]   Cells            UINTN
 
   @retval EFI_SUCCESS            *Out is populated.
-  @retval EFI_NOT_FOUND          No #address-cells property.
   @retval Others                 Errors.
 
 **/
@@ -136,7 +138,11 @@ FdtGetAddressCells (
 
   Buf = fdt_getprop (TreeBase, FdtNode, "#address-cells", &Len);
   if (!Buf) {
-    return EFI_NOT_FOUND;
+    //
+    // Default value in 2.3.5 #address-cells and #size-cells.
+    //
+    *Cells = 2;
+    return EFI_SUCCESS;
   }
 
   if (Len != sizeof (EFI_DT_CELL)) {

@@ -90,7 +90,7 @@ DtDeviceCreate (
     Broken = TRUE;
   }
 
-  if ((Parent != NULL) && ((Parent->Flags & DT_DEVICE_HAS_ADDRESS_CELLS) != 0)) {
+  if (Parent != NULL) {
     DtDevice->DtIo.AddressCells = Parent->DtIo.ChildAddressCells;
   } else {
     //
@@ -99,7 +99,7 @@ DtDeviceCreate (
     DtDevice->DtIo.AddressCells = 2;
   }
 
-  if ((Parent != NULL) && ((Parent->Flags & DT_DEVICE_HAS_SIZE_CELLS) != 0)) {
+  if (Parent != NULL) {
     DtDevice->DtIo.SizeCells = Parent->DtIo.ChildSizeCells;
   } else {
     //
@@ -113,9 +113,7 @@ DtDeviceCreate (
              FdtNode,
              &DtDevice->DtIo.ChildAddressCells
              );
-  if (!EFI_ERROR (Status)) {
-    DtDevice->Flags |= DT_DEVICE_HAS_ADDRESS_CELLS;
-  } else if (Status != EFI_NOT_FOUND) {
+  if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: FdtGetAddressCells: %r\n", __func__, Status));
     Broken = TRUE;
   }
@@ -125,9 +123,7 @@ DtDeviceCreate (
              FdtNode,
              &DtDevice->DtIo.ChildSizeCells
              );
-  if (!EFI_ERROR (Status)) {
-    DtDevice->Flags |= DT_DEVICE_HAS_SIZE_CELLS;
-  } else if (Status != EFI_NOT_FOUND) {
+  if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: FdtGetSizeCells: %r\n", __func__, Status));
     Broken = TRUE;
   }

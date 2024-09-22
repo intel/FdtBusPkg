@@ -88,6 +88,7 @@ struct _DT_DEVICE {
   // DMA maps.
   //
   LIST_ENTRY                 Maps;
+  EFI_PHYSICAL_ADDRESS       MaxCpuDmaAddress;
 };
 
 #define DT_DEV_SIGNATURE  SIGNATURE_32 ('d', 't', 'i', 'o')
@@ -213,19 +214,7 @@ FdtGetSizeCells (
   );
 
 BOOLEAN
-FdtGetDmaCoherency (
-  IN  VOID  *TreeBase,
-  IN  INTN  FdtNode
-  );
-
-BOOLEAN
 FdtIsDeviceCritical (
-  IN  VOID  *TreeBase,
-  IN  INTN  FdtNode
-  );
-
-BOOLEAN
-FdtIsDmaIdentity (
   IN  VOID  *TreeBase,
   IN  INTN  FdtNode
   );

@@ -10,12 +10,123 @@
 
 LIST_ENTRY  gCriticalDevices = INITIALIZE_LIST_HEAD_VARIABLE (gCriticalDevices);
 
+STATIC
+EFI_STATUS
+DtDeviceCreateDmaInit (
+  IN  DT_DEVICE  *DtDevice
+  )
+{
+  EFI_STATUS          Status;
+  EFI_DT_PROPERTY     Property;
+  EFI_DT_BUS_ADDRESS  ChildBase;
+  EFI_DT_BUS_ADDRESS  ParentBase;
+  EFI_DT_SIZE         ChildSize;
+
+  InitializeListHead (&DtDevice->Maps);
+  if (DtDevice->Parent == NULL) {
+    DtDevice->MaxCpuDmaAddress = (EFI_PHYSICAL_ADDRESS)-1UL;
+  } else {
+    DtDevice->MaxCpuDmaAddress = DtDevice->Parent->MaxCpuDmaAddress;
+  }
+
+  Status = DtIoGetProp (
+             &DtDevice->DtIo,
+             DMA_DEFAULT_IS_COHERENT ? "dma-noncoherent" : "dma-coherent",
+             &Property
+             );
+  if (!EFI_ERROR (Status)) {
+    DtDevice->DtIo.IsDmaCoherent = !DMA_DEFAULT_IS_COHERENT;
+  } else if (Status == EFI_NOT_FOUND) {
+    DtDevice->DtIo.IsDmaCoherent = DMA_DEFAULT_IS_COHERENT;
+  } else {
+    return Status;
+  }
+
+  //
+  // DT_DEVICE_NON_IDENTITY_DMA is "sticky", being inherited. This allows
+  // optimizing for the common scenario of non-crazy hardware (which don't
+  // narrow or translate DMA).
+  //
+
+  Status = DtIoGetProp (&DtDevice->DtIo, "dma-ranges", &Property);
+  if (Status == EFI_NOT_FOUND) {
+    //
+    // This is the same as an empty dma-ranges. Quite different
+    // from the ranges property, where the missing property implies
+    // lack of translation.
+    //
+    // https://github.com/devicetree-org/devicetree-specification/issues/53
+    //
+    return EFI_SUCCESS;
+  }
+
+  if (Property.End == Property.Begin) {
+    //
+    // Identity (no entries).
+    //
+    return EFI_SUCCESS;
+  }
+
+  //
+  // Check indiividual ranges. Could still be identity, just narrowing the range. We only
+  // care about the max address (not only is the min unlikely, but UEFI is not well setup
+  // to handle allocations with minimum addresses, so something different must be done
+  // like reserving the invalid addresses if they correspond to RAM).
+  //
+  while (Property.Iter < Property.End) {
+    EFI_PHYSICAL_ADDRESS  MaxChildAddress;
+
+    Status = DtIoParseProp (&DtDevice->DtIo, &Property, EFI_DT_VALUE_CHILD_BUS_ADDRESS, 0, &ChildBase);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    Status = DtIoParseProp (&DtDevice->DtIo, &Property, EFI_DT_VALUE_BUS_ADDRESS, 0, &ParentBase);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    Status = DtIoParseProp (&DtDevice->DtIo, &Property, EFI_DT_VALUE_CHILD_SIZE, 0, &ChildSize);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    if (ChildBase != ParentBase) {
+      DtDevice->Flags |= DT_DEVICE_NON_IDENTITY_DMA;
+      break;
+    }
+
+    //
+    // Both ParentBase and ChildBase are in the domain of CPU addresses. It doesn't
+    // matter which one we check.
+    //
+    MaxChildAddress = ChildBase;
+    if (ChildSize != 0) {
+      MaxChildAddress += ChildSize - 1;
+    }
+
+    if (DtDevice->MaxCpuDmaAddress > MaxChildAddress) {
+      DtDevice->MaxCpuDmaAddress = MaxChildAddress;
+    }
+  }
+
+  if ((DtDevice->Flags & DT_DEVICE_NON_IDENTITY_DMA) != 0) {
+    //
+    // The code is not set up to deal with non-identity DMA translations.
+    //
+    DtDevice->MaxCpuDmaAddress = 0;
+  }
+
+  return EFI_SUCCESS;
+}
+
 /**
   Given a EFI_DT_DEVICE_PATH_NODE, create/populate a DT_DEVICE.
 
   @param[in]    FdtNode          INTN.
   @param[in]    Name             CHAR8 *.
   @param[in]    Parent           DT_DEVICE *.
+  @param[in]    ParentFlags      Parent device flags.
   @param[out]   Out              DT_DEVICE **.
 
   @retval EFI_SUCCESS            *Out is populated.
@@ -27,7 +138,7 @@ DtDeviceCreate (
   IN  INTN         FdtNode,
   IN  CONST CHAR8  *Name,
   IN  DT_DEVICE    *Parent,
-  IN  UINTN        DeviceFlags,
+  IN  UINTN        ParentFlags,
   OUT DT_DEVICE    **Out
   )
 {
@@ -39,7 +150,7 @@ DtDeviceCreate (
   VOID                     *TreeBase;
 
   Broken   = FALSE;
-  TreeBase = GetTreeBaseFromDeviceFlags (DeviceFlags);
+  TreeBase = GetTreeBaseFromDeviceFlags (ParentFlags);
 
   NewPathNode = FbpPathNodeCreate (Name);
   if (NewPathNode == NULL) {
@@ -128,24 +239,20 @@ DtDeviceCreate (
     Broken = TRUE;
   }
 
-  if (!FdtIsDmaIdentity (TreeBase, FdtNode)) {
-    //
-    // DT_DEVICE_NON_IDENTITY_DMA is "sticky", being inherited. This allows
-    // optimizing for the common scenario of non-crazy hardware (which don't
-    // narrow or translate DMA).
-    //
-    DtDevice->Flags |= DT_DEVICE_NON_IDENTITY_DMA;
-  }
+  DtDevice->DtIo.ParentDevice = Parent == NULL ? NULL : Parent->Handle;
+  DtDevice->Flags            |= ParentFlags & DT_DEVICE_INHERITED;
 
-  DtDevice->DtIo.IsDmaCoherent = FdtGetDmaCoherency (TreeBase, FdtNode);
-  DtDevice->DtIo.ParentDevice  = Parent == NULL ? NULL : Parent->Handle;
+  Status = DtDeviceCreateDmaInit (DtDevice);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: DtDeviceCreateDmaInit: %r\n", __func__, Status));
+    Broken = TRUE;
+  }
 
   if (Broken) {
     DEBUG ((DEBUG_ERROR, "%a: marking %a as broken\n", __func__, Name));
     DtDevice->DtIo.DeviceStatus = EFI_DT_STATUS_BROKEN;
   }
 
-  DtDevice->Flags |= DeviceFlags & DT_DEVICE_INHERITED;
   if (FdtIsDeviceCritical (TreeBase, FdtNode) ||
       (AsciiStrCmp (DtDevice->DtIo.DeviceType, "memory") == 0))
   {
@@ -161,8 +268,6 @@ DtDeviceCreate (
   if ((DtDevice->Flags & DT_DEVICE_CRITICAL) != 0) {
     InsertTailList (&gCriticalDevices, &DtDevice->Link);
   }
-
-  InitializeListHead (&DtDevice->Maps);
 
   //
   // Core.

@@ -66,7 +66,7 @@ DtIoMap (
     return EFI_UNSUPPORTED;
   }
 
-  MaxAddress = -1;
+  MaxAddress = DtDevice->MaxCpuDmaAddress;
   IsCoherent = This->IsDmaCoherent;
   if (ExtraConstraints != NULL) {
     if ((ExtraConstraints->Flags & ~KNOWN_CONSTRAINTS) != 0) {
@@ -74,7 +74,7 @@ DtIoMap (
     }
 
     if ((ExtraConstraints->Flags & EFI_DT_IO_DMA_WITH_MAX_ADDRESS) != 0) {
-      MaxAddress = ExtraConstraints->MaxAddress;
+      MaxAddress = MIN (MaxAddress, ExtraConstraints->MaxAddress);
     }
 
     if ((ExtraConstraints->Flags & EFI_DT_IO_DMA_NON_COHERENT) != 0) {
@@ -278,7 +278,7 @@ DtIoAllocateBuffer (
     return EFI_INVALID_PARAMETER;
   }
 
-  Address    = -1;
+  Address    = DtDevice->MaxCpuDmaAddress;
   IsCoherent = This->IsDmaCoherent;
   if (ExtraConstraints != NULL) {
     if ((ExtraConstraints->Flags & ~KNOWN_CONSTRAINTS) != 0) {
@@ -286,7 +286,7 @@ DtIoAllocateBuffer (
     }
 
     if ((ExtraConstraints->Flags & EFI_DT_IO_DMA_WITH_MAX_ADDRESS) != 0) {
-      Address = ExtraConstraints->MaxAddress;
+      Address = MIN (Address, ExtraConstraints->MaxAddress);
     }
 
     if ((ExtraConstraints->Flags & EFI_DT_IO_DMA_NON_COHERENT) != 0) {

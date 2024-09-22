@@ -159,29 +159,6 @@ FdtGetAddressCells (
 }
 
 /**
-  Given an FdtNode, return whether DMA is coherent.
-
-  @param[in]    TreeBase         Devicetree blob base
-  @param[in]    FdtNode          INTN
-
-  @retval TRUE                   DMA is coherent.
-  @retval FALSE                  DMA is not coherent.
-
-**/
-BOOLEAN
-FdtGetDmaCoherency (
-  IN  VOID  *TreeBase,
-  IN  INTN  FdtNode
-  )
-{
-  if (DMA_DEFAULT_IS_COHERENT) {
-    return fdt_getprop (TreeBase, FdtNode, "dma-noncoherent", NULL) == NULL;
-  } else {
-    return fdt_getprop (TreeBase, FdtNode, "dma-coherent", NULL) != NULL;
-  }
-}
-
-/**
   Given an FdtNode, return whether this device is critical to platform
   operation (e.g. it must be connected before or during EndOfDxe event).
 
@@ -199,37 +176,6 @@ FdtIsDeviceCritical (
   )
 {
   return fdt_getprop (TreeBase, FdtNode, "fdtbuspkg,critical", NULL) != NULL;
-}
-
-/**
-  Given an FdtNode, return whether the node describes 1:1 DMA mapping.
-
-  @param[in]    TreeBase         Devicetree blob base
-  @param[in]    FdtNode          INTN
-
-  @retval TRUE                   1:1 mapping.
-  @retval FALSE                  dma-ranges must be parsed and honored.
-
-**/
-BOOLEAN
-FdtIsDmaIdentity (
-  IN  VOID  *TreeBase,
-  IN  INTN  FdtNode
-  )
-{
-  INT32       Len;
-  CONST VOID  *Buf;
-
-  Buf = fdt_getprop (TreeBase, FdtNode, "dma-ranges", &Len);
-  if (Buf == NULL) {
-    return TRUE;
-  }
-
-  if (Len == 0) {
-    return TRUE;
-  }
-
-  return FALSE;
 }
 
 #ifndef MDEPKG_NDEBUG

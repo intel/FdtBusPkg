@@ -1936,6 +1936,11 @@ RootBridgeDtInit (
       RootBridge->BusRange.TranslatedParentBase = BusMin;
   RootBridge->BusRange.Length                   = BusMax - BusMin + 1;
 
+  Status = DtIo->GetProp (DtIo, "fdtbuspkg,pci-keep-config", &Property);
+  if (!EFI_ERROR (Status)) {
+    RootBridge->KeepExistingConfig = TRUE;
+  }
+
   for (Index = 0,
        Status = DtIo->GetRange (
                         DtIo,
@@ -1957,32 +1962,23 @@ RootBridgeDtInit (
     // UEFI expects the apertures to be visible in CPU space, which I suppose
     // isn't really a problem for well-written driver code. However,
     // this driver relies on GCD functions (see AllocateResource in
-    // HostBridge.c) to allocate/validate ranges. To support
-    // apertures that aren't directly mapped to CPU addresses
-    // (e.g. that rely on access via EFI_DT_IO_PROTOCOL_CB),
-    // AllocateResource needs to use its own allocator/range tracker
-    // (probably need to look over PciBusDxe for any similar assumptions as
-    // well).
+    // HostBridge.c) to allocate/validate ranges. This means that we can
+    // limp along if we're keeping existing configuration, but actually
+    // assigning resources involves our own allocator/range tracker.
     //
-    // This is mostly an interesting design/implementation anecdote that
-    // no one is likely to ever worry about.
-    //
-    // Note that this driver *does* support indirect access to configuration
-    // space. This means it *can* support all kinds of quirky PCIe RCs
-    // (provided the actual IP setup is done elsewhere). A good example
-    // is exposing PCIe devices via VFIO to a userspace emulation of UEFI.
-    //
-    Status = FbpRangeToPhysicalAddress (&Range, NULL);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((
-        DEBUG_ERROR,
-        "%s: couldn't translate range[%lu] to CPU addresses: %r\n",
-        RootBridge->DevicePathStr,
-        Index,
-        Status
-        ));
-      ASSERT_EFI_ERROR (Status);
-      continue;
+    if (!RootBridge->KeepExistingConfig) {
+      Status = FbpRangeToPhysicalAddress (&Range, NULL);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((
+          DEBUG_ERROR,
+          "%s: couldn't translate range[%lu] to CPU addresses: %r\n",
+          RootBridge->DevicePathStr,
+          Index,
+          Status
+          ));
+        ASSERT_EFI_ERROR (Status);
+        continue;
+      }
     }
 
     SpaceCode = FbpPciGetRangeAttribute (DtIo, Range.ChildBase);
@@ -2065,11 +2061,6 @@ RootBridgeDtInit (
   }
 
   RootBridge->DmaAbove4G = RootBridgeDmaAbove4G (DtIo);
-
-  Status = DtIo->GetProp (DtIo, "fdtbuspkg,pci-keep-config", &Property);
-  if (!EFI_ERROR (Status)) {
-    RootBridge->KeepExistingConfig = TRUE;
-  }
 
   return EFI_SUCCESS;
 }

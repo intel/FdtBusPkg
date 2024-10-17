@@ -89,6 +89,7 @@ typedef struct {
   UINT64                  Length;
   UINT64                  Alignment;
   RES_STATUS              Status;
+  BOOLEAN                 ResTracked;
 } PCI_RES_NODE;
 
 typedef struct _PCI_ROOT_BRIDGE_INSTANCE PCI_ROOT_BRIDGE_INSTANCE;

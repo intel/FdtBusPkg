@@ -1033,23 +1033,34 @@ HostBridgeKeepExistingConfig (
     if (RANGE_VALID (*Range)) {
       UINT64  Base;
 
-      if (Index == TypeIo) {
-        Base = RB (*Range);
-        Base = AllocateResource (FALSE, RS (*Range), 1, Base, Base + RS (*Range) - 1);
-        if (Base != MAX_UINT64) {
-          Base = TO_HOST_ADDRESS (Base, RT (*Range));
+      if (!EFI_ERROR (FbpRangeToPhysicalAddress (Range, NULL))) {
+        if (Index == TypeIo) {
+          Base = RB (*Range);
+          Base = AllocateResource (FALSE, RS (*Range), 1, Base, Base + RS (*Range) - 1);
+          if (Base != MAX_UINT64) {
+            Base = TO_HOST_ADDRESS (Base, RT (*Range));
+          }
+        } else if (Index != TypeBus) {
+          Base = TO_HOST_ADDRESS (RB (*Range), RT (*Range));
+          Base = AllocateResource (TRUE, RS (*Range), 1, Base, Base + RS (*Range) - 1);
+        } else {
+          Base = RB (*Range);
         }
-      } else if (Index != TypeBus) {
-        Base = TO_HOST_ADDRESS (RB (*Range), RT (*Range));
-        Base = AllocateResource (TRUE, RS (*Range), 1, Base, Base + RS (*Range) - 1);
-      } else {
-        Base = RB (*Range);
-      }
 
-      if (Base != MAX_UINT64) {
-        RootBridge->ResAllocNode[Index].Base   = Base;
-        RootBridge->ResAllocNode[Index].Length = RS (*Range);
-        RootBridge->ResAllocNode[Index].Status = ResAllocated;
+        if (Base != MAX_UINT64) {
+          RootBridge->ResAllocNode[Index].Base       = Base;
+          RootBridge->ResAllocNode[Index].Length     = RS (*Range);
+          RootBridge->ResAllocNode[Index].Status     = ResAllocated;
+          RootBridge->ResAllocNode[Index].ResTracked = TRUE;
+        }
+      } else {
+        //
+        // Apertures not backed 1:1 CPU addressing (indirect, synthetic, etc).
+        //
+        RootBridge->ResAllocNode[Index].Base       = RB (*Range);
+        RootBridge->ResAllocNode[Index].Length     = RS (*Range);
+        RootBridge->ResAllocNode[Index].Status     = ResAllocated;
+        RootBridge->ResAllocNode[Index].ResTracked = FALSE;
       }
     }
   }
@@ -1079,39 +1090,42 @@ HostBridgeFreeExistingConfig (
 
   for (Index = TypeIo; Index < TypeMax; Index++) {
     if (RootBridge->ResAllocNode[Index].Status == ResAllocated) {
-      if (Index == TypeIo) {
-        Status = gDS->FreeIoSpace (
-                        TO_DEVICE_ADDRESS (
+      if (RootBridge->ResAllocNode[Index].ResTracked) {
+        if (Index == TypeIo) {
+          Status = gDS->FreeIoSpace (
+                          TO_DEVICE_ADDRESS (
+                            RootBridge->ResAllocNode[Index].Base,
+                            RT (RootBridge->IoRange)
+                            ),
+                          RootBridge->ResAllocNode[Index].Length
+                          );
+        } else if (Index != TypeBus) {
+          Status = gDS->FreeMemorySpace (
                           RootBridge->ResAllocNode[Index].Base,
-                          RT (RootBridge->IoRange)
-                          ),
-                        RootBridge->ResAllocNode[Index].Length
-                        );
-      } else if (Index != TypeBus) {
-        Status = gDS->FreeMemorySpace (
-                        RootBridge->ResAllocNode[Index].Base,
-                        RootBridge->ResAllocNode[Index].Length
-                        );
+                          RootBridge->ResAllocNode[Index].Length
+                          );
+        }
+
+        if (EFI_ERROR (Status)) {
+          DEBUG ((
+            DEBUG_ERROR,
+            "%s: Free%aSpace(0x%lx-0x%lx): %r\n",
+            RootBridge->DevicePathStr,
+            Index == TypeIo ? "Io" : "Memory",
+            RootBridge->ResAllocNode[Index].Base,
+            RootBridge->ResAllocNode[Index].Base +
+            RootBridge->ResAllocNode[Index].Length - 1,
+            Status
+            ));
+          return Status;
+        }
       }
 
-      if (EFI_ERROR (Status)) {
-        DEBUG ((
-          DEBUG_ERROR,
-          "%s: Free%aSpace(0x%lx-0x%lx): %r\n",
-          RootBridge->DevicePathStr,
-          Index == TypeIo ? "Io" : "Memory",
-          RootBridge->ResAllocNode[Index].Base,
-          RootBridge->ResAllocNode[Index].Base +
-          RootBridge->ResAllocNode[Index].Length - 1,
-          Status
-          ));
-        return Status;
-      }
-
-      RootBridge->ResAllocNode[Index].Base      = 0;
-      RootBridge->ResAllocNode[Index].Length    = 0;
-      RootBridge->ResAllocNode[Index].Alignment = 0;
-      RootBridge->ResAllocNode[Index].Status    = ResNone;
+      RootBridge->ResAllocNode[Index].Base       = 0;
+      RootBridge->ResAllocNode[Index].Length     = 0;
+      RootBridge->ResAllocNode[Index].Alignment  = 0;
+      RootBridge->ResAllocNode[Index].Status     = ResNone;
+      RootBridge->ResAllocNode[Index].ResTracked = FALSE;
     }
   }
 

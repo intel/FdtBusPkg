@@ -47,6 +47,8 @@ See the [presentation video](https://www.youtube.com/watch?v=2w9iQE8jA1w) and [s
 
 | When | What |
 | :-: | ------------ |
+| October 2024 | Support indirect access to preconfigured BARs. |
+| September 2024 | Range translation, DMA range narrowing, reg-attrs, range-attrs, improved address-cells and size-cells handling, PciHostBridgeFdtDxe support for indirect configuration space access, legacy VGA ranges, preconfigured BARs. PciInfo tool. |
 | August 2024 | Various fixes, DtInterrupt protocol. |
 | February 2024 | Docs complete. DtInfo, DtProp and DtReg tools added. VirtNorFlashDxe, PciSioSerialDxe, PciHostBridgeFdtDxe drivers ported. Demo video at https://youtu.be/9RqKq4wGYZI. |
 | January 2024 | Open sourced. Work on documentation. |
